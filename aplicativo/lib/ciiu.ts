@@ -1,0 +1,22 @@
+export const CIIU_ACTIVITIES = [
+    { code: "4711", name: "Comercio al por menor en establecimientos no especializados (Tiendas, Supermercados)" },
+    { code: "4719", name: "Comercio al por menor en otros establecimientos no especializados (Misceláneas)" },
+    { code: "4721", name: "Comercio al por menor de productos agrícolas (Fruterías, Verduras)" },
+    { code: "4722", name: "Comercio al por menor de leche, productos lácteos y huevos" },
+    { code: "4723", name: "Comercio al por menor de carnes (Carnicerías, Pollerías)" },
+    { code: "4724", name: "Comercio al por menor de bebidas y productos del tabaco (Licorerías)" },
+    { code: "4731", name: "Comercio al por menor de combustible para automotores" },
+    { code: "4741", name: "Comercio al por menor de computadores, periféricos y programas" },
+    { code: "4752", name: "Comercio al por menor de ferretería, pinturas y productos de vidrio" },
+    { code: "4759", name: "Comercio al por menor de artículos y utensilios de uso doméstico" },
+    { code: "4761", name: "Comercio al por menor de libros, periódicos, materiales y artículos de papelería" },
+    { code: "4771", name: "Comercio al por menor de prendas de vestir y sus accesorios (Ropa)" },
+    { code: "4772", name: "Comercio al por menor de calzado y artículos de cuero" },
+    { code: "4773", name: "Comercio al por menor de productos farmacéuticos y medicinales (Droguerías)" },
+    { code: "4774", name: "Comercio al por menor de artículos de perfumería y cosmética" },
+    { code: "5611", name: "Expendio a la mesa de comidas preparadas (Restaurantes)" },
+    { code: "5613", name: "Expendio de comidas preparadas en cafeterías" },
+    { code: "5630", name: "Expendio de bebidas alcohólicas para el consumo dentro del establecimiento (Bares)" },
+    { code: "1071", name: "Elaboración de productos de panadería (Panaderías)" },
+    { code: "9602", name: "Peluquería y otros tratamientos de belleza" }
+];
