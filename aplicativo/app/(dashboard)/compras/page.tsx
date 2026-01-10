@@ -313,6 +313,7 @@ export default function PurchasesHistoryPage() {
                                                             tempId: i.id,
                                                             productId: i.product_id,
                                                             name: i.product_name,
+                                                            barcode: '', // Added missing field
                                                             qty: i.quantity,
                                                             cost: i.cost,
                                                             taxPercent: i.tax_percent,
@@ -320,7 +321,7 @@ export default function PurchasesHistoryPage() {
                                                             isNew: false
                                                         }))
                                                     };
-                                                    handleEdit(fullPurchase);
+                                                    handleEdit(fullPurchase as any);
                                                 }}
                                                 className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
                                                 title="Editar (Rehacer)"
