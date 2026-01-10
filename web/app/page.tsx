@@ -82,12 +82,12 @@ export default function Home() {
               >
                 <span className="truncate">Quiero ser inversor</span>
               </button>
-              <button
-                className="flex items-center justify-center overflow-hidden rounded-full h-10 px-4 sm:px-6 bg-[#234836]/50 text-gray-400 text-xs sm:text-sm font-bold border border-[#234836] cursor-not-allowed opacity-70 hover:opacity-70"
-                disabled
+              <a
+                href={process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/login` : "http://localhost:3000/login"}
+                className="flex items-center justify-center overflow-hidden rounded-full h-10 px-4 sm:px-6 bg-[#234836] text-white text-xs sm:text-sm font-bold border border-[#234836] hover:bg-[#1e3d2f] transition-colors"
               >
                 <span className="truncate">Ingresar</span>
-              </button>
+              </a>
             </div>
           </div>
         </header>
@@ -111,23 +111,14 @@ export default function Home() {
             </h2>
             <div className="w-full max-w-[520px] mb-6 relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-[#234836] rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-500"></div>
-              <form className="relative flex flex-col sm:flex-row w-full bg-[#193326] p-2 rounded-xl border border-[#32674d] shadow-2xl">
-                <div className="flex-1 flex items-center px-2">
-                  <span className="material-symbols-outlined text-[#92c9ad] ml-2">mail</span>
-                  <input
-                    className="w-full bg-transparent border-none text-white placeholder-[#5a8670] focus:ring-0 h-12 text-base outline-none px-2"
-                    placeholder="Tu correo electrónico..."
-                    required
-                    type="email"
-                  />
-                </div>
-                <button
-                  className="mt-2 sm:mt-0 sm:ml-2 flex items-center justify-center rounded-lg h-12 px-6 bg-primary hover:bg-[#0fd672] text-[#11221a] text-sm md:text-base font-bold transition-all transform active:scale-95 shadow-[0_0_20px_rgba(19,236,128,0.3)] hover:shadow-[0_0_30px_rgba(19,236,128,0.5)] whitespace-nowrap"
-                  type="submit"
+              <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                <a
+                  href={process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/register` : "http://localhost:3000/register"}
+                  className="flex items-center justify-center rounded-lg h-14 px-8 bg-primary hover:bg-[#0fd672] text-[#11221a] text-lg font-bold transition-all transform active:scale-95 shadow-[0_0_20px_rgba(19,236,128,0.3)] hover:shadow-[0_0_30px_rgba(19,236,128,0.5)] whitespace-nowrap w-full sm:w-auto"
                 >
-                  <span>Avísame y dame 1 mes GRATIS</span>
-                </button>
-              </form>
+                  <span>Comenzar Gratis</span>
+                </a>
+              </div>
             </div>
           </section>
 
