@@ -74,7 +74,7 @@ export function useConfiguration() {
                             phone: loadedInfo.phone || parsed.phone || "",
                             rutUrl: loadedInfo.rutUrl || parsed.rutPath || ""
                         };
-                        toast("Datos recuperados de tu sesión anterior. Por favor guarda.", "default");
+                        toast("Datos recuperados de tu sesión anterior. Por favor guarda.", "info");
                     } catch (e) {
                         console.error("Error parsing local onboarding data", e);
                     }
