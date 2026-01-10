@@ -34,6 +34,37 @@ export default function PurchasesHistoryPage() {
     const [hasMore, setHasMore] = useState(false);
     const PAGE_SIZE = 50;
 
+    const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
+    const [selectedPurchase, setSelectedPurchase] = useState<PurchaseRecord | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [stats, setStats] = useState({
+        totalSpent: 0,
+        purchaseCount: 0,
+        topProvider: "N/A"
+    });
+
+    const calculateStats = (data: PurchaseRecord[]) => {
+        const totalSpent = data.reduce((sum, p) => sum + p.totalAmount, 0);
+        const purchaseCount = data.length;
+
+        // Find top provider
+        const providerCounts: { [key: string]: number } = {};
+        data.forEach(p => {
+            providerCounts[p.provider] = (providerCounts[p.provider] || 0) + 1;
+        });
+
+        let topProvider = "N/A";
+        let maxCount = 0;
+        for (const [provider, count] of Object.entries(providerCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                topProvider = provider;
+            }
+        }
+
+        setStats({ totalSpent, purchaseCount, topProvider });
+    };
+
     useEffect(() => {
         loadPurchases(0);
     }, []);
@@ -134,7 +165,7 @@ export default function PurchasesHistoryPage() {
         }
 
         alert("Compra eliminada y stock revertido.");
-        loadPurchases();
+        loadPurchases(page);
     };
 
     const handleEdit = (purchase: PurchaseRecord) => {
