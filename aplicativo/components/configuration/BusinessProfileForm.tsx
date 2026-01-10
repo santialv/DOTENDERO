@@ -28,20 +28,23 @@ export function BusinessProfileForm({ businessInfo, setBusinessInfo, userId }: B
 
         setUploadingLogo(true);
         try {
+            if (!userId) throw new Error("No user ID found");
+
             const fileExt = file.name.split('.').pop();
             const fileName = `logo_${Date.now()}.${fileExt}`;
+            const filePath = `${userId}/${fileName}`;
 
-            // Upload to 'logos' bucket (Public)
+            // Upload to 'logos' bucket (Public) with User Isolation
             const { error: uploadError } = await supabase.storage
                 .from('logos')
-                .upload(fileName, file, { upsert: true });
+                .upload(filePath, file, { upsert: true });
 
             if (uploadError) throw uploadError;
 
             // Get Public URL
             const { data: { publicUrl } } = supabase.storage
                 .from('logos')
-                .getPublicUrl(fileName);
+                .getPublicUrl(filePath);
 
             // Update State
             setBusinessInfo({ ...businessInfo, logoUrl: publicUrl });

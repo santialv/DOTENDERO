@@ -21,15 +21,28 @@ export function useConfiguration() {
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (user) setUserId(user.id);
+            if (!user) return;
 
-            // RLS ensures we only get our own organization(s)
-            // Fix: Use order by created_at desc to get the latest one, and don't fail if multiple exist.
-            const { data: orgs, error } = await supabase
+            setUserId(user.id);
+
+            // 1. Get Profile to find Org ID
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', user.id)
+                .single();
+
+            if (!profile?.organization_id) {
+                console.warn("User has no organization linked");
+                return;
+            }
+
+            // 2. Get Organization Details securely
+            const { data: org, error } = await supabase
                 .from('organizations')
                 .select('*')
-                .order('created_at', { ascending: false })
-                .limit(1);
+                .eq('id', profile.organization_id)
+                .single();
 
             if (error) {
                 console.error("Error loading org:", error);
@@ -37,26 +50,23 @@ export function useConfiguration() {
 
             let loadedInfo: BusinessInfo = DEFAULT_BUSINESS_INFO;
 
-            if (orgs && orgs.length > 0) {
-                const data = orgs[0];
+            if (org) {
                 loadedInfo = {
-                    name: data.name || "",
-                    legalName: data.legal_name || "",
-                    regime: data.regime || "No Responsable de IVA",
-                    activityCode: data.activity_code || "",
-                    nit: data.nit || "",
-                    city: data.city || "",
-                    address: data.address || "",
-                    phone: data.phone || "",
-                    email: data.email || "",
-                    logoUrl: data.logo_url || "",
-                    rutUrl: data.rut_url || ""
+                    name: org.name || "",
+                    legalName: org.legal_name || "",
+                    regime: org.regime || "No Responsable de IVA",
+                    activityCode: org.activity_code || "",
+                    nit: org.nit || "",
+                    city: org.city || "",
+                    address: org.address || "",
+                    phone: org.phone || "",
+                    email: org.email || "",
+                    logoUrl: org.logo_url || "",
+                    rutUrl: org.rut_url || ""
                 };
             }
 
-            // RECOVERY MECHANISM:
-            // If critical data is missing from DB (e.g. NIT is empty), checking localStorage
-            // This rescues data if Onboarding crashed before saving.
+            // RECOVERY MECHANISM from LocalStorage
             if (!loadedInfo.nit || !loadedInfo.name) {
                 const localData = localStorage.getItem("onboarding_data");
                 if (localData) {
@@ -93,15 +103,22 @@ export function useConfiguration() {
     const saveConfiguration = async () => {
         setLoading(true);
         try {
-            // Retrieve Org ID (assuming user has one, which trigger guarantees)
-            const { data: orgs } = await supabase.from('organizations').select('id').limit(1);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("No authentifado");
 
-            if (!orgs || orgs.length === 0) {
-                toast("Error: No se encontró organización", "error");
+            // 1. Verify Profile Link again for security
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', user.id)
+                .single();
+
+            if (!profile?.organization_id) {
+                toast("Error: No tienes permisos sobre ninguna organización", "error");
                 return;
             }
 
-            const orgId = orgs[0].id;
+            const orgId = profile.organization_id;
 
             const { error } = await supabase.from('organizations').update({
                 name: businessInfo.name,
