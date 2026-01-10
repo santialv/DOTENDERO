@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useConfiguration } from "@/hooks/useConfiguration";
-import { BusinessProfileForm } from "@/components/configuration/BusinessProfileForm";
+import BusinessProfileForm from "@/components/configuration/BusinessProfileForm";
 import { InvoiceConfigForm } from "@/components/configuration/InvoiceConfigForm";
 import { UserProfileForm } from "@/components/configuration/UserProfileForm";
 import { SubscriptionCard } from "@/components/configuration/SubscriptionCard";
