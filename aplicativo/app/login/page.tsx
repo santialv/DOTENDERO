@@ -80,13 +80,8 @@ export default function LoginPage() {
                     <div className="mx-auto w-full max-w-sm lg:w-96">
                         {/* Logo Header */}
                         <div className="flex flex-col gap-6 mb-8">
-                            <div className="flex items-center gap-3 text-[#0d1b14]">
-                                <div className="size-8 text-[#13ec80]">
-                                    <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                                        <path clipRule="evenodd" d="M24 0.757355L47.2426 24L24 47.2426L0.757355 24L24 0.757355ZM21 35.7574V12.2426L9.24264 24L21 35.7574Z" fill="currentColor" fillRule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <h2 className="text-2xl font-bold leading-tight tracking-[-0.015em]">DonTendero</h2>
+                            <div className="flex items-center gap-3 mb-2">
+                                <img src="/logo.png" alt="DonTendero POS" className="h-[42px] w-auto object-contain" />
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold tracking-tight text-[#0d1b14]">Bienvenido de nuevo</h1>

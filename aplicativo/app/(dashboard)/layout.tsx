@@ -54,15 +54,18 @@ export default function DashboardLayout({
 
                     <div>
                         <div className={`h-20 flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-6'} border-b border-slate-100 overflow-hidden whitespace-nowrap`}>
-                            <div className="flex items-center gap-3">
-                                {/* Logo: Always storefront, color changes */}
-                                <div className={`w-10 h-10 ${brandColor} rounded-lg flex items-center justify-center text-slate-900 shadow-sm shrink-0 transition-colors duration-300`}>
-                                    <span className={`material-symbols-outlined text-[24px] ${isFinance ? 'text-white' : 'text-slate-900'}`}>storefront</span>
-                                </div>
-                                <div className={`${isCollapsed ? 'hidden' : 'block'} flex flex-col transition-opacity`}>
-                                    <h1 className="text-lg font-bold leading-none mb-0.5 text-slate-900">DonTendero</h1>
-                                    <p className={`text-[10px] font-bold tracking-[0.2em] leading-none ${subLabelColor}`}>{subLabel}</p>
-                                </div>
+                            <div className="flex items-center justify-center w-full">
+                                {/* Collapsed: CSS Icon */}
+                                {isCollapsed ? (
+                                    <div className={`w-10 h-10 ${brandColor} rounded-lg flex items-center justify-center text-slate-900 shadow-sm shrink-0 transition-transform duration-300`}>
+                                        <span className={`material-symbols-outlined text-[24px] ${isFinance ? 'text-white' : 'text-slate-900'}`}>storefront</span>
+                                    </div>
+                                ) : (
+                                    /* Expanded: Full Logo Image */
+                                    <div className="flex justify-start w-full transition-opacity duration-300 animate-in fade-in">
+                                        <img src="/logo.png" alt="DonTendero" className="h-[42px] w-auto object-contain" />
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <nav className="flex flex-col gap-1 p-2 md:p-4">
