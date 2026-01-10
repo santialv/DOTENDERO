@@ -45,9 +45,18 @@ export default function PurchasesHistoryPage() {
     }, []);
 
     const loadPurchases = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
+        const orgId = profile?.organization_id;
+
+        if (!orgId) return;
+
         const { data } = await supabase
             .from('purchases')
             .select('*')
+            .eq('organization_id', orgId)
             .order('date', { ascending: false });
 
         if (data) {

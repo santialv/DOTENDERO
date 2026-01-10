@@ -45,7 +45,18 @@ export default function PurchaseEntryPage() {
 
     useEffect(() => {
         const fetchProviders = async () => {
-            const { data } = await supabase.from('customers').select('id, full_name, document_number');
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+            const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
+            const orgId = profile?.organization_id;
+
+            if (!orgId) return;
+
+            const { data } = await supabase
+                .from('customers')
+                .select('id, full_name, document_number')
+                .eq('organization_id', orgId);
+
             if (data) {
                 const mapped = data.map(c => ({
                     id: c.id,
@@ -119,9 +130,17 @@ export default function PurchaseEntryPage() {
     const handleSearch = async (term: string) => {
         setSearchTerm(term);
         if (term.length > 1) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+            const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
+            const orgId = profile?.organization_id;
+
+            if (!orgId) return;
+
             const { data } = await supabase
                 .from('products')
                 .select('*')
+                .eq('organization_id', orgId)
                 .or(`name.ilike.%${term}%,barcode.eq.${term}`)
                 .limit(10);
 
@@ -175,9 +194,11 @@ export default function PurchaseEntryPage() {
         if (entryItems.length === 0) return alert("Agregue al menos un producto");
 
         try {
-            // Get Org ID
-            const { data: orgs } = await supabase.from("organizations").select("id").limit(1);
-            const orgId = orgs?.[0]?.id;
+            // Get Org ID Securely
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error("No sesión activa");
+            const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
+            const orgId = profile?.organization_id;
 
             if (!orgId) {
                 throw new Error("No se encontró la organización (ID nulo). Contacta soporte.");
