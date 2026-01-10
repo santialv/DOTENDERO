@@ -1,15 +1,17 @@
 "use client";
 
-export function CategoryButton({ label, icon, color, active, onClick }: { label: string, icon: string, color: string, active: boolean, onClick: () => void }) {
+export function CategoryButton({ label, icon, active, onClick }: { label: string, icon: string, color?: string, active: boolean, onClick: () => void }) {
     return (
         <button
             onClick={onClick}
-            className={`flex flex-col items-center justify-center gap-2 p-2 rounded-xl border shadow-md transition-all active:scale-95 group h-[88px] ${active
-                ? `bg-${color}-500 text-white border-${color}-500 shadow-${color}-500/30`
-                : `bg-white text-slate-600 border-slate-200 hover:border-${color}-500/50`}`}
+            // Eliminado el color dinámico para consistencia "default"
+            // Mejorada la animación activa y hover
+            className={`flex flex-col items-center justify-center gap-2 p-2 rounded-xl border shadow-sm transition-all duration-200 active:scale-90 group h-[88px] ${active
+                ? `bg-slate-900 text-white border-slate-900 shadow-lg scale-105` // Estilo Activo Uniforme (Negro/Premium)
+                : `bg-white text-slate-500 border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:shadow-md`}`}
         >
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm ${active ? 'bg-white/20' : `bg-${color}-50 text-${color}-500`}`}>
-                <span className="material-symbols-outlined text-[22px]">{icon}</span>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${active ? 'bg-white/20 text-white' : 'bg-slate-100 group-hover:bg-emerald-50 text-slate-500 group-hover:text-emerald-600'}`}>
+                <span className="material-symbols-outlined text-[24px]">{icon}</span>
             </div>
             <span className="text-xs font-bold truncate w-full px-1">{label}</span>
         </button>

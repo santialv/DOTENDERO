@@ -6,7 +6,19 @@ import { ProductTable } from "@/components/inventory/ProductTable";
 import Link from "next/link";
 
 export default function InventoryPage() {
-    const { filteredProducts, searchTerm, setSearchTerm, stats, deleteProduct, calculateMargin } = useInventory();
+    const {
+        filteredProducts,
+        searchTerm,
+        setSearchTerm,
+        stats,
+        deleteProduct,
+        calculateMargin,
+        categoryFilter,
+        setCategoryFilter,
+        stockFilter,
+        setStockFilter,
+        uniqueCategories
+    } = useInventory();
 
     return (
         <div className="flex flex-col h-full bg-slate-50 font-display overflow-hidden">
@@ -60,14 +72,39 @@ export default function InventoryPage() {
                         </div>
                         {/* Filters (Visual only for now matching original) */}
                         <div className="flex flex-wrap gap-2 w-full xl:w-auto xl:justify-end">
-                            <button className="group flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 hover:border-primary/50 transition-colors">
-                                <span className="text-xs font-medium text-slate-500 group-hover:text-slate-900">Categoría: <span className="text-slate-900 font-semibold">Todas</span></span>
-                                <span className="material-symbols-outlined text-[18px] text-slate-400">expand_more</span>
-                            </button>
-                            <button className="group flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 hover:border-primary/50 transition-colors">
-                                <span className="text-xs font-medium text-slate-500 group-hover:text-slate-900">Stock: <span className="text-slate-900 font-semibold">Cualquiera</span></span>
-                                <span className="material-symbols-outlined text-[18px] text-slate-400">expand_more</span>
-                            </button>
+                            {/* Category Filter */}
+                            <div className="relative group">
+                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                    <span className="material-symbols-outlined text-[18px] text-slate-400">expand_more</span>
+                                </div>
+                                <select
+                                    value={categoryFilter}
+                                    onChange={(e) => setCategoryFilter(e.target.value)}
+                                    className="h-9 pl-3 pr-8 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-900 hover:border-primary/50 transition-colors outline-none cursor-pointer appearance-none shadow-sm"
+                                >
+                                    {uniqueCategories.map(cat => (
+                                        <option key={cat} value={cat}>Categoría: {cat}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Stock Filter */}
+                            <div className="relative group">
+                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                    <span className="material-symbols-outlined text-[18px] text-slate-400">expand_more</span>
+                                </div>
+                                <select
+                                    value={stockFilter}
+                                    onChange={(e) => setStockFilter(e.target.value)}
+                                    className="h-9 pl-3 pr-8 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-900 hover:border-primary/50 transition-colors outline-none cursor-pointer appearance-none shadow-sm"
+                                >
+                                    <option value="Cualquiera">Stock: Cualquiera</option>
+                                    <option value="Con Stock">Stock: Con Stock</option>
+                                    <option value="Bajo Stock">Stock: Bajo Stock</option>
+                                    <option value="Sin Stock">Stock: Sin Stock</option>
+                                </select>
+                            </div>
+
                             <button className="flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-primary hover:border-primary/50 transition-colors" title="Más filtros">
                                 <span className="material-symbols-outlined text-[20px]">tune</span>
                             </button>

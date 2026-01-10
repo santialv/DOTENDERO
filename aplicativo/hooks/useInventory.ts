@@ -4,57 +4,145 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Product, InventoryStats } from "@/types";
 import { SEED_PRODUCTS } from "@/lib/seed-data";
 import { useToast } from "@/components/ui/toast";
+import { supabase } from "@/lib/supabase";
 
 export function useInventory() {
     const { toast } = useToast();
     const [products, setProducts] = useState<Product[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState("Todas");
+    const [stockFilter, setStockFilter] = useState("Cualquiera"); // Cualquiera, Bajo Stock, Sin Stock
     const [isLoading, setIsLoading] = useState(true);
 
     // Load Data
-    useEffect(() => {
+    // Load Data from Supabase
+    const fetchProducts = useCallback(async () => {
         setIsLoading(true);
-        const savedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+        try {
+            // 1. Get User
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
 
-        // Auto-seed if empty or low (legacy logic)
-        if (savedProducts.length < 20) {
-            // Cast seed data to match new Product type if needed, 
-            // assuming SEED_PRODUCTS roughly matches. 
-            // In real app, we'd map/validate.
-            const seed = SEED_PRODUCTS.map(p => ({
-                ...p,
-                id: String(p.id),
-                stock: p.stock || 0,
-                minStock: p.minStock || 5,
-                costPrice: p.costPrice || 0,
-                salePrice: p.salePrice || p.price || 0,
-                status: p.status || "Activo"
-            })) as Product[];
+            // 2. Get User's Organization
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', session.user.id)
+                .single();
 
-            setProducts(seed);
-            localStorage.setItem("products", JSON.stringify(seed));
-        } else {
-            setProducts(savedProducts);
+            if (!profile?.organization_id) {
+                // Should be handled by AuthGuard, but safety first
+                setProducts([]);
+                setIsLoading(false);
+                return;
+            }
+
+            const orgId = profile.organization_id;
+
+            // 3. Fetch Products for THIS Organization
+            const { data, error } = await supabase
+                .from("products")
+                .select("*")
+                .eq('organization_id', orgId)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                setProducts([]);
+                setIsLoading(false);
+                return;
+            }
+
+            // Map Supabase snake_case to TS camelCase
+            const mappedProducts: Product[] = (data || []).map(p => ({
+                id: p.id,
+                name: p.name,
+                description: p.description,
+                category: p.category,
+                barcode: p.barcode,
+                price: p.price,
+                salePrice: p.price,
+                costPrice: p.cost,
+                tax: p.tax_rate,
+                taxType: p.tax_type as 'IVA' | 'ICO',
+                stock: p.stock,
+                minStock: p.min_stock,
+                unit: p.unit,
+                image: p.image_url,
+                icaRate: p.ica_rate,
+                bagTax: p.bag_tax,
+                status: p.status === 'active' ? 'Activo' : 'Inactivo' // Map back
+            }));
+
+            setProducts(mappedProducts);
+        } catch (error) {
+            console.error("Error fetching inventory:", error);
+            toast("Error cargando inventario", "error");
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
-    }, []);
+    }, [toast]);
+
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
 
     // Actions
-    const deleteProduct = useCallback((id: string) => {
-        // In a real app this would be a modal, but for hook logic we provide the function
-        const updatedProducts = products.filter(p => p.id !== id);
-        setProducts(updatedProducts);
-        localStorage.setItem("products", JSON.stringify(updatedProducts));
-        toast("Producto eliminado correctamente", "success");
-    }, [products, toast]);
+    const deleteProduct = useCallback(async (id: string, name: string = 'Producto') => {
+        try {
+            // 1. Try Hard Delete (works if no history)
+            const { error: deleteError } = await supabase.from('products').delete().eq('id', id);
+
+            if (deleteError) {
+                // 2. If constraint violation (FK), fallback to Soft Delete (Archive)
+                // Postgres error 23503 is foreign_key_violation
+                console.warn("Soft delete fallback for:", name, deleteError);
+
+                const { error: updateError } = await supabase
+                    .from('products')
+                    .update({ status: 'inactive' })
+                    .eq('id', id);
+
+                if (updateError) throw updateError;
+
+                toast("Producto con movimientos: Se ha pasado a INACTIVO", "info");
+                // Update local state to reflect change (or remove if you filter by active)
+                setProducts(prev => prev.map(p => p.id === id ? { ...p, status: 'Inactivo' } : p));
+            } else {
+                // Hard delete success
+                setProducts(prev => prev.filter(p => p.id !== id));
+                toast("Producto eliminado permanentemente", "success");
+            }
+        } catch (error: any) {
+            console.error("Error deleting product:", error);
+            toast(`Error: ${error.message || "No se pudo eliminar"}`, "error");
+        }
+    }, [toast]);
 
     // Derived State
     const filteredProducts = useMemo(() => {
-        return products.filter(p =>
-            p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.barcode?.includes(searchTerm)
-        );
-    }, [products, searchTerm]);
+        return products.filter(p => {
+            // 1. Search
+            const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.barcode?.includes(searchTerm);
+            if (!matchesSearch) return false;
+
+            // 2. Category
+            if (categoryFilter !== "Todas" && p.category !== categoryFilter) return false;
+
+            // 3. Stock
+            if (stockFilter === "Bajo Stock") return p.stock <= p.minStock;
+            if (stockFilter === "Sin Stock") return p.stock <= 0;
+            if (stockFilter === "Con Stock") return p.stock > 0;
+
+            return true;
+        });
+    }, [products, searchTerm, categoryFilter, stockFilter]);
+
+    const uniqueCategories = useMemo(() => {
+        const cats = new Set(products.map(p => p.category).filter(Boolean));
+        return ["Todas", ...Array.from(cats)];
+    }, [products]);
 
     const stats: InventoryStats = useMemo(() => {
         return {
@@ -75,6 +163,11 @@ export function useInventory() {
         filteredProducts,
         searchTerm,
         setSearchTerm,
+        categoryFilter,
+        setCategoryFilter,
+        stockFilter,
+        setStockFilter,
+        uniqueCategories,
         stats,
         isLoading,
         deleteProduct,

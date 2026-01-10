@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import { Movement } from "../../../utils/inventory";
 
 export default function KardexPage() {
@@ -13,9 +14,47 @@ export default function KardexPage() {
     const [filterType, setFilterType] = useState("Todos");
 
     useEffect(() => {
-        const savedKardex = JSON.parse(localStorage.getItem("kardex") || "[]");
-        // Sort by date desc
-        setMovements(savedKardex.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        const fetchKardex = async () => {
+            // 0. Get Org Context
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', session.user.id)
+                .single();
+            const orgId = profile?.organization_id;
+            if (!orgId) return;
+
+            const { data } = await supabase
+                .from('movements')
+                .select('*, products(name)')
+                .eq('organization_id', orgId)
+                .order('created_at', { ascending: false });
+
+            if (data) {
+                const mapped = data.map(m => {
+                    let type = m.type;
+                    if (m.type === 'IN') type = m.reference && m.reference.includes('Compra') ? 'Compra' : 'Entrada';
+                    if (m.type === 'OUT') type = 'Venta';
+
+                    return {
+                        id: m.id,
+                        date: m.created_at,
+                        ref: m.reference || 'S/N',
+                        productId: m.product_id,
+                        productName: m.products?.name || 'Desconocido',
+                        type: type,
+                        quantity: m.type === 'OUT' ? -m.quantity : m.quantity, // Visual negative for OUT
+                        costPrice: m.unit_cost,
+                        balance: m.new_stock,
+                        user: "Sistema" // Placeholder until we join profiles
+                    };
+                });
+                setMovements(mapped as any);
+            }
+        };
+        fetchKardex();
     }, []);
 
     const filteredMovements = movements.filter(m => {
@@ -27,12 +66,29 @@ export default function KardexPage() {
     // Stats
     const totalValue = movements[0]?.balance ? 0 : 0; // Complexity to calc total value of inventory from kardex is high, use products for that usually. Keep placeholder or link to products.
     // Actually, let's pull products for stats
+    // Stats
     const [stats, setStats] = useState({ totalValue: 0, totalUnits: 0 });
     useEffect(() => {
-        const products = JSON.parse(localStorage.getItem("products") || "[]");
-        const val = products.reduce((acc: number, p: any) => acc + (p.stock * p.costPrice), 0);
-        const units = products.reduce((acc: number, p: any) => acc + p.stock, 0);
-        setStats({ totalValue: val, totalUnits: units });
+        const fetchStats = async () => {
+            // 0. Get Org Context
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', session.user.id)
+                .single();
+            const orgId = profile?.organization_id;
+            if (!orgId) return;
+
+            const { data } = await supabase.from('products').select('stock, cost').eq('organization_id', orgId);
+            if (data) {
+                const val = data.reduce((acc, p) => acc + ((p.stock || 0) * (p.cost || 0)), 0);
+                const units = data.reduce((acc, p) => acc + (p.stock || 0), 0);
+                setStats({ totalValue: val, totalUnits: units });
+            }
+        };
+        fetchStats();
     }, []);
 
     const getTypeColor = (type: Movement['type']) => {

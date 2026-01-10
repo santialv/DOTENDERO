@@ -5,6 +5,7 @@ import { ProductGrid } from "@/components/pos/ProductGrid";
 import { CartSidebar } from "@/components/pos/CartSidebar";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import { SuccessModal } from "@/components/pos/SuccessModal";
+import { CustomerModal } from "@/components/pos/CustomerModal";
 import { CategoryButton } from "@/components/pos/CategoryButton";
 import { usePOS } from "@/hooks/usePOS";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
@@ -143,17 +144,12 @@ export default function VentaPage() {
             </div>
 
             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-              <button
+              <CategoryButton
+                label="Todos"
+                icon="apps"
+                active={activeCategory === "Todos"}
                 onClick={() => setActiveCategory("Todos")}
-                className={`flex flex-col items-center justify-center gap-2 p-2 rounded-xl border shadow-md transition-all active:scale-95 group h-[88px] ${activeCategory === "Todos"
-                  ? "bg-primary text-slate-900 border-primary shadow-primary/20"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-primary/50"}`}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm ${activeCategory === "Todos" ? "bg-white/20" : "bg-slate-100"}`}>
-                  <span className="material-symbols-outlined text-[22px]">apps</span>
-                </div>
-                <span className="text-xs font-bold">Todos</span>
-              </button>
+              />
               {PRODUCT_CATEGORIES.slice(0, 7).map(cat => (
                 <CategoryButton
                   key={cat.id}
@@ -256,16 +252,24 @@ export default function VentaPage() {
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         total={total}
-        onFinalize={(payments, amountTendered, change) => {
-          const tx = checkout(payments, amountTendered, change);
-          setLastTransaction(tx);
-          setIsPaymentModalOpen(false);
+        onFinalize={async (payments, amountTendered, change) => {
+          const tx = await checkout(payments, amountTendered, change);
+          if (tx) {
+            setLastTransaction(tx as any); // Cast to any to avoid strict type mismatch during refactor
+            setIsPaymentModalOpen(false);
+          }
         }}
       />
 
       <SuccessModal
         transaction={lastTransaction}
         onNewSale={() => setLastTransaction(null)}
+      />
+
+      <CustomerModal
+        isOpen={isCustomerModalOpen}
+        onClose={() => setIsCustomerModalOpen(false)}
+        onSelect={(customer) => setSelectedCustomer(customer)}
       />
 
       {/* Print Styles */}

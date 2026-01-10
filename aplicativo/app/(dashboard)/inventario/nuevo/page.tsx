@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/components/ui/toast";
 
 // Define Product interface locally or import if available centrally (using local conformity for now)
 interface Product {
@@ -27,6 +29,7 @@ interface Product {
 
 export default function CreateProductPage() {
     const router = useRouter();
+    const { toast } = useToast();
 
     // -- Form State --
     const [name, setName] = useState("");
@@ -50,66 +53,99 @@ export default function CreateProductPage() {
     const [hasBagTax, setHasBagTax] = useState(false);
     const [bagTaxValue, setBagTaxValue] = useState("60"); // Default 2024/2025 value approx
 
-    const handleSave = (shouldRedirect = true) => {
+    const handleSave = async (shouldRedirect = true) => {
         if (!name) {
-            alert("El nombre del producto es obligatorio.");
+            toast("El nombre del producto es obligatorio.", "error");
             return;
         }
 
-        const existingProducts = JSON.parse(localStorage.getItem("products") || "[]");
-
-        let finalBarcode = barcode;
-        if (skuMode === 'auto') {
-            const randomSuffix = Math.floor(100000 + Math.random() * 900000); // 6 digit random
-            finalBarcode = `SKU-${randomSuffix}`;
-        } else if (!finalBarcode) {
-            if (!confirm("El código de barras está vacío. ¿Desea guardar sin código?")) return;
-            finalBarcode = "SIN-CODIGO";
-        }
-
-        // Check for duplicates
-        if (finalBarcode !== "SIN-CODIGO") {
-            const isDuplicate = existingProducts.some((p: Product) => p.barcode === finalBarcode);
-            if (isDuplicate) {
-                alert(`El código de barras "${finalBarcode}" ya está registrado.`);
+        try {
+            // Get Organization Securely
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                toast("No hay sesión activa.", "error");
                 return;
             }
-        }
 
-        const newProduct: Product = {
-            id: crypto.randomUUID(),
-            name,
-            description,
-            category: category || "General",
-            barcode: finalBarcode,
-            costPrice: parseFloat(costPrice) || 0,
-            salePrice: parseFloat(salePrice) || 0,
-            tax: parseFloat(tax) || 0,
-            stock: parseFloat(stock) || 0,
-            minStock: parseFloat(minStock) || 0,
-            unit,
-            status,
-            image: "", // Placeholder
-            icaRate: parseFloat(icaRate) || 0,
-            bagTax: hasBagTax ? (parseFloat(bagTaxValue) || 0) : 0,
-            taxType: taxType
-        };
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("organization_id")
+                .eq("id", session.user.id)
+                .single();
 
-        const updatedProducts = [...existingProducts, newProduct];
-        localStorage.setItem("products", JSON.stringify(updatedProducts));
+            const orgId = profile?.organization_id;
 
-        if (shouldRedirect) {
-            router.push("/inventario");
-        } else {
-            // Reset form for next product
-            setName("");
-            setDescription("");
-            setBarcode("");
-            setCostPrice("");
-            setSalePrice("");
-            setStock("");
-            // Keep category, tax, unit, etc if desired, or reset. Let's keep common settings.
-            alert("Producto guardado exitosamente. Puede crear otro.");
+            if (!orgId) {
+                toast("No se encontró una organización válida vinculada a su cuenta.", "error");
+                return;
+            }
+
+            let finalBarcode = barcode;
+            if (skuMode === 'auto') {
+                const randomSuffix = Math.floor(100000 + Math.random() * 900000); // 6 digit random
+                finalBarcode = `SKU-${randomSuffix}`;
+            } else if (!finalBarcode) {
+                if (!confirm("El código de barras está vacío. ¿Desea guardar sin código?")) return;
+                finalBarcode = "SIN-CODIGO";
+            }
+
+            // Check duplicate barcode
+            if (finalBarcode !== "SIN-CODIGO") {
+                const { data: duplicate } = await supabase
+                    .from("products")
+                    .select("id")
+                    .eq("barcode", finalBarcode)
+                    .eq("organization_id", orgId) // Check duplicate in same org only!
+                    .single();
+
+                if (duplicate) {
+                    toast(`El código de barras "${finalBarcode}" ya está registrado.`, "error");
+                    return;
+                }
+            }
+
+            // Insert to Supabase
+            const { error } = await supabase.from("products").insert({
+                organization_id: orgId,
+                name,
+                description,
+                category: category || "General",
+                barcode: finalBarcode,
+                price: parseFloat(salePrice) || 0,
+                cost: parseFloat(costPrice) || 0,
+                tax_rate: parseFloat(tax) || 0,
+                tax_type: taxType,
+                stock: parseFloat(stock) || 0,
+                min_stock: parseFloat(minStock) || 0,
+                unit,
+                status: status === 'Activo' ? 'active' : 'inactive',
+                image_url: "",
+                ica_rate: parseFloat(icaRate) || 0,
+                bag_tax: hasBagTax ? (parseFloat(bagTaxValue) || 0) : 0
+            });
+
+            if (error) throw error;
+
+            toast("Producto creado exitosamente.", "success");
+
+            if (shouldRedirect) {
+                router.push("/inventario");
+            } else {
+                // Reset form
+                setName("");
+                setDescription("");
+                setBarcode("");
+                setCostPrice("");
+                setSalePrice("");
+                setStock("");
+                setIcaRate("");
+                setBagTaxValue("60");
+                setHasBagTax(false);
+                setStatus("Activo");
+            }
+        } catch (error) {
+            console.error("Error creating product:", error);
+            toast("Error al guardar el producto.", "error");
         }
     };
 

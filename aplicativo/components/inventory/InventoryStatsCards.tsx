@@ -18,14 +18,12 @@ export function InventoryStatsCards({ stats }: InventoryStatsProps) {
                 <p className="text-slate-500 text-sm font-medium mb-2">Total Productos</p>
                 <div className="flex items-end justify-between">
                     <p className="text-3xl font-bold tracking-tight text-slate-900">{stats.totalProducts}</p>
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">+12%</span>
                 </div>
             </div>
             <div className="rounded-xl p-5 border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                 <p className="text-slate-500 text-sm font-medium mb-2">Valor Inventario</p>
                 <div className="flex items-end justify-between">
                     <p className="text-3xl font-bold tracking-tight text-slate-900">${stats.totalValue.toLocaleString()}</p>
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">+2.5%</span>
                 </div>
             </div>
             <div className="rounded-xl p-5 border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">

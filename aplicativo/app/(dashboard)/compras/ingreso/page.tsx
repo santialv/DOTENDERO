@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { addInventoryMovement } from "../../../utils/inventory";
+import { supabase } from "@/lib/supabase";
 
-// Mock Providers (would be in DB/LocalStorage typically)
-const MOCK_PROVIDERS = [
-    { id: "1", name: "Coca-Cola FEMSA", nit: "890.900.608-9" },
-    { id: "2", name: "Bavaria S.A.", nit: "860.003.020-1" },
-    { id: "3", name: "Alpina S.A.", nit: "860.025.900-3" },
-    { id: "4", name: "Proveedor General", nit: "222.222.222-2" }
-];
+interface Provider {
+    id: string;
+    name: string;
+    nit: string;
+}
 
 interface Product {
     id: string;
@@ -42,6 +40,23 @@ export default function PurchaseEntryPage() {
     const [providerName, setProviderName] = useState(""); // Display/Manual input
     const [invoiceNumber, setInvoiceNumber] = useState("");
     const [date, setDate] = useState("");
+
+    const [providers, setProviders] = useState<Provider[]>([]);
+
+    useEffect(() => {
+        const fetchProviders = async () => {
+            const { data } = await supabase.from('customers').select('id, full_name, document_number');
+            if (data) {
+                const mapped = data.map(c => ({
+                    id: c.id,
+                    name: c.full_name,
+                    nit: c.document_number
+                }));
+                setProviders(mapped);
+            }
+        };
+        fetchProviders();
+    }, []);
 
     useEffect(() => {
         setDate(new Date().toISOString().split('T')[0]);
@@ -93,7 +108,7 @@ export default function PurchaseEntryPage() {
     const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const pid = e.target.value;
         setProviderId(pid);
-        const p = MOCK_PROVIDERS.find(pr => pr.id === pid);
+        const p = providers.find(pr => pr.id === pid);
         if (p) {
             setProviderName(p.name);
         } else {
@@ -101,14 +116,26 @@ export default function PurchaseEntryPage() {
         }
     };
 
-    const handleSearch = (term: string) => {
+    const handleSearch = async (term: string) => {
         setSearchTerm(term);
         if (term.length > 1) {
-            const inventory = JSON.parse(localStorage.getItem("products") || "[]");
-            const results = inventory.filter((p: Product) =>
-                p.name.toLowerCase().includes(term.toLowerCase()) || p.barcode.includes(term)
-            );
-            setSearchResults(results);
+            const { data } = await supabase
+                .from('products')
+                .select('*')
+                .or(`name.ilike.%${term}%,barcode.eq.${term}`)
+                .limit(10);
+
+            if (data) {
+                const results = data.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    barcode: p.barcode,
+                    costPrice: p.cost,
+                    salePrice: p.price,
+                    stock: p.stock
+                }));
+                setSearchResults(results as Product[]);
+            }
         } else {
             setSearchResults([]);
         }
@@ -143,57 +170,100 @@ export default function PurchaseEntryPage() {
         setEntryItems(prev => prev.filter(i => i.tempId !== id));
     };
 
-    const handleProcess = () => {
+    const handleProcess = async () => {
         if (!providerName) return alert("Seleccione un proveedor");
         if (entryItems.length === 0) return alert("Agregue al menos un producto");
 
-        // 1. Save Inventory Movements & Update Cost
-        entryItems.forEach(item => {
-            addInventoryMovement(
-                item.productId || null,
-                null,
-                item.qty,
-                item.cost,
-                'Compra',
-                `Factura ${invoiceNumber || 'S/N'} - ${providerName}`,
-                "Admin"
-            );
-        });
+        try {
+            // Get Org ID
+            const { data: orgs } = await supabase.from("organizations").select("id").limit(1);
+            const orgId = orgs?.[0]?.id;
 
-        // 2. Save to Purchase History
-        const newPurchase = {
-            id: crypto.randomUUID(),
-            date: date || new Date().toISOString(),
-            provider: providerName,
-            invoice: invoiceNumber || 'S/N',
-            totalAmount: total,
-            itemCount: entryItems.reduce((acc, i) => acc + i.qty, 0),
-            user: "Admin",
-            items: entryItems // storing details just in case
-        };
+            if (!orgId) {
+                throw new Error("No se encontró la organización (ID nulo). Contacta soporte.");
+            }
 
-        const purchaseHistory = JSON.parse(localStorage.getItem("purchaseHistory") || "[]");
-        purchaseHistory.unshift(newPurchase); // Add to top
-        localStorage.setItem("purchaseHistory", JSON.stringify(purchaseHistory));
+            for (const item of entryItems) {
+                // 1. Fetch current specific product data to ensure concurrency/accuracy
+                const { data: currentProduct } = await supabase.from('products').select('*').eq('id', item.productId).single();
 
-        // 3. Register Expense (Transaction)
-        const newTransaction = {
-            id: crypto.randomUUID(),
-            date: date || new Date().toISOString(),
-            type: 'expense', // Gasto
-            method: 'Efectivo', // Defaulting to Cash/General
-            amount: total,
-            description: `Compra a ${providerName} (${invoiceNumber || 'S/N'})`,
-            category: 'Compra Mercancía',
-            user: "Admin"
-        };
+                if (currentProduct) {
+                    const currentStock = currentProduct.stock || 0;
+                    const currentCost = currentProduct.cost || 0;
+                    const newQty = item.qty;
+                    const newUnitCost = item.cost;
 
-        const transactions = JSON.parse(localStorage.getItem("transactions") || "[]");
-        transactions.push(newTransaction);
-        localStorage.setItem("transactions", JSON.stringify(transactions));
+                    // WAC Calculation
+                    let newWeightedCost = currentCost;
+                    if (currentStock + newQty > 0) {
+                        const totalValue = (currentStock * currentCost) + (newQty * newUnitCost);
+                        newWeightedCost = totalValue / (currentStock + newQty);
+                    }
 
-        alert("Compra registrada correctamente. Inventario actualizado y gasto registrado.");
-        router.push("/compras");
+                    // 2. Update Product
+                    await supabase.from('products').update({
+                        stock: currentStock + newQty,
+                        cost: newWeightedCost
+                    }).eq('id', item.productId);
+
+                    // 3. Insert Movement
+                    const { error: moveError } = await supabase.from('movements').insert({
+                        organization_id: orgId,
+                        product_id: item.productId,
+                        type: 'IN',
+                        quantity: newQty,
+                        previous_stock: currentStock,
+                        new_stock: currentStock + newQty,
+                        unit_cost: newUnitCost,
+                        reference: `Compra Fact. ${invoiceNumber || 'S/N'} - ${providerName}`
+                    });
+
+                    if (moveError) {
+                        console.error("Error inserting movement:", moveError);
+                        throw new Error(`Error guardando movimiento: ${moveError.message}`);
+                    }
+                }
+            }
+
+            // 4. Save Purchase Header (New)
+            const { data: purchaseData, error: purchaseError } = await supabase.from('purchases').insert({
+                organization_id: orgId,
+                provider_id: providerId === 'custom' ? null : providerId,
+                provider_name: providerName,
+                invoice_number: invoiceNumber || 'S/N',
+                date: date || new Date().toISOString(),
+                total_amount: total,
+                item_count: entryItems.reduce((acc, i) => acc + i.qty, 0)
+            }).select().single();
+
+            if (purchaseError) {
+                console.error("Error inserting purchase:", purchaseError);
+                throw new Error(`Error guardando cabecera de compra: ${purchaseError.message}`);
+            }
+
+            // 5. Save Purchase Items
+            if (purchaseData) {
+                const itemsToInsert = entryItems.map(item => ({
+                    purchase_id: purchaseData.id,
+                    product_id: item.productId,
+                    product_name: item.name,
+                    quantity: item.qty,
+                    cost: item.cost,
+                    tax_percent: item.taxPercent,
+                    discount_percent: item.discountPercent,
+                    total: (item.cost * item.qty) * (1 - item.discountPercent / 100) * (1 + item.taxPercent / 100)
+                }));
+
+                const { error: itemsError } = await supabase.from('purchase_items').insert(itemsToInsert);
+                if (itemsError) console.error("Error saving purchase items:", itemsError);
+            }
+
+            alert("Compra registrada correctamente. Inventario actualizado.");
+            router.push("/inventario"); // Redirect to inventory to see changes
+        } catch (error: any) {
+            console.error("Error processing purchase:", error);
+            alert(`Error al procesar: ${error.message || JSON.stringify(error)}`);
+        }
     };
 
     return (
@@ -214,7 +284,7 @@ export default function PurchaseEntryPage() {
                                     onChange={handleProviderChange}
                                 >
                                     <option value="">Seleccionar...</option>
-                                    {MOCK_PROVIDERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                    {providers.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                     <option value="custom">Otro / Nuevo</option>
                                 </select>
                                 <input

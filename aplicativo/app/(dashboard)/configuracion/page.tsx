@@ -11,7 +11,7 @@ type ActiveTab = 'perfil' | 'facturacion' | 'usuarios' | 'suscripcion';
 
 export default function ConfigurationPage() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('perfil');
-    const { businessInfo, setBusinessInfo, saveConfiguration } = useConfiguration();
+    const { businessInfo, setBusinessInfo, saveConfiguration, userId } = useConfiguration();
 
     return (
         <div className="flex flex-col h-full bg-slate-50 font-display overflow-hidden">
@@ -66,7 +66,7 @@ export default function ConfigurationPage() {
                 {/* Content */}
                 <div className="flex-1 overflow-auto custom-scrollbar">
                     {activeTab === 'perfil' && (
-                        <BusinessProfileForm businessInfo={businessInfo} setBusinessInfo={setBusinessInfo} />
+                        <BusinessProfileForm businessInfo={businessInfo} setBusinessInfo={setBusinessInfo} userId={userId} />
                     )}
 
                     {activeTab === 'facturacion' && (

@@ -1,16 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import { formatCurrency } from "@/lib/utils";
 
 export default function SuperAdminDashboard() {
-    const [clients, setClients] = useState([
-        { id: 1, name: "Tienda La Esperanza", owner: "Carlos Rodríguez", plan: "Pro", status: "Active", lastPayment: "2024-05-15" },
-        { id: 2, name: "Supermercado El Vecino", owner: "Ana Martínez", plan: "Free", status: "Active", lastPayment: "-" },
-        { id: 3, name: "Víveres Don José", owner: "José Pérez", plan: "Pro", status: "Late", lastPayment: "2024-04-10" },
-        { id: 4, name: "Licorera La 80", owner: "Felipe Gomez", plan: "Pro", status: "Active", lastPayment: "2024-05-18" },
-        { id: 5, name: "Minimarket Express", owner: "Lucía Torres", plan: "Free", status: "Inactive", lastPayment: "-" },
-    ]);
+    const [stats, setStats] = useState({
+        total_stores: 0,
+        active_stores: 0,
+        total_volume: 0,
+        new_stores_week: 0
+    });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadDashboardData();
+    }, []);
+
+    const loadDashboardData = async () => {
+        setLoading(true);
+        try {
+            // Attempt 1: Try RPC (Fastest & Preferred)
+            const { data: statsData, error: statsError } = await supabase.rpc('get_admin_dashboard_stats');
+
+            if (!statsError && statsData && statsData.length > 0) {
+                setStats(statsData[0]);
+                return;
+            }
+
+            // Attempt 2: Fallback (Manual Queries)
+            console.warn("RPC Stats failed, switching to manual queries...", statsError);
+
+            // 1. Total Stores
+            const { count: totalStores } = await supabase
+                .from('organizations')
+                .select('*', { count: 'exact', head: true });
+
+            // 2. Total Volume (This is heavy for client, so we might skip or approximate)
+            // We can't sum easily without RPC or downloading all rows. 
+            // We'll set it to 0 or leave previous value.
+
+            // 3. New Stores (Last 7 days)
+            const today = new Date();
+            const lastWeek = new Date(today.setDate(today.getDate() - 7)).toISOString();
+            const { count: newStores } = await supabase
+                .from('organizations')
+                .select('*', { count: 'exact', head: true })
+                .gt('created_at', lastWeek);
+
+            setStats(prev => ({
+                ...prev,
+                total_stores: totalStores || 0,
+                new_stores_week: newStores || 0,
+                active_stores: 0, // Hard to calculate client-side efficiently
+                total_volume: 0   // Hard to calculate client-side efficiently
+            }));
+
+        } catch (error) {
+            console.error("Error loading admin dashboard:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
@@ -37,77 +89,104 @@ export default function SuperAdminDashboard() {
             </nav>
 
             <main className="p-8 max-w-7xl mx-auto">
-                <h2 className="text-2xl font-bold mb-6">Visión General del Negocio (SaaS)</h2>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold">Visión General del Negocio (SaaS)</h2>
+                    <button onClick={loadDashboardData} className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">refresh</span> Actualizar
+                    </button>
+                </div>
 
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    {/* MRR Card */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-green-100 text-green-700 rounded-lg">
-                                <span className="material-symbols-outlined">payments</span>
-                            </div>
-                            <span className="text-sm font-bold text-slate-500">MRR Mensual</span>
-                        </div>
-                        <p className="text-3xl font-black text-slate-900">$2,450 USD</p>
-                        <p className="text-xs font-medium text-green-600 flex items-center mt-1">
-                            <span className="material-symbols-outlined text-[16px] mr-1">trending_up</span>
-                            +12% vs mes anterior
-                        </p>
-                    </div>
-
-                    {/* Active Clients */}
+                    {/* Total Stores */}
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
                                 <span className="material-symbols-outlined">store</span>
                             </div>
-                            <span className="text-sm font-bold text-slate-500">Tiendas Activas</span>
+                            <span className="text-sm font-bold text-slate-500">Total Tiendas</span>
                         </div>
-                        <p className="text-3xl font-black text-slate-900">142</p>
-                        <p className="text-xs font-medium text-blue-600 mt-1">
-                            15 registradas esta semana
+                        <p className="text-3xl font-black text-slate-900">{stats.total_stores}</p>
+                        <p className="text-xs font-medium text-slate-400 mt-1">
+                            Registradas en plataforma
                         </p>
                     </div>
 
-                    {/* Churn Rate */}
+                    {/* Active Stores */}
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-red-100 text-red-700 rounded-lg">
-                                <span className="material-symbols-outlined">person_off</span>
+                            <div className="p-2 bg-green-100 text-green-700 rounded-lg">
+                                <span className="material-symbols-outlined">verified</span>
                             </div>
-                            <span className="text-sm font-bold text-slate-500">Tasa de Cancelación</span>
+                            <span className="text-sm font-bold text-slate-500">Tiendas Activas</span>
                         </div>
-                        <p className="text-3xl font-black text-slate-900">1.2%</p>
-                        <p className="text-xs font-medium text-slate-400 mt-1">
-                            Bajo control (Objetivo &lt; 2%)
+                        <p className="text-3xl font-black text-slate-900">{stats.active_stores}</p>
+                        <p className="text-xs font-medium text-green-600 mt-1">
+                            Ventas en últimos 30 días
+                        </p>
+                    </div>
+
+                    {/* New Stores */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-purple-100 text-purple-700 rounded-lg">
+                                <span className="material-symbols-outlined">domain_add</span>
+                            </div>
+                            <span className="text-sm font-bold text-slate-500">Crecimiento (7d)</span>
+                        </div>
+                        <p className="text-3xl font-black text-slate-900">+{stats.new_stores_week}</p>
+                        <p className="text-xs font-medium text-purple-600 mt-1">
+                            Nuevas tiendas esta semana
                         </p>
                     </div>
 
                     {/* Total Volume */}
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-purple-100 text-purple-700 rounded-lg">
+                            <div className="p-2 bg-orange-100 text-orange-700 rounded-lg">
                                 <span className="material-symbols-outlined">bar_chart_4_bars</span>
                             </div>
                             <span className="text-sm font-bold text-slate-500">Volumen Transado</span>
                         </div>
-                        <p className="text-3xl font-black text-slate-900">$450M COP</p>
-                        <p className="text-xs font-medium text-purple-600 mt-1">
-                            Total ventas de todos los clientes
+                        <p className="text-3xl font-black text-slate-900">{formatCurrency(stats.total_volume)}</p>
+                        <p className="text-xs font-medium text-orange-600 mt-1">
+                            Total ventas históricas
                         </p>
                     </div>
                 </div>
 
-                {/* Operational Tools Section */}
+                {/* Operational Tools Grid */}
+                <h3 className="text-xl font-bold mb-4 text-slate-800">Herramientas de Administración</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <Link href="/admin/comunicados" className="group">
+
+                    {/* NEW: Stores Management Card */}
+                    <Link href="/admin/tiendas" className="group">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-[#13ec80] hover:shadow-md transition-all cursor-pointer h-full">
+                            <div className="h-12 w-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <span className="material-symbols-outlined text-[28px]">storefront</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-1">Administración de Tiendas</h3>
+                            <p className="text-sm text-slate-500">Ver listado de tenants, gestionar estados y crear nuevas tiendas manualmente.</p>
+                        </div>
+                    </Link>
+
+                    <Link href="/admin/comunicados" className="group">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-purple-200 hover:shadow-md transition-all cursor-pointer h-full">
                             <div className="h-12 w-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                 <span className="material-symbols-outlined text-[28px]">campaign</span>
                             </div>
                             <h3 className="text-lg font-bold text-slate-900 mb-1">Centro de Comunicaciones</h3>
-                            <p className="text-sm text-slate-500">Enviar alertas globales, anuncios de mantenimiento o novedades a todos los clientes.</p>
+                            <p className="text-sm text-slate-500">Enviar alertas globales y anuncios a todos los clientes.</p>
+                        </div>
+                    </Link>
+
+                    <Link href="/admin/legal" className="group">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-slate-800 hover:shadow-md transition-all cursor-pointer h-full">
+                            <div className="h-12 w-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <span className="material-symbols-outlined text-[28px]">gavel</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-1">Legal (Términos)</h3>
+                            <p className="text-sm text-slate-500">Gestiona los textos de Términos y Condiciones y Privacidad.</p>
                         </div>
                     </Link>
 
@@ -117,7 +196,7 @@ export default function SuperAdminDashboard() {
                                 <span className="material-symbols-outlined text-[28px]">monitoring</span>
                             </div>
                             <h3 className="text-lg font-bold text-slate-900 mb-1">Zona Financiera</h3>
-                            <p className="text-sm text-slate-500">Ingresos del SaaS, distribución de planes y volumen de ventas de clientes.</p>
+                            <p className="text-sm text-slate-500">Ingresos del SaaS, métricas MRR y facturación.</p>
                         </div>
                     </Link>
 
@@ -127,7 +206,7 @@ export default function SuperAdminDashboard() {
                                 <span className="material-symbols-outlined text-[28px]">local_police</span>
                             </div>
                             <h3 className="text-lg font-bold text-slate-900 mb-1">Soporte Técnico</h3>
-                            <p className="text-sm text-slate-500">Herramienta "Ghost Login" para acceder como cliente y depurar errores.</p>
+                            <p className="text-sm text-slate-500">Herramienta "Ghost Login" y logs de errores.</p>
                         </div>
                     </Link>
 
@@ -137,16 +216,7 @@ export default function SuperAdminDashboard() {
                                 <span className="material-symbols-outlined text-[28px]">security</span>
                             </div>
                             <h3 className="text-lg font-bold text-slate-900 mb-1">Auditoría & Logs</h3>
-                            <p className="text-sm text-slate-500">Registro de seguridad y trazabilidad de acciones administrativas.</p>
-                        </div>
-                    </Link>
-                    <Link href="/admin/equipo" className="group">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-slate-800 hover:shadow-md transition-all cursor-pointer h-full">
-                            <div className="h-12 w-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                <span className="material-symbols-outlined text-[28px]">group_add</span>
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-900 mb-1">Equipo y Accesos</h3>
-                            <p className="text-sm text-slate-500">Administra colaboradores, contadores y asigna permisos por rol.</p>
+                            <p className="text-sm text-slate-500">Registro de seguridad y trazabilidad.</p>
                         </div>
                     </Link>
 
@@ -156,7 +226,7 @@ export default function SuperAdminDashboard() {
                                 <span className="material-symbols-outlined text-[28px]">payments</span>
                             </div>
                             <h3 className="text-lg font-bold text-slate-900 mb-1">Planes y Precios</h3>
-                            <p className="text-sm text-slate-500">Gestiona precios y características. (Cambios aplican al siguiente cobro).</p>
+                            <p className="text-sm text-slate-500">Gestiona la oferta comercial del SaaS.</p>
                         </div>
                     </Link>
 
@@ -166,7 +236,7 @@ export default function SuperAdminDashboard() {
                                 <span className="material-symbols-outlined text-[28px]">tune</span>
                             </div>
                             <h3 className="text-lg font-bold text-slate-900 mb-1">Configuración Sistema</h3>
-                            <p className="text-sm text-slate-500">Interruptores globales: Modo Mantenimiento, Registro Abierto, Beta.</p>
+                            <p className="text-sm text-slate-500">Modo Mantenimiento, Registro Abierto, etc.</p>
                         </div>
                     </Link>
                     <Link href="/admin/marketing" className="group">
@@ -178,66 +248,7 @@ export default function SuperAdminDashboard() {
                             <p className="text-sm text-slate-500">Crea códigos de descuento (ej. "LANZAMIENTO") para captar clientes.</p>
                         </div>
                     </Link>
-                </div>
 
-                {/* Clients Table */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                        <h3 className="font-bold text-lg">Gestión de Clientes (Tenants)</h3>
-                        <button className="text-sm font-bold text-primary hover:text-primary-dark transition-colors">
-                            + Nuevo Registro Manual
-                        </button>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50 text-slate-500">
-                                <tr>
-                                    <th className="px-6 py-3 font-bold">Negocio</th>
-                                    <th className="px-6 py-3 font-bold">Propietario</th>
-                                    <th className="px-6 py-3 font-bold">Plan</th>
-                                    <th className="px-6 py-3 font-bold">Estado</th>
-                                    <th className="px-6 py-3 font-bold">Último Pago</th>
-                                    <th className="px-6 py-3 font-bold text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {clients.map((client) => (
-                                    <tr key={client.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-slate-900">{client.name}</td>
-                                        <td className="px-6 py-4 text-slate-600">{client.owner}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${client.plan === 'Pro' ? 'bg-[#13ec80]/20 text-green-800' : 'bg-slate-100 text-slate-600'
-                                                }`}>
-                                                {client.plan}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-bold ${client.status === 'Active' ? 'text-green-600' :
-                                                client.status === 'Late' ? 'text-orange-600' : 'text-slate-400'
-                                                }`}>
-                                                <span className={`h-1.5 w-1.5 rounded-full ${client.status === 'Active' ? 'bg-green-500' :
-                                                    client.status === 'Late' ? 'bg-orange-500' : 'bg-slate-300'
-                                                    }`}></span>
-                                                {client.status === 'Active' ? 'Activo' :
-                                                    client.status === 'Late' ? 'Mora' : 'Inactivo'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-600">{client.lastPayment}</td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button className="text-slate-400 hover:text-slate-900 font-bold text-xs border border-slate-200 rounded px-2 py-1">
-                                                Gestionar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 text-center">
-                        <button className="text-xs font-bold text-slate-500 hover:text-primary transition-colors">
-                            Ver todos los 142 clientes
-                        </button>
-                    </div>
                 </div>
             </main>
         </div>

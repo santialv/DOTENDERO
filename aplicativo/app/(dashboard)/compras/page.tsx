@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import { addInventoryMovement } from "../../utils/inventory";
 
 interface EntryItem { // Duplicated from ingreo/page.tsx or should be shared?
@@ -43,10 +44,26 @@ export default function PurchasesHistoryPage() {
         loadPurchases();
     }, []);
 
-    const loadPurchases = () => {
-        const savedPurchases: PurchaseRecord[] = JSON.parse(localStorage.getItem("purchaseHistory") || "[]");
-        setPurchases(savedPurchases);
-        calculateStats(savedPurchases);
+    const loadPurchases = async () => {
+        const { data } = await supabase
+            .from('purchases')
+            .select('*')
+            .order('date', { ascending: false });
+
+        if (data) {
+            const mapped = data.map(p => ({
+                id: p.id,
+                date: p.date,
+                provider: p.provider_name || 'Desconocido',
+                invoice: p.invoice_number,
+                totalAmount: p.total_amount,
+                itemCount: p.item_count,
+                user: "Sistema", // Placeholder
+                items: [] // Items not stored in purchase header yet, would need a purchase_items table or jsonb
+            }));
+            setPurchases(mapped);
+            calculateStats(mapped);
+        }
     };
 
     const calculateStats = (data: PurchaseRecord[]) => {
@@ -267,14 +284,44 @@ export default function PurchasesHistoryPage() {
                                         <td className="p-4 text-center text-sm text-slate-500">{purchase.user}</td>
                                         <td className="p-4 flex justify-center gap-2">
                                             <button
-                                                onClick={() => setSelectedPurchase(purchase)}
+                                                onClick={async () => {
+                                                    const { data: items } = await supabase.from('purchase_items').select('*').eq('purchase_id', purchase.id);
+                                                    setSelectedPurchase({
+                                                        ...purchase, items: items?.map(i => ({
+                                                            tempId: i.id,
+                                                            productId: i.product_id,
+                                                            name: i.product_name,
+                                                            barcode: '', // Could join products or omit
+                                                            qty: i.quantity,
+                                                            cost: i.cost,
+                                                            taxPercent: i.tax_percent,
+                                                            discountPercent: i.discount_percent,
+                                                            isNew: false
+                                                        })) as any
+                                                    });
+                                                }}
                                                 className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                                 title="Ver Detalles"
                                             >
                                                 <span className="material-symbols-outlined text-[20px]">visibility</span>
                                             </button>
                                             <button
-                                                onClick={() => handleEdit(purchase)}
+                                                onClick={async () => {
+                                                    const { data: items } = await supabase.from('purchase_items').select('*').eq('purchase_id', purchase.id);
+                                                    const fullPurchase = {
+                                                        ...purchase, items: items?.map(i => ({
+                                                            tempId: i.id,
+                                                            productId: i.product_id,
+                                                            name: i.product_name,
+                                                            qty: i.quantity,
+                                                            cost: i.cost,
+                                                            taxPercent: i.tax_percent,
+                                                            discountPercent: i.discount_percent,
+                                                            isNew: false
+                                                        }))
+                                                    };
+                                                    handleEdit(fullPurchase);
+                                                }}
                                                 className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
                                                 title="Editar (Rehacer)"
                                             >

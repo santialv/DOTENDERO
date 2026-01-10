@@ -22,10 +22,16 @@ interface Product {
     image?: string;
 }
 
+// Add Supabase import
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/components/ui/toast"; // Correct import
+
 export default function EditProductPage() {
+    const { toast } = useToast();
     const router = useRouter();
     const params = useParams();
     const productId = params?.id as string;
+    const [loading, setLoading] = useState(true);
 
     // -- Form State --
     const [name, setName] = useState("");
@@ -45,39 +51,54 @@ export default function EditProductPage() {
 
     // Load Product Data
     useEffect(() => {
-        if (!productId) return;
+        const fetchProduct = async () => {
+            // ... logic ...
+            if (!productId) return;
+            setLoading(true);
+            try {
+                const { data: product, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('id', productId)
+                    .single();
 
-        const savedProducts = JSON.parse(localStorage.getItem("products") || "[]");
-        const product = savedProducts.find((p: Product) => String(p.id) === String(productId));
+                if (error || !product) {
+                    console.error("Error fetching product:", error);
+                    toast("Producto no encontrado en la base de datos.", "destructive");
+                    return;
+                }
 
-        if (product) {
-            setName(product.name);
-            setDescription(product.description || "");
-            setCategory(product.category);
-            setBarcode(product.barcode);
-            setSkuMode(product.barcode.startsWith("SKU-") ? 'auto' : 'manual');
-            setCostPrice(String(product.costPrice));
-            setSalePrice(String(product.salePrice));
-            setTax(String(product.tax));
-            setStock(String(product.stock));
-            setMinStock(String(product.minStock));
-            setUnit(product.unit);
-            setStatus(product.status);
-        } else {
-            alert("Producto no encontrado.");
-            router.push("/inventario");
-        }
-    }, [productId, router]);
+                setName(product.name);
+                setDescription(product.description || "");
+                setCategory(product.category);
+                setBarcode(product.barcode);
+                setSkuMode(product.barcode && product.barcode.startsWith("SKU-") ? 'auto' : 'manual');
+                setCostPrice(String(product.cost_price));
+                setSalePrice(String(product.sale_price));
+                setTax(String(product.tax));
+                setStock(String(product.stock));
+                setMinStock(String(product.min_stock));
+                setUnit(product.unit);
+                setStatus(product.status || 'Activo');
 
-    const handleSave = () => {
+            } catch (err) {
+                console.error(err);
+                toast("Error cargando producto.", "destructive");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProduct();
+    }, [productId, router, toast]);
+
+    const handleSave = async () => {
         if (!name) {
-            alert("El nombre del producto es obligatorio.");
+            toast("El nombre del producto es obligatorio.", "destructive");
             return;
         }
 
         let finalBarcode = barcode;
         if (skuMode === 'auto' && (!barcode || barcode.startsWith("SKU-"))) {
-            // Keep existing if auto
             if (!finalBarcode) {
                 const randomSuffix = Math.floor(100000 + Math.random() * 900000);
                 finalBarcode = `SKU-${randomSuffix}`;
@@ -87,35 +108,34 @@ export default function EditProductPage() {
             finalBarcode = "SIN-CODIGO";
         }
 
-        const updatedProduct: Product = {
-            id: productId,
-            name,
-            description,
-            category: category || "General",
-            barcode: finalBarcode,
-            costPrice: parseFloat(costPrice) || 0,
-            salePrice: parseFloat(salePrice) || 0,
-            tax: parseFloat(tax) || 0,
-            stock: parseFloat(stock) || 0,
-            minStock: parseFloat(minStock) || 0,
-            unit,
-            status,
-            image: "" // Placeholder, assuming we don't wipe image if we had one, but currently we have separate image logic. Ideally specificy `image: product.image` but `product` isn't in scope here. 
-            // Better to re-fetch to merge.
-        };
+        try {
+            const updates = {
+                name,
+                description,
+                category: category || "General",
+                barcode: finalBarcode,
+                cost_price: parseFloat(costPrice) || 0,
+                sale_price: parseFloat(salePrice) || 0,
+                tax: parseFloat(tax) || 0,
+                stock: parseFloat(stock) || 0,
+                min_stock: parseFloat(minStock) || 0,
+                unit,
+                status,
+                updated_at: new Date().toISOString()
+            };
 
-        // Save to LocalStorage
-        const existingProducts = JSON.parse(localStorage.getItem("products") || "[]");
-        const index = existingProducts.findIndex((p: Product) => String(p.id) === String(productId));
+            const { error } = await supabase
+                .from('products')
+                .update(updates)
+                .eq('id', productId);
 
-        if (index !== -1) {
-            // Merge to keep existing fields like image if not editable here
-            const updatedProducts = [...existingProducts];
-            updatedProducts[index] = { ...existingProducts[index], ...updatedProduct };
-            localStorage.setItem("products", JSON.stringify(updatedProducts));
+            if (error) throw error;
+
+            toast("Producto actualizado correctamente", "success");
             router.push("/inventario");
-        } else {
-            alert("Error al guardar: Producto original no encontrado.");
+        } catch (error: any) {
+            console.error("Error updating product:", error);
+            toast(`Error al guardar: ${error.message}`, "destructive");
         }
     };
 

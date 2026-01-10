@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { Transaction, TransactionType } from "@/types";
 import { useToast } from "@/components/ui/toast";
+import { supabase } from "@/lib/supabase";
 
 type FilterDateMode = "hoy" | "semana" | "mes" | "custom";
 
@@ -21,16 +22,76 @@ export function useTransactions() {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
 
-    // Load Data
-    useEffect(() => {
-        const saved = localStorage.getItem("transactions");
-        if (saved) {
-            setTransactions(JSON.parse(saved).reverse()); // Assuming saved is chronological, reverse for newest first
+    // Load Data from Supabase
+    const fetchTransactions = useCallback(async () => {
+        try {
+            // 0. Get Context
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', session.user.id)
+                .single();
+
+            const orgId = profile?.organization_id;
+            if (!orgId) return;
+
+            // 1. Fetch Sales (Invoices)
+            const { data: sales, error: salesError } = await supabase
+                .from('invoices')
+                .select('*')
+                .eq('organization_id', orgId)
+                .order('date', { ascending: false });
+
+            if (salesError) throw salesError;
+
+            // 2. Fetch Expenses/Manual Entries
+            const { data: expenses, error: expensesError } = await supabase
+                .from('expenses')
+                .select('*')
+                .eq('organization_id', orgId)
+                .order('date', { ascending: false });
+
+            if (expensesError) throw expensesError;
+
+            // 3. Merge & Map
+            const mappedSales: Transaction[] = (sales || []).map(s => ({
+                id: s.id,
+                date: s.date,
+                type: 'income', // Sales are income
+                method: s.payment_method?.includes('Tarjeta') ? 'Tarjeta' : (s.payment_method?.includes('QR') ? 'QR' : (s.payment_method?.includes('Fiado') ? 'Fiado' : 'Efectivo')),
+                amount: s.total,
+                description: `Venta ${s.number} - ${s.status === 'paid' ? 'Pagada' : 'Pendiente'}`,
+                items: [],
+                customerName: 'Cliente' // Should join customer but keep simple for now
+            }));
+
+            const mappedExpenses: Transaction[] = (expenses || []).map(e => ({
+                id: e.id,
+                date: e.date,
+                type: e.amount < 0 ? 'expense' : 'income',
+                method: e.payment_method || 'Efectivo',
+                amount: e.amount,
+                description: e.description || 'Movimiento Manual',
+                items: []
+            }));
+
+            const all = [...mappedSales, ...mappedExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+            setTransactions(all);
+        } catch (error) {
+            console.error("Error loading transactions:", error);
+            // Fallback to localstorage if DB fail? No, show error or empty.
         }
     }, []);
 
+    useEffect(() => {
+        fetchTransactions();
+    }, [fetchTransactions]);
+
     // Actions
-    const addTransaction = useCallback((
+    const addTransaction = useCallback(async (
         type: TransactionType,
         amountStr: string,
         description: string
@@ -38,30 +99,38 @@ export function useTransactions() {
         if (!amountStr || !description) return;
 
         const val = parseFloat(amountStr);
-        const newTx: Transaction = {
-            id: crypto.randomUUID(),
-            date: new Date().toISOString(),
-            type: type,
-            // For manual entry, simplified logic:
-            method: "Efectivo",
-            amount: type === "expense" ? -Math.abs(val) : Math.abs(val),
-            description: description,
-            items: [],
-        };
+        // Correct sign: expense is negative, income is positive
+        const finalAmount = type === 'expense' ? -Math.abs(val) : Math.abs(val);
 
-        const updated = [newTx, ...transactions];
-        setTransactions(updated);
-        // Persist reverse order if that's how we store it? 
-        // Actually, usually store chronological. Let's align with existing pattern.
-        // If state is Newest First, then saving state is fine if we parse it correctly.
-        // Previous code: JSON.parse(saved).reverse() => State is Newest First.
-        // Previous Save: JSON.stringify(updated.reverse()) => Saved is Oldest First.
-        // Let's simplify: Store Newest First everywhere to avoid confusion.
-        localStorage.setItem("transactions", JSON.stringify(updated));
+        try {
+            // Get ID
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error("No active session");
+            const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
+            const orgId = profile?.organization_id;
 
-        toast("Transacción registrada correctamente", "success");
-        return true;
-    }, [transactions, toast]);
+            if (!orgId) throw new Error("No organization linked");
+
+            const { error } = await supabase.from('expenses').insert({
+                organization_id: orgId,
+                description,
+                amount: finalAmount,
+                type: type,
+                date: new Date().toISOString(),
+                user_id: null, // fill if auth context available
+                payment_method: 'Efectivo' // Default to cash for manual box movements usually
+            });
+
+            if (error) throw error;
+
+            toast("Movimiento registrado", "success");
+            fetchTransactions(); // Reload list
+            return true;
+        } catch (error: any) {
+            console.error("Error saving transaction:", error);
+            toast(`Error: ${error.message}`, "error");
+        }
+    }, [toast, fetchTransactions]);
 
     // Derived State (Totals - Liquid)
     const stats = useMemo(() => {
