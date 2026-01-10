@@ -64,7 +64,7 @@ export default function OnboardingPage() {
         console.log("[1] INICIO SUBMIT - Debug Mode");
 
         if (!userId) {
-            toast("Error: Sesión perdida. Recarga.", "destructive");
+            toast("Error: Sesión perdida. Recarga.", "error");
             return;
         }
 
@@ -141,7 +141,7 @@ export default function OnboardingPage() {
 
         } catch (error: any) {
             console.error("!!! CRASH FINAL:", error);
-            toast("Error Técnico: " + error.message, "destructive");
+            toast("Error Técnico: " + error.message, "error");
             setLoading(false);
         }
     };
@@ -174,7 +174,7 @@ export default function OnboardingPage() {
 
             if (existingOrg) {
                 console.log("¡Recuperación! Tienda encontrada:", existingOrg);
-                toast(`Tienda encontrada: ${existingOrg.name}. Reconectando...`, "default");
+                toast(`Tienda encontrada: ${existingOrg.name}. Reconectando...`, "info");
 
                 // Fix Profile
                 await supabase
@@ -193,7 +193,7 @@ export default function OnboardingPage() {
         if (!e.target.files || e.target.files.length === 0) return;
 
         const file = e.target.files[0];
-        if (file.size > 5 * 1024 * 1024) return toast("El archivo es muy pesado (Max 5MB)", "destructive");
+        if (file.size > 5 * 1024 * 1024) return toast("El archivo es muy pesado (Max 5MB)", "error");
 
         setUploading(true);
         try {
@@ -208,10 +208,10 @@ export default function OnboardingPage() {
             if (uploadError) throw uploadError;
 
             setData({ ...data, rutPath: filePath });
-            toast("RUT subido correctamente", "default");
+            toast("RUT subido correctamente", "success");
         } catch (error: any) {
             console.error(error);
-            toast("Error subiendo el archivo: " + error.message, "destructive");
+            toast("Error subiendo el archivo: " + error.message, "error");
         } finally {
             setUploading(false);
         }
@@ -498,7 +498,7 @@ export default function OnboardingPage() {
                             onClick={async () => {
                                 // Lógica de Reparación Just-in-Time
                                 setLoading(true);
-                                toast("Preparando tu tienda...", "default");
+                                toast("Preparando tu tienda...", "info");
 
                                 try {
                                     // 1. Verificar/Crear Org

@@ -64,7 +64,7 @@ export default function EditProductPage() {
 
                 if (error || !product) {
                     console.error("Error fetching product:", error);
-                    toast("Producto no encontrado en la base de datos.", "destructive");
+                    toast("Producto no encontrado en la base de datos.", "error");
                     return;
                 }
 
@@ -83,7 +83,7 @@ export default function EditProductPage() {
 
             } catch (err) {
                 console.error(err);
-                toast("Error cargando producto.", "destructive");
+                toast("Error cargando producto.", "error");
             } finally {
                 setLoading(false);
             }
@@ -93,7 +93,7 @@ export default function EditProductPage() {
 
     const handleSave = async () => {
         if (!name) {
-            toast("El nombre del producto es obligatorio.", "destructive");
+            toast("El nombre del producto es obligatorio.", "error");
             return;
         }
 
@@ -135,7 +135,7 @@ export default function EditProductPage() {
             router.push("/inventario");
         } catch (error: any) {
             console.error("Error updating product:", error);
-            toast(`Error al guardar: ${error.message}`, "destructive");
+            toast(`Error al guardar: ${error.message}`, "error");
         }
     };
 

@@ -21,13 +21,13 @@ export default function ForgotPasswordPage() {
             });
 
             if (error) {
-                toast(error.message || "Error al enviar correo", "destructive");
+                toast(error.message || "Error al enviar correo", "error");
             } else {
                 setSent(true);
-                toast("Correo enviado. Revisa tu bandeja de entrada.", "default");
+                toast("Correo enviado. Revisa tu bandeja de entrada.", "success");
             }
         } catch (error) {
-            toast("Ocurrió un error inesperado", "destructive");
+            toast("Ocurrió un error inesperado", "error");
             console.error(error);
         } finally {
             setLoading(false);

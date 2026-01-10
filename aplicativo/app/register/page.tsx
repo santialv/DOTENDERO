@@ -21,7 +21,7 @@ export default function RegisterPage() {
         e.preventDefault();
 
         if (password !== confirmPassword) {
-            toast("Las contraseñas no coinciden", "destructive");
+            toast("Las contraseñas no coinciden", "error");
             return;
         }
 
@@ -39,13 +39,13 @@ export default function RegisterPage() {
             });
 
             if (error) {
-                toast(error.message, "destructive");
+                toast(error.message, "error");
             } else {
                 alert(`¡Cuenta creada con éxito!\n\nHemos enviado un enlace de confirmación a ${email}.`);
                 router.push('/login');
             }
         } catch (error) {
-            toast("Error inesperado", "destructive");
+            toast("Error inesperado", "error");
             console.error(error);
         } finally {
             setLoading(false);

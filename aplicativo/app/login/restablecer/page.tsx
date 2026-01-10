@@ -28,13 +28,13 @@ export default function ResetPasswordPage() {
         setLoading(true);
 
         if (password.length < 6) {
-            toast("La contraseña debe tener al menos 6 caracteres", "destructive");
+            toast("La contraseña debe tener al menos 6 caracteres", "error");
             setLoading(false);
             return;
         }
 
         if (password !== confirmPassword) {
-            toast("Las contraseñas no coinciden. Inténtalo de nuevo.", "destructive");
+            toast("Las contraseñas no coinciden. Inténtalo de nuevo.", "error");
             setLoading(false);
             return;
         }
@@ -43,15 +43,15 @@ export default function ResetPasswordPage() {
             const { error } = await supabase.auth.updateUser({ password: password });
 
             if (error) {
-                toast(error.message, "destructive");
+                toast(error.message, "error");
             } else {
-                toast("¡Contraseña actualizada con éxito!", "default");
+                toast("¡Contraseña actualizada con éxito!", "success");
                 setTimeout(() => {
                     router.push('/');
                 }, 1500);
             }
         } catch (error) {
-            toast("Error inesperado al actualizar", "destructive");
+            toast("Error inesperado al actualizar", "error");
             console.error(error);
         } finally {
             setLoading(false);

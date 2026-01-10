@@ -28,14 +28,14 @@ export default function LoginPage() {
             });
 
             if (error) {
-                toast(error.message || "Credenciales inválidas", "destructive");
+                toast(error.message || "Credenciales inválidas", "error");
             } else {
-                toast("Bienvenido de nuevo", "default");
+                toast("Bienvenido de nuevo", "success");
                 router.refresh();
                 router.push('/venta');
             }
         } catch (error) {
-            toast("Ocurrió un error inesperado", "destructive");
+            toast("Ocurrió un error inesperado", "error");
             console.error(error);
         } finally {
             setLoading(false);
