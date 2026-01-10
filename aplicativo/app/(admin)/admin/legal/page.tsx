@@ -51,10 +51,10 @@ export default function LegalSettingsPage() {
                 });
 
             if (error) throw error;
-            toast("Configuración legal actualizada", "default");
+            toast("Configuración legal actualizada", "success");
         } catch (error: any) {
             console.error(error);
-            toast("Error al guardar: " + error.message, "destructive");
+            toast("Error al guardar: " + error.message, "error");
         } finally {
             setSaving(false);
         }
