@@ -17,8 +17,16 @@ export default function InventoryPage() {
         setCategoryFilter,
         stockFilter,
         setStockFilter,
-        uniqueCategories
+        uniqueCategories,
+        // Pagination
+        page,
+        setPage,
+        totalPages,
+        totalCount
     } = useInventory();
+
+    const startItem = totalCount === 0 ? 0 : page * 50 + 1;
+    const endItem = Math.min((page + 1) * 50, totalCount);
 
     return (
         <div className="flex flex-col h-full bg-slate-50 font-display overflow-hidden">
@@ -118,21 +126,31 @@ export default function InventoryPage() {
                         calculateMargin={calculateMargin}
                     />
 
-                    {/* Pagination (Static) */}
+                    {/* Pagination (Dynamic) */}
                     <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/50 px-4 py-3 sm:px-6 shrink-0">
                         <div className="hidden sm:flex flex-1 sm:items-center sm:justify-between">
                             <div>
                                 <p className="text-sm text-slate-500">
-                                    Mostrando <span className="font-medium text-slate-900">1</span> a <span className="font-medium text-slate-900">{filteredProducts.length}</span> de <span className="font-medium text-slate-900">{filteredProducts.length}</span> resultados
+                                    Mostrando <span className="font-medium text-slate-900">{startItem}</span> a <span className="font-medium text-slate-900">{endItem}</span> de <span className="font-medium text-slate-900">{totalCount}</span> resultados
                                 </p>
                             </div>
                             <div>
                                 <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
-                                    <button className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 focus:z-20 focus:outline-offset-0">
+                                    <button
+                                        onClick={() => setPage(page - 1)}
+                                        disabled={page === 0}
+                                        className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
                                         <span className="material-symbols-outlined text-[20px]">chevron_left</span>
                                     </button>
-                                    <button className="relative inline-flex items-center bg-primary px-4 py-2 text-sm font-semibold text-text-main focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">1</button>
-                                    <button className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 focus:z-20 focus:outline-offset-0">
+                                    <button className="relative inline-flex items-center bg-primary px-4 py-2 text-sm font-semibold text-text-main focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                                        {page + 1}
+                                    </button>
+                                    <button
+                                        onClick={() => setPage(page + 1)}
+                                        disabled={page >= totalPages - 1}
+                                        className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
                                         <span className="material-symbols-outlined text-[20px]">chevron_right</span>
                                     </button>
                                 </nav>

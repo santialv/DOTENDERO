@@ -208,6 +208,21 @@ export function useTransactions() {
         });
     }, [transactions, activeTab, filterDateMode, searchQuery, filterCustomer, filterMinAmount, filterMaxAmount, startDate, endDate]);
 
+    // Pagination State
+    const [page, setPage] = useState(0);
+    const ITEMS_PER_PAGE = 50;
+
+    // Reset page when filters change
+    useEffect(() => {
+        setPage(0);
+    }, [activeTab, filterDateMode, searchQuery, filterCustomer, filterMinAmount, filterMaxAmount, startDate, endDate]);
+
+    // Derived State (Paginated)
+    const paginatedTransactions = useMemo(() => {
+        const start = page * ITEMS_PER_PAGE;
+        return filteredTransactions.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredTransactions, page]);
+
     const handleCloseDay = () => {
         const now = new Date();
         const todayTxs = transactions.filter(t => {
@@ -222,8 +237,7 @@ export function useTransactions() {
 
         const balanceToday = cashIn - cashOut;
 
-        // Print Logic can stay here or be passed as a data object to a component
-        // For now, generating HTML string here is acceptable for a "print job"
+        // Print Logic
         const printWindow = window.open('', '_blank');
         if (printWindow) {
             printWindow.document.write(`
@@ -267,10 +281,16 @@ export function useTransactions() {
 
     return {
         transactions,
-        filteredTransactions,
+        filteredTransactions: paginatedTransactions, // Expose only the current slice to the UI Table
+        allFilteredCount: filteredTransactions.length, // Expose total count for pagination UI
         stats,
         addTransaction,
         handleCloseDay,
+
+        // Pagination
+        page,
+        setPage,
+        totalPages: Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE),
 
         // Filter State & Setters
         activeTab, setActiveTab,

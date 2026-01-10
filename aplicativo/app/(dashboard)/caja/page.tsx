@@ -13,9 +13,15 @@ export default function CajaPage() {
         transactions, // Original unfiltered list needed for Closing Day calculation inside hook?
         // Actually hook handles logic. We need filteredTransactions for Table.
         filteredTransactions,
+        allFilteredCount,
         stats,
         addTransaction,
         handleCloseDay,
+
+        // Pagination
+        page,
+        setPage,
+        totalPages,
 
         // State Pass-through
         activeTab, setActiveTab,
@@ -41,6 +47,10 @@ export default function CajaPage() {
         addTransaction(type, amount, description);
         setIsTransactionModalOpen(false);
     };
+
+    // Pagination Calculations for Display
+    const startItem = allFilteredCount === 0 ? 0 : page * 50 + 1;
+    const endItem = Math.min((page + 1) * 50, allFilteredCount);
 
     return (
         <div className="flex flex-col h-full bg-slate-50 font-display relative">
@@ -83,7 +93,33 @@ export default function CajaPage() {
                         startDate={startDate} setStartDate={setStartDate}
                         endDate={endDate} setEndDate={setEndDate}
                     />
-                    <TransactionTable transactions={filteredTransactions} />
+
+                    <div className="flex-1 overflow-auto custom-scrollbar">
+                        <TransactionTable transactions={filteredTransactions} />
+                    </div>
+
+                    {/* Pagination Footer */}
+                    <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
+                        <span className="text-sm font-medium text-slate-500">
+                            Mostrando <span className="text-slate-900 font-bold">{startItem} - {endItem}</span> de <span className="text-slate-900 font-bold">{allFilteredCount}</span> movimientos
+                        </span>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setPage(page - 1)}
+                                disabled={page === 0}
+                                className="px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                            >
+                                Anterior
+                            </button>
+                            <button
+                                onClick={() => setPage(page + 1)}
+                                disabled={page >= totalPages - 1} // Correct logic: if pages is 5, index 4 is last. if page(4) >= 4 -> disabled.
+                                className="px-4 py-2 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-slate-900/10"
+                            >
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
