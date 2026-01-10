@@ -58,6 +58,7 @@ export default function LegalSettingsPage() {
         } finally {
             setSaving(false);
         }
+        // Force redeploy
     };
 
     if (loading) return <div className="p-8">Cargando configuración...</div>;
