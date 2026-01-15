@@ -40,6 +40,7 @@ export type BusinessInfo = {
     rutUrl?: string; // Added
     plan?: string;
     subscription_status?: string;
+    organization_id?: string;
 };
 
 // Initial state constant
@@ -54,5 +55,6 @@ export const DEFAULT_BUSINESS_INFO: BusinessInfo = {
     phone: "",
     email: "",
     logoUrl: "",
-    rutUrl: ""
+    rutUrl: "",
+    organization_id: ""
 };

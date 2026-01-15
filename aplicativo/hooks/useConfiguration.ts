@@ -64,7 +64,8 @@ export function useConfiguration() {
                     logoUrl: org.logo_url || "",
                     rutUrl: org.rut_url || "",
                     plan: org.plan || "free",
-                    subscription_status: org.subscription_status || "active"
+                    subscription_status: org.subscription_status || "active",
+                    organization_id: org.id
                 };
             }
 

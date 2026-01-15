@@ -6,33 +6,53 @@ import { supabase } from "@/lib/supabase";
 import { PlanUpgradeModal } from "./PlanUpgradeModal";
 import { PlanSuccessModal } from "./PlanSuccessModal";
 import { useSearchParams, useRouter } from "next/navigation";
+import { verifyAndActivateSubscription } from "@/app/actions/wompi";
+import { useToast } from "@/components/ui/toast";
 
 export const SubscriptionCard = () => {
     const { businessInfo } = useConfiguration();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { toast } = useToast();
 
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [planDetails, setPlanDetails] = useState<any>(null);
 
     useEffect(() => {
-        // Check for Wompi transaction ID in URL (indicates return from payment)
-        const transactionId = searchParams.get('id');
-        const env = searchParams.get('env');
+        const checkPayment = async () => {
+            const transactionId = searchParams.get('id');
 
-        if (transactionId) {
-            // In a real scenario, we would verify the transaction status with backend here.
-            // For now, if we have an ID, we assume the user completed the flow 
-            // and the webhook (async) will update the plan.
-            // We show the success modal to welcome them.
-            setShowSuccessModal(true);
+            if (transactionId && businessInfo?.organization_id) {
+                toast("Verificando estado del pago...", "info");
 
-            // Clean URL
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, '', newUrl);
+                try {
+                    const result = await verifyAndActivateSubscription(transactionId, businessInfo.organization_id);
+
+                    if (result.success) {
+                        setShowSuccessModal(true);
+                        // Clean URL
+                        const newUrl = window.location.pathname;
+                        window.history.replaceState({}, '', newUrl);
+                        toast("¡Pago confirmado! Tu suscripción ha sido activada.", "success");
+                    } else {
+                        if (result.status === 'PENDING') {
+                            toast("El pago está en proceso de validación por tu banco.", "warning");
+                        } else {
+                            toast(`El pago no fue aprobado. Estado: ${result.status}`, "error");
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error verifying payment:", e);
+                    toast("Error verificando el pago", "error");
+                }
+            }
+        };
+
+        if (businessInfo?.organization_id) {
+            checkPayment();
         }
-    }, [searchParams]);
+    }, [searchParams, businessInfo?.organization_id, toast]);
 
     useEffect(() => {
         if (businessInfo?.plan) {
