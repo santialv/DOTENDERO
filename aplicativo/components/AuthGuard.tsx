@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/toast";
+import { WompiButton } from "@/components/payments/WompiButton";
+import { Lock, CreditCard, ShieldCheck } from "lucide-react";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -11,6 +13,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const { toast } = useToast();
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [subscriptionInfo, setSubscriptionInfo] = useState<{ plan: string, status: string } | null>(null);
 
     useEffect(() => {
         const checkSession = async () => {
@@ -23,10 +26,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     return;
                 }
 
-                // 1. Obtener Perfil y Organización (Solo para logueo, no bloqueo estricto)
+                // 1. Obtener Perfil y Organización
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('organization_id')
+                    .select('organization_id, organizations(plan, subscription_status)')
                     .eq('id', session.user.id)
                     .single();
 
@@ -52,13 +55,23 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     return;
                 }
 
-                // CASO 2: USUARIO EXISTENTE (Con Organización) -> AL DASHBOARD
+                // CASO 2: USUARIO EXISTENTE (Con Organización)
+                const org = (profile as any).organizations;
+                if (org) {
+                    setSubscriptionInfo({
+                        plan: org.plan || 'free',
+                        status: org.subscription_status || 'active'
+                    });
+                }
                 setIsAuthorized(true);
 
             } catch (error) {
                 console.error("Guardián: Fallo al verificar sesión", error);
-                // En caso de error de red, mejor no sacar al usuario agresivamente, 
-                // pero por seguridad en esta etapa, redirigimos a login
+
+                // Si el token es inválido o no se encuentra (AuthApiError), 
+                // forzamos el cierre de sesión para limpiar el localStorage.
+                await supabase.auth.signOut();
+
                 router.replace("/login");
             } finally {
                 setLoading(false);
@@ -89,7 +102,53 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     if (!isAuthorized) {
-        return null; // Bloqueo total visual hasta redirección
+        return null;
+    }
+
+    // BLOCKING SCREEN: If sub is not active
+    if (subscriptionInfo && subscriptionInfo.plan !== 'free' && subscriptionInfo.status !== 'active') {
+        const planPrice = subscriptionInfo.plan === 'pro' ? 50000 : 90000;
+
+        return (
+            <div className="h-screen w-full flex items-center justify-center bg-slate-50 p-6">
+                <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 border border-slate-200 animate-in zoom-in-95 duration-500">
+                    <div className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <Lock className="w-10 h-10 text-red-600" />
+                    </div>
+
+                    <h1 className="text-2xl font-black text-slate-900 text-center mb-2">Acceso Restringido</h1>
+                    <p className="text-slate-500 text-center mb-8 leading-relaxed">
+                        Tu suscripción al <span className="font-bold text-slate-700 capitalize">Plan {subscriptionInfo.plan}</span> se encuentra inactiva o con pago pendiente.
+                    </p>
+
+                    <div className="bg-slate-50 rounded-2xl p-6 mb-8 border border-slate-100">
+                        <div className="flex justify-between items-center mb-4">
+                            <span className="text-slate-500 font-bold text-xs uppercase tracking-wider">Monto a pagar</span>
+                            <span className="text-xl font-black text-slate-900">${planPrice.toLocaleString()} COP</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-slate-600">
+                            <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                            <span>Pago 100% seguro vía Wompi</span>
+                        </div>
+                    </div>
+
+                    <WompiButton
+                        amount={planPrice}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 group transition-all"
+                    />
+
+                    <button
+                        onClick={async () => {
+                            await supabase.auth.signOut();
+                            router.replace("/login");
+                        }}
+                        className="w-full mt-4 text-slate-400 text-sm font-bold hover:text-slate-600 transition-colors"
+                    >
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     return <>{children}</>;

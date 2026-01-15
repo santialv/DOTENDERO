@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ProductGrid } from "@/components/pos/ProductGrid";
 import { CartSidebar } from "@/components/pos/CartSidebar";
 import { PaymentModal } from "@/components/pos/PaymentModal";
+import { CashCloseModal } from "@/components/pos/CashCloseModal";
 import { SuccessModal } from "@/components/pos/SuccessModal";
 import { CustomerModal } from "@/components/pos/CustomerModal";
 import { CategoryButton } from "@/components/pos/CategoryButton";
@@ -47,6 +48,7 @@ export default function VentaPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isHeldOrdersModalOpen, setIsHeldOrdersModalOpen] = useState(false);
+  const [isCashCloseModalOpen, setIsCashCloseModalOpen] = useState(false);
   const [lastTransaction, setLastTransaction] = useState<Transaction | null>(null);
 
   // Auto-focus search on mount and after interactions
@@ -122,6 +124,14 @@ export default function VentaPage() {
         </button>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsCashCloseModalOpen(true)}
+            className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors font-semibold text-sm"
+          >
+            <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
+            Cerrar Caja
+          </button>
+
           <button className="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-primary transition-colors shadow-sm relative">
             <span className="material-symbols-outlined">notifications</span>
             <span className="absolute top-2.5 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
@@ -252,6 +262,11 @@ export default function VentaPage() {
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         total={total}
+        currentCustomer={selectedCustomer}
+        onRequestCustomerSelection={() => {
+          setIsPaymentModalOpen(false);
+          setIsCustomerModalOpen(true);
+        }}
         onFinalize={async (payments, amountTendered, change) => {
           const tx = await checkout(payments, amountTendered, change);
           if (tx) {
@@ -259,6 +274,11 @@ export default function VentaPage() {
             setIsPaymentModalOpen(false);
           }
         }}
+      />
+
+      <CashCloseModal
+        isOpen={isCashCloseModalOpen}
+        onClose={() => setIsCashCloseModalOpen(false)}
       />
 
       <SuccessModal

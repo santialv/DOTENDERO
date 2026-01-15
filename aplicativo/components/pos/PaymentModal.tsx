@@ -1,16 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { PaymentMethod, Payment } from "@/types";
+import { PaymentMethod, Payment, Customer } from "@/types";
+import { useToast } from "@/components/ui/toast";
 
 interface PaymentModalProps {
     total: number;
     isOpen: boolean;
     onClose: () => void;
     onFinalize: (payments: Payment[], amountTendered: number, change: number) => void;
+    currentCustomer?: Customer;
+    onRequestCustomerSelection?: () => void;
 }
 
-export function PaymentModal({ total, isOpen, onClose, onFinalize }: PaymentModalProps) {
+export function PaymentModal({ total, isOpen, onClose, onFinalize, currentCustomer, onRequestCustomerSelection }: PaymentModalProps) {
+    const { toast } = useToast();
     const [payments, setPayments] = useState<Payment[]>([]);
     const [currentPaymentMethod, setCurrentPaymentMethod] = useState<PaymentMethod | null>(null);
     const [amountTendered, setAmountTendered] = useState<string>("");
@@ -95,7 +99,17 @@ export function PaymentModal({ total, isOpen, onClose, onFinalize }: PaymentModa
                                 return (
                                     <button
                                         key={m}
-                                        onClick={() => { setCurrentPaymentMethod(m); setAmountTendered(""); }}
+                                        onClick={() => {
+                                            if (m === 'Fiado') {
+                                                if (!currentCustomer || currentCustomer.id === 'default') {
+                                                    toast("Para vender fiado, debes asignar un cliente.", "error");
+                                                    if (onRequestCustomerSelection) onRequestCustomerSelection();
+                                                    return;
+                                                }
+                                            }
+                                            setCurrentPaymentMethod(m);
+                                            setAmountTendered("");
+                                        }}
                                         className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${isActive ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                     >
                                         {m}

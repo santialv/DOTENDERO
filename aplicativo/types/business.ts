@@ -38,6 +38,8 @@ export type BusinessInfo = {
     email: string;
     logoUrl?: string; // Added
     rutUrl?: string; // Added
+    plan?: string;
+    subscription_status?: string;
 };
 
 // Initial state constant

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/toast";
 import { COLOMBIA_CITIES } from "@/lib/cities";
 import { CIIU_ACTIVITIES } from "@/lib/ciiu";
+import { WompiButton } from "@/components/payments/WompiButton";
 
 // Types
 type OnboardingData = {
@@ -17,7 +18,8 @@ type OnboardingData = {
     activityCode: string;
     address: string;
     phone: string;
-    rutPath?: string; // New field
+    rutPath?: string;
+    plan: 'free' | 'pro' | 'premium';
 };
 
 export default function OnboardingPage() {
@@ -37,7 +39,8 @@ export default function OnboardingPage() {
         activityCode: "",
         address: "",
         phone: "",
-        rutPath: ""
+        rutPath: "",
+        plan: "free",
     });
 
     // Save state on change
@@ -52,8 +55,9 @@ export default function OnboardingPage() {
         if (step === 3 && (!data.activityCode)) return toast("Selecciona tu actividad económica", "error");
         // Step 4 is Upload, optional
         if (step === 5 && (!data.address || !data.phone)) return toast("Completa los datos de contacto", "error");
+        if (step === 6 && !data.plan) return toast("Selecciona un plan para continuar", "error");
 
-        if (step === 5) {
+        if (step === 6) {
             handleFinalSubmit();
         } else {
             setStep(prev => prev + 1);
@@ -68,7 +72,7 @@ export default function OnboardingPage() {
             return;
         }
 
-        setStep(6);
+        setStep(7);
         setLoading(true);
 
         try {
@@ -96,6 +100,8 @@ export default function OnboardingPage() {
                     created_at: new Date().toISOString(),
                     nit: data.nit,
                     email: userEmail,
+                    plan: data.plan,
+                    subscription_status: data.plan === 'free' ? 'active' : 'pending_payment'
                 }).select().single();
 
                 if (insertError) {
@@ -125,7 +131,9 @@ export default function OnboardingPage() {
                     address: data.address,
                     phone: data.phone,
                     email: userEmail,
-                    rut_url: data.rutPath // Save RUT path
+                    rut_url: data.rutPath,
+                    plan: data.plan,
+                    subscription_status: data.plan === 'free' ? 'active' : 'pending_payment'
                 }).eq('id', orgId);
 
                 if (updateError) throw updateError;
@@ -137,7 +145,7 @@ export default function OnboardingPage() {
             localStorage.removeItem("onboarding_data");
             localStorage.removeItem("onboarding_step");
             setLoading(false);
-            setStep(7);
+            setStep(8);
 
         } catch (error: any) {
             console.error("!!! CRASH FINAL:", error);
@@ -451,6 +459,56 @@ export default function OnboardingPage() {
         </div>
     );
 
+    const renderStep6 = () => (
+        <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-500">
+            <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-green-600">
+                    <span className="material-symbols-outlined text-4xl">loyalty</span>
+                </div>
+                <h2 className="text-2xl font-black text-slate-900">Selecciona tu Plan</h2>
+                <p className="text-slate-500 mt-2">Elige el plan que mejor se adapte a tu negocio.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+                {/* Free Plan */}
+                <button
+                    onClick={() => setData({ ...data, plan: 'free' })}
+                    className={`p-5 rounded-2xl border-2 text-left transition-all ${data.plan === 'free' ? 'border-[#00E054] bg-green-50 shadow-md' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                >
+                    <div className="flex justify-between items-start mb-2">
+                        <span className="font-black text-lg text-slate-800">Plan Gratuito</span>
+                        <span className="text-slate-400 font-bold">$0</span>
+                    </div>
+                    <p className="text-xs text-slate-500">Funciones básicas de venta e inventario para tiendas pequeñas.</p>
+                </button>
+
+                {/* Pro Plan */}
+                <button
+                    onClick={() => setData({ ...data, plan: 'pro' })}
+                    className={`p-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden ${data.plan === 'pro' ? 'border-[#00E054] bg-green-50 shadow-md' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                >
+                    <div className="absolute top-0 right-0 bg-[#00E054] text-slate-900 text-[10px] font-black px-3 py-1 rounded-bl-xl">POPULAR</div>
+                    <div className="flex justify-between items-start mb-2">
+                        <span className="font-black text-lg text-slate-800">Plan Pro</span>
+                        <span className="text-indigo-600 font-bold">$50,000 / mes</span>
+                    </div>
+                    <p className="text-xs text-slate-500">Incluye IA, reportes avanzados y facturación ilimitada.</p>
+                </button>
+
+                {/* Premium Plan */}
+                <button
+                    onClick={() => setData({ ...data, plan: 'premium' })}
+                    className={`p-5 rounded-2xl border-2 text-left transition-all ${data.plan === 'premium' ? 'border-[#00E054] bg-green-50 shadow-md' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                >
+                    <div className="flex justify-between items-start mb-2">
+                        <span className="font-black text-lg text-slate-800">Plan Premium</span>
+                        <span className="text-slate-900 font-bold">$90,000 / mes</span>
+                    </div>
+                    <p className="text-xs text-slate-500">Soporte prioritario, múltiples bodegas y analítica predictiva.</p>
+                </button>
+            </div>
+        </div>
+    );
+
     const renderLoading = () => (
         <div className="flex flex-col items-center justify-center py-10 animate-in fade-in duration-700">
             <div className="relative w-24 h-24 mb-6">
@@ -494,44 +552,56 @@ export default function OnboardingPage() {
                     </p>
 
                     <div className="flex flex-col md:flex-row items-center justify-center gap-6">
-                        <button
-                            onClick={async () => {
-                                // Lógica de Reparación Just-in-Time
-                                setLoading(true);
-                                toast("Preparando tu tienda...", "info");
+                        {data.plan !== 'free' ? (
+                            <div className="flex flex-col items-center gap-4">
+                                <p className="text-sm font-bold text-slate-600 italic">Has seleccionado el {data.plan.toUpperCase()}. Para activar todas las funciones, realiza tu primer pago:</p>
+                                <WompiButton
+                                    amount={data.plan === 'pro' ? 50000 : 90000}
+                                    className="h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-black rounded-lg transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 hover:-translate-y-1 active:scale-95 flex items-center gap-2"
+                                />
+                            </div>
+                        ) : (
+                            <button
+                                onClick={async () => {
+                                    // Lógica de Reparación Just-in-Time
+                                    setLoading(true);
+                                    toast("Preparando tu tienda...", "info");
 
-                                try {
-                                    // 1. Verificar/Crear Org
-                                    const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', userId).maybeSingle();
+                                    try {
+                                        // 1. Verificar/Crear Org
+                                        const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', userId).maybeSingle();
 
-                                    if (!profile?.organization_id) {
-                                        // Crear Org
-                                        const { data: newOrg } = await supabase.from('organizations').insert({
-                                            name: data.storeName || "Mi Tienda Nueva",
-                                            created_at: new Date().toISOString(),
-                                            nit: data.nit,
-                                            city: data.city,
-                                            regime: data.regime || 'No Responsable de IVA',
-                                        }).select().single();
+                                        if (!profile?.organization_id) {
+                                            // Crear Org
+                                            const { data: newOrg } = await supabase.from('organizations').insert({
+                                                name: data.storeName || "Mi Tienda Nueva",
+                                                created_at: new Date().toISOString(),
+                                                nit: data.nit,
+                                                city: data.city,
+                                                plan: 'free',
+                                                subscription_status: 'active',
+                                                regime: data.regime || 'No Responsable de IVA',
+                                            }).select().single();
 
-                                        if (newOrg) {
-                                            await supabase.from('profiles').update({ organization_id: newOrg.id }).eq('id', userId);
+                                            if (newOrg) {
+                                                await supabase.from('profiles').update({ organization_id: newOrg.id }).eq('id', userId);
+                                            }
                                         }
+
+                                        // 2. Redirigir ahora sí seguro
+                                        window.location.href = "/venta";
+
+                                    } catch (e) {
+                                        console.error("Error final:", e);
+                                        router.push("/venta");
                                     }
-
-                                    // 2. Redirigir ahora sí seguro
-                                    window.location.href = "/venta";
-
-                                } catch (e) {
-                                    console.error("Error final:", e);
-                                    router.push("/venta");
-                                }
-                            }}
-                            className="h-14 px-8 bg-[#00E054] hover:bg-[#00c94a] text-slate-900 text-lg font-black rounded-lg transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/40 hover:-translate-y-1 active:scale-95 flex items-center gap-2"
-                        >
-                            Ir a mi Tienda
-                            <span className="material-symbols-outlined font-bold">arrow_forward</span>
-                        </button>
+                                }}
+                                className="h-14 px-8 bg-[#00E054] hover:bg-[#00c94a] text-slate-900 text-lg font-black rounded-lg transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/40 hover:-translate-y-1 active:scale-95 flex items-center gap-2"
+                            >
+                                Ir a mi Tienda
+                                <span className="material-symbols-outlined font-bold">arrow_forward</span>
+                            </button>
+                        )}
 
                         <button className="flex items-center gap-2 text-slate-500 font-bold hover:text-slate-800 transition-colors">
                             <span className="material-symbols-outlined text-xl">help</span>
@@ -546,8 +616,8 @@ export default function OnboardingPage() {
     return (
         <div className="min-h-screen bg-[#F3F9F4] font-display relative overflow-y-auto overflow-x-hidden flex flex-col">
 
-            {/* Floating Background Decor (Only visible on Step 7) */}
-            {step === 7 && (
+            {/* Floating Background Decor (Only visible on Step 8) */}
+            {step === 8 && (
                 <>
                     {/* Left Icon */}
                     <div className="absolute top-40 left-10 md:left-20 animate-in fade-in slide-in-from-left duration-1000 delay-300 pointer-events-none">
@@ -587,19 +657,19 @@ export default function OnboardingPage() {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col items-center justify-center p-4 relative z-10 pb-20">
 
-                {/* Floating Progress Bar (Steps 1-6) */}
-                {step < 7 && (
+                {/* Floating Progress Bar (Steps 1-7) */}
+                {step < 8 && (
                     <div className="w-full max-w-lg mb-8 animate-in fade-in slide-in-from-top duration-500 shrink-0">
                         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4">
                             <div className="flex-1">
                                 <div className="flex justify-between text-xs font-bold text-slate-500 uppercase mb-2">
                                     <span>Progreso de Registro</span>
-                                    <span>{Math.round((step / 6) * 100)}%</span>
+                                    <span>{Math.round((step / 7) * 100)}%</span>
                                 </div>
                                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-[#00E054] transition-all duration-500 ease-out rounded-full"
-                                        style={{ width: `${(step / 6) * 100}%` }}
+                                        style={{ width: `${(step / 7) * 100}%` }}
                                     ></div>
                                 </div>
                             </div>
@@ -608,7 +678,7 @@ export default function OnboardingPage() {
                 )}
 
                 {/* Final Step Progress (Success Capsule) - Floating above card */}
-                {step === 7 && (
+                {step === 8 && (
                     <div className="w-full max-w-4xl mb-6 animate-in slide-in-from-top duration-700 delay-200 px-4 md:px-0 shrink-0">
                         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-3 shadow-sm border border-green-100 flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -626,7 +696,7 @@ export default function OnboardingPage() {
 
                 {/* Render Active Step */}
                 <div className="w-full flex justify-center px-4">
-                    {step < 7 ? (
+                    {step < 8 ? (
                         // Form Steps Card
                         <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl overflow-hidden p-6 md:p-10 relative transition-all duration-300">
                             {step === 1 && renderStep1()}
@@ -634,10 +704,11 @@ export default function OnboardingPage() {
                             {step === 3 && renderStep3()}
                             {step === 4 && renderStep4()}
                             {step === 5 && renderStep5()}
-                            {step === 6 && renderLoading()}
+                            {step === 6 && renderStep6()}
+                            {step === 7 && renderLoading()}
 
                             {/* Navigation Buttons for Form */}
-                            {step < 6 && (
+                            {step < 7 && (
                                 <div className="mt-8 flex gap-3">
                                     {step > 1 && (
                                         <button
@@ -653,7 +724,7 @@ export default function OnboardingPage() {
                                         onClick={handleNext}
                                         className="flex-1 h-12 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-lg shadow-slate-900/20 active:scale-95 flex items-center justify-center gap-2"
                                     >
-                                        {step === 5 ? 'Finalizar' : 'Continuar'}
+                                        {step === 6 ? 'Finalizar' : 'Continuar'}
                                         <span className="material-symbols-outlined text-sm">arrow_forward</span>
                                     </button>
                                 </div>

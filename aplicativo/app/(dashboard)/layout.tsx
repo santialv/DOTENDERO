@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { NavItem } from '@/components/nav-item';
 import AuthGuard from '@/components/AuthGuard';
@@ -15,10 +15,22 @@ export default function DashboardLayout({
     children: React.ReactNode
 }) {
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [userRole, setUserRole] = useState<string | null>(null);
     const pathname = usePathname();
     const router = useRouter(); // Import useRouter
     const { businessInfo } = useConfiguration(); // Fetch dynamic info
     const isFinance = pathname?.startsWith('/asesoria');
+
+    useEffect(() => {
+        const fetchRole = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+                setUserRole(profile?.role || null);
+            }
+        };
+        fetchRole();
+    }, []);
 
     const brandColor = isFinance ? 'bg-blue-600' : 'bg-[#13ec80]';
     // User requested "DonTendero POS" (interpreted from 'POST') vs "DonTendero FINANCE"
@@ -94,6 +106,18 @@ export default function DashboardLayout({
                             </div>
                         </div>
 
+                        {/* Admin Link (Only for Super Admin) */}
+                        {userRole === 'super_admin' && (
+                            <Link
+                                href="/admin"
+                                className={`flex w-full items-center gap-3 p-2 rounded-xl text-slate-600 hover:text-purple-600 hover:bg-purple-50 transition-colors group ${isCollapsed ? 'justify-center' : ''}`}
+                                title="Panel Administrativo"
+                            >
+                                <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">shield_person</span>
+                                {!isCollapsed && <span className="text-sm font-medium">Panel Admin</span>}
+                            </Link>
+                        )}
+
                         <button
                             onClick={handleLogout}
                             className={`flex w-full items-center gap-3 p-2 rounded-xl text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors group ${isCollapsed ? 'justify-center' : ''}`}
@@ -102,6 +126,12 @@ export default function DashboardLayout({
                             <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">logout</span>
                             {!isCollapsed && <span className="text-sm font-medium">Cerrar Sesión</span>}
                         </button>
+
+                        {!isCollapsed && (
+                            <div className="mt-2 text-center">
+                                <span className="text-[10px] text-slate-300 font-mono">v0.1.2</span>
+                            </div>
+                        )}
                     </div>
                 </aside>
 

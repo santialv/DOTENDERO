@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from "@/components/ui/toast";
+import { motion } from 'framer-motion';
+import { Store, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -22,17 +24,30 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
             if (error) {
                 toast(error.message || "Credenciales inválidas", "error");
-            } else {
+            } else if (data.user) {
                 toast("Bienvenido de nuevo", "success");
+
+                // Check Role
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', data.user.id)
+                    .single();
+
                 router.refresh();
-                router.push('/venta');
+
+                if (profile?.role === 'super_admin') {
+                    router.push('/admin');
+                } else {
+                    router.push('/venta');
+                }
             }
         } catch (error) {
             toast("Ocurrió un error inesperado", "error");
@@ -43,11 +58,16 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="font-sans bg-[#f8fcfa] text-[#0d1b14] h-full antialiased selection:bg-[#13ec80] selection:text-[#0d1b14]">
+        <div className="font-sans bg-background-light text-text-main h-full antialiased selection:bg-primary selection:text-text-main">
             <div className="flex min-h-screen flex-row">
                 {/* Left Side: Visual/Marketing (Hidden on mobile) */}
-                <div className="relative hidden w-0 flex-1 lg:block bg-[#102219]">
-                    <div className="absolute inset-0 h-full w-full">
+                <div className="relative hidden w-0 flex-1 lg:block bg-background-dark overflow-hidden">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 1.05 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        className="absolute inset-0 h-full w-full"
+                    >
                         {/* Image background */}
                         <div
                             className="h-full w-full bg-cover bg-center opacity-80"
@@ -55,37 +75,58 @@ export default function LoginPage() {
                         >
                         </div>
                         {/* Overlay gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#102219]/90 via-[#102219]/40 to-transparent"></div>
-                    </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-background-dark/90 via-background-dark/40 to-transparent"></div>
+                    </motion.div>
+
                     <div className="relative z-10 flex h-full flex-col justify-end p-12 text-white">
-                        <div className="mb-8">
-                            <div className="mb-4 flex size-12 items-center justify-center rounded-lg bg-[#13ec80]/20 backdrop-blur-sm">
-                                <span className="material-symbols-outlined text-[#13ec80] text-3xl">storefront</span>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3, duration: 0.6 }}
+                            className="mb-8"
+                        >
+                            <div className="mb-4 flex size-12 items-center justify-center rounded-lg bg-primary/20 backdrop-blur-sm">
+                                <Store className="w-8 h-8 text-primary" />
                             </div>
                             <h2 className="text-3xl font-bold leading-tight tracking-tight text-white mb-2">Tu aliado en el crecimiento</h2>
                             <p className="text-lg text-gray-300 max-w-md">Gestiona tu inventario, ventas y fiados en un solo lugar. DonTendero hace que tu negocio prospere.</p>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.6, duration: 0.6 }}
+                            className="flex items-center gap-2 text-sm text-gray-400"
+                        >
                             <span>© 2026 DonTendero</span>
                             <span>•</span>
-                            <a className="hover:text-[#13ec80] transition-colors" href="/legal/privacidad" target="_blank">Privacidad</a>
+                            <a className="hover:text-primary transition-colors" href="/legal/privacidad" target="_blank">Privacidad</a>
                             <span>•</span>
-                            <a className="hover:text-[#13ec80] transition-colors" href="/legal/terminos" target="_blank">Términos</a>
-                        </div>
+                            <a className="hover:text-primary transition-colors" href="/legal/terminos" target="_blank">Términos</a>
+                        </motion.div>
                     </div>
                 </div>
 
                 {/* Right Side: Login Form */}
                 <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-white w-full lg:w-[600px]">
-                    <div className="mx-auto w-full max-w-sm lg:w-96">
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                        className="mx-auto w-full max-w-sm lg:w-96"
+                    >
                         {/* Logo Header */}
                         <div className="flex flex-col gap-6 mb-8">
-                            <div className="flex items-center gap-3 mb-2">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.2, duration: 0.5 }}
+                                className="flex items-center gap-3 mb-2"
+                            >
                                 <img src="/logo.png" alt="DonTendero POS" className="h-[42px] w-auto object-contain" />
-                            </div>
+                            </motion.div>
                             <div>
-                                <h1 className="text-3xl font-bold tracking-tight text-[#0d1b14]">Bienvenido de nuevo</h1>
-                                <p className="mt-2 text-base text-[#4c9a73]">
+                                <h1 className="text-3xl font-bold tracking-tight text-text-main">Bienvenido de nuevo</h1>
+                                <p className="mt-2 text-base text-text-secondary">
                                     Ingresa tus credenciales para acceder a tu panel.
                                 </p>
                             </div>
@@ -96,12 +137,12 @@ export default function LoginPage() {
                             <form onSubmit={handleLogin} className="space-y-6">
                                 {/* Email Field */}
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-medium leading-6 text-[#0d1b14]" htmlFor="email">
+                                    <label className="block text-sm font-medium leading-6 text-text-main" htmlFor="email">
                                         Correo electrónico o Usuario
                                     </label>
                                     <div className="relative rounded-lg shadow-sm">
                                         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                            <span className="material-symbols-outlined text-[#4c9a73]">mail</span>
+                                            <Mail className="w-5 h-5 text-text-secondary" />
                                         </div>
                                         <input
                                             id="email"
@@ -112,19 +153,19 @@ export default function LoginPage() {
                                             required
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            className="block w-full rounded-lg border-0 py-3.5 pl-10 text-[#0d1b14] ring-1 ring-inset ring-[#cfe7db] placeholder:text-[#4c9a73]/70 focus:ring-2 focus:ring-inset focus:ring-[#13ec80] sm:text-sm sm:leading-6 bg-white outline-none"
+                                            className="block w-full rounded-lg border-0 py-3.5 pl-10 text-text-main ring-1 ring-inset ring-input-border placeholder:text-text-secondary/70 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-white outline-none transition-shadow duration-200"
                                         />
                                     </div>
                                 </div>
 
                                 {/* Password Field */}
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-medium leading-6 text-[#0d1b14]" htmlFor="password">
+                                    <label className="block text-sm font-medium leading-6 text-text-main" htmlFor="password">
                                         Contraseña
                                     </label>
                                     <div className="relative rounded-lg shadow-sm">
                                         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                            <span className="material-symbols-outlined text-[#4c9a73]">lock</span>
+                                            <Lock className="w-5 h-5 text-text-secondary" />
                                         </div>
                                         <input
                                             id="password"
@@ -135,14 +176,14 @@ export default function LoginPage() {
                                             required
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="block w-full rounded-lg border-0 py-3.5 pl-10 pr-10 text-[#0d1b14] ring-1 ring-inset ring-[#cfe7db] placeholder:text-[#4c9a73]/70 focus:ring-2 focus:ring-inset focus:ring-[#13ec80] sm:text-sm sm:leading-6 bg-white outline-none"
+                                            className="block w-full rounded-lg border-0 py-3.5 pl-10 pr-10 text-text-main ring-1 ring-inset ring-input-border placeholder:text-text-secondary/70 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-white outline-none transition-shadow duration-200"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer text-[#4c9a73] hover:text-[#13ec80] transition-colors outline-none"
+                                            className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer text-text-secondary hover:text-primary transition-colors outline-none"
                                         >
-                                            <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                         </button>
                                     </div>
                                 </div>
@@ -156,12 +197,12 @@ export default function LoginPage() {
                                             type="checkbox"
                                             checked={rememberMe}
                                             onChange={(e) => setRememberMe(e.target.checked)}
-                                            className="h-4 w-4 rounded border-[#cfe7db] text-[#13ec80] focus:ring-[#13ec80] bg-white"
+                                            className="h-4 w-4 rounded border-input-border text-primary focus:ring-primary bg-white cursor-pointer"
                                         />
-                                        <label className="ml-2 block text-sm text-[#0d1b14]" htmlFor="remember-me">Recordarme</label>
+                                        <label className="ml-2 block text-sm text-text-main cursor-pointer" htmlFor="remember-me">Recordarme</label>
                                     </div>
                                     <div className="text-sm">
-                                        <Link href="/login/recuperar" className="font-semibold text-[#13ec80] hover:text-[#0fd673] hover:underline decoration-2 underline-offset-2">
+                                        <Link href="/login/recuperar" className="font-semibold text-primary hover:text-primary-hover hover:underline decoration-2 underline-offset-2">
                                             ¿Olvidaste tu contraseña?
                                         </Link>
                                     </div>
@@ -169,13 +210,15 @@ export default function LoginPage() {
 
                                 {/* Submit Button */}
                                 <div>
-                                    <button
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
                                         type="submit"
                                         disabled={loading}
-                                        className="flex w-full justify-center rounded-lg bg-[#13ec80] px-3 py-3.5 text-sm font-bold leading-6 text-[#0d1b14] shadow-sm hover:bg-[#0fd673] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#13ec80] transition-all duration-200 transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                                        className="flex w-full justify-center rounded-lg bg-[#13ec80] px-3 py-3.5 text-sm font-bold leading-6 text-[#0d1b14] shadow-sm hover:bg-[#0fd673] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#13ec80] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
                                         {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-                                    </button>
+                                    </motion.button>
                                 </div>
                             </form>
 
@@ -185,21 +228,24 @@ export default function LoginPage() {
                                     <div className="w-full border-t border-gray-200"></div>
                                 </div>
                                 <div className="relative flex justify-center text-sm font-medium leading-6">
-                                    <span className="bg-[#f8fcfa] px-6 text-[#4c9a73]">¿Nuevo en DonTendero?</span>
+                                    <span className="bg-background-light px-6 text-text-secondary">¿Nuevo en DonTendero?</span>
                                 </div>
                             </div>
 
                             {/* Create Account Button */}
                             <div className="mt-6">
-                                <Link
-                                    href="/register"
-                                    className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-3 py-3.5 text-sm font-bold text-[#0d1b14] shadow-sm ring-1 ring-inset ring-[#cfe7db] hover:bg-gray-50 focus-visible:ring-transparent transition-all duration-200"
-                                >
-                                    Crear una cuenta
+                                <Link href="/register">
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-3 py-3.5 text-sm font-bold text-text-main shadow-sm ring-1 ring-inset ring-input-border hover:bg-gray-50 focus-visible:ring-transparent transition-all duration-200"
+                                    >
+                                        Crear una cuenta
+                                    </motion.button>
                                 </Link>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             </div>
         </div>

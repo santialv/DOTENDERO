@@ -265,8 +265,9 @@ export default function CreateProductPage() {
                                                 value={skuMode === 'auto' ? "Se generará automáticamente" : barcode}
                                                 onChange={(e) => setBarcode(e.target.value)}
                                                 disabled={skuMode === 'auto'}
-                                                className={`w-full rounded-lg border bg-slate-50 focus:ring-2 focus:ring-primary focus:border-primary h-12 pl-10 pr-4 font-mono transition-colors ${skuMode === 'auto' ? 'border-primary/30 text-primary italic' : 'border-slate-200 text-slate-900'}`}
-                                                placeholder="Escanea o escribe"
+                                                autoFocus={skuMode === 'manual'}
+                                                className={`w-full rounded-lg border bg-slate-50 focus:ring-2 focus:ring-primary focus:border-primary h-12 pl-10 pr-4 font-mono transition-colors ${skuMode === 'auto' ? 'border-primary/30 text-primary italic' : 'border-slate-200 text-slate-900 placeholder:text-slate-400'}`}
+                                                placeholder={skuMode === 'manual' ? "Haz clic aquí y escanea el código..." : "Automático"}
                                                 type="text"
                                             />
                                         </div>
@@ -274,211 +275,211 @@ export default function CreateProductPage() {
                                 </div>
                             </div>
                         </div>
-                        {/* Pricing & Inventory Card */}
-                        <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                                <div className="p-2 bg-slate-100 rounded-lg">
-                                    <span className="material-symbols-outlined text-primary">payments</span>
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-bold text-slate-900">Precios e Inventario</h2>
-                                    <p className="text-sm text-slate-400">Define los costos y el stock inicial.</p>
-                                </div>
+                    </div>
+                    {/* Pricing & Inventory Card */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                            <div className="p-2 bg-slate-100 rounded-lg">
+                                <span className="material-symbols-outlined text-primary">payments</span>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                                <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Precio de Costo ($)</span>
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-900">Precios e Inventario</h2>
+                                <p className="text-sm text-slate-400">Define los costos y el stock inicial.</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                            <label className="flex flex-col gap-2">
+                                <span className="text-sm font-semibold text-slate-700">Precio de Costo ($)</span>
+                                <input
+                                    value={costPrice}
+                                    onChange={(e) => setCostPrice(e.target.value)}
+                                    className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 font-medium"
+                                    placeholder="0.00"
+                                    step="0.01"
+                                    type="number"
+                                />
+                            </label>
+                            <label className="flex flex-col gap-2">
+                                <span className="text-sm font-semibold text-slate-700">Precio de Venta ($)</span>
+                                <div className="relative">
                                     <input
-                                        value={costPrice}
-                                        onChange={(e) => setCostPrice(e.target.value)}
-                                        className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 font-medium"
+                                        value={salePrice}
+                                        onChange={(e) => setSalePrice(e.target.value)}
+                                        className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 font-bold text-lg"
                                         placeholder="0.00"
                                         step="0.01"
                                         type="number"
                                     />
-                                </label>
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded hidden md:block">
+                                        Margen: {margin.toFixed(1)}%
+                                    </div>
+                                </div>
+                            </label>
+
+                        </div>
+                        <div className="mt-5 border-t border-slate-100 pt-5">
+                            <h3 className="text-sm font-bold text-slate-900 mb-3 block">Otros Impuestos</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Precio de Venta ($)</span>
+                                    <div className="flex justify-between">
+                                        <span className="text-sm font-semibold text-slate-700">ICA (Industria y Comercio)</span>
+                                        <span className="text-xs text-slate-400">Por mil (‰)</span>
+                                    </div>
                                     <div className="relative">
                                         <input
-                                            value={salePrice}
-                                            onChange={(e) => setSalePrice(e.target.value)}
-                                            className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 font-bold text-lg"
-                                            placeholder="0.00"
-                                            step="0.01"
+                                            value={icaRate}
+                                            onChange={(e) => setIcaRate(e.target.value)}
+                                            className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4"
+                                            placeholder="Ej. 11.04"
                                             type="number"
+                                            step="0.01"
                                         />
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded hidden md:block">
-                                            Margen: {margin.toFixed(1)}%
-                                        </div>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">‰</div>
                                     </div>
                                 </label>
-
-                            </div>
-                            <div className="mt-5 border-t border-slate-100 pt-5">
-                                <h3 className="text-sm font-bold text-slate-900 mb-3 block">Otros Impuestos</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <label className="flex flex-col gap-2">
-                                        <div className="flex justify-between">
-                                            <span className="text-sm font-semibold text-slate-700">ICA (Industria y Comercio)</span>
-                                            <span className="text-xs text-slate-400">Por mil (‰)</span>
-                                        </div>
-                                        <div className="relative">
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-sm font-semibold text-slate-700">Impuesto a la Bolsa</span>
+                                    <div className={`p-3 rounded-lg border transition-colors ${hasBagTax ? 'bg-primary/5 border-primary/30' : 'bg-slate-50 border-slate-200'}`}>
+                                        <label className="flex items-center gap-3 cursor-pointer mb-2">
                                             <input
-                                                value={icaRate}
-                                                onChange={(e) => setIcaRate(e.target.value)}
-                                                className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4"
-                                                placeholder="Ej. 11.04"
-                                                type="number"
-                                                step="0.01"
+                                                type="checkbox"
+                                                checked={hasBagTax}
+                                                onChange={(e) => setHasBagTax(e.target.checked)}
+                                                className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
                                             />
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">‰</div>
-                                        </div>
-                                    </label>
-                                    <div className="flex flex-col gap-2">
-                                        <span className="text-sm font-semibold text-slate-700">Impuesto a la Bolsa</span>
-                                        <div className={`p-3 rounded-lg border transition-colors ${hasBagTax ? 'bg-primary/5 border-primary/30' : 'bg-slate-50 border-slate-200'}`}>
-                                            <label className="flex items-center gap-3 cursor-pointer mb-2">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={hasBagTax}
-                                                    onChange={(e) => setHasBagTax(e.target.checked)}
-                                                    className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
-                                                />
-                                                <span className="font-medium text-slate-800">Aplica Impuesto Nacional</span>
-                                            </label>
-                                            {hasBagTax && (
-                                                <div className="pl-8">
-                                                    <div className="relative">
-                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
-                                                        <input
-                                                            value={bagTaxValue}
-                                                            onChange={(e) => setBagTaxValue(e.target.value)}
-                                                            className="w-full rounded-md border-slate-300 text-sm h-9 pl-6"
-                                                            placeholder="Valor"
-                                                            type="number"
-                                                        />
-                                                    </div>
-                                                    <p className="text-[10px] text-slate-500 mt-1">Valor por unidad (Ej. $60)</p>
+                                            <span className="font-medium text-slate-800">Aplica Impuesto Nacional</span>
+                                        </label>
+                                        {hasBagTax && (
+                                            <div className="pl-8">
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
+                                                    <input
+                                                        value={bagTaxValue}
+                                                        onChange={(e) => setBagTaxValue(e.target.value)}
+                                                        className="w-full rounded-md border-slate-300 text-sm h-9 pl-6"
+                                                        placeholder="Valor"
+                                                        type="number"
+                                                    />
                                                 </div>
-                                            )}
-                                        </div>
+                                                <p className="text-[10px] text-slate-500 mt-1">Valor por unidad (Ej. $60)</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
-                            <div className="mt-5 border-t border-slate-100 pt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Tipo de Impuesto</span>
-                                    <div className="flex gap-2">
-                                        <select
-                                            value={taxType}
-                                            onChange={(e) => setTaxType(e.target.value as "IVA" | "ICO")}
-                                            className="w-1/3 rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 appearance-none font-bold"
-                                        >
-                                            <option value="IVA">IVA</option>
-                                            <option value="ICO">Impoconsumo</option>
-                                        </select>
-                                        <select
-                                            value={tax}
-                                            onChange={(e) => setTax(e.target.value)}
-                                            className="w-2/3 rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 appearance-none"
-                                        >
-                                            {taxType === 'IVA' ? (
-                                                <>
-                                                    <option value="19">19% (General)</option>
-                                                    <option value="5">5% (Reducido)</option>
-                                                    <option value="0">0% (Exento)</option>
-                                                    <option value="-1">Excluido</option>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <option value="8">8% (General)</option>
-                                                    <option value="4">4% (Telefonía)</option>
-                                                    <option value="0">0% (Exento)</option>
-                                                </>
-                                            )}
-                                        </select>
-                                    </div>
-                                </label>
-                                <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Cantidad Inicial</span>
-                                    <input
-                                        value={stock}
-                                        onChange={(e) => setStock(e.target.value)}
-                                        className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4"
-                                        placeholder="0"
-                                        type="number"
-                                    />
-                                </label>
-                            </div>
+                        </div>
+                        <div className="mt-5 border-t border-slate-100 pt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <label className="flex flex-col gap-2">
+                                <span className="text-sm font-semibold text-slate-700">Tipo de Impuesto</span>
+                                <div className="flex gap-2">
+                                    <select
+                                        value={taxType}
+                                        onChange={(e) => setTaxType(e.target.value as "IVA" | "ICO")}
+                                        className="w-1/3 rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 appearance-none font-bold"
+                                    >
+                                        <option value="IVA">IVA</option>
+                                        <option value="ICO">Impoconsumo</option>
+                                    </select>
+                                    <select
+                                        value={tax}
+                                        onChange={(e) => setTax(e.target.value)}
+                                        className="w-2/3 rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 appearance-none"
+                                    >
+                                        {taxType === 'IVA' ? (
+                                            <>
+                                                <option value="19">19% (General)</option>
+                                                <option value="5">5% (Reducido)</option>
+                                                <option value="0">0% (Exento)</option>
+                                                <option value="-1">Excluido</option>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <option value="8">8% (General)</option>
+                                                <option value="4">4% (Telefonía)</option>
+                                                <option value="0">0% (Exento)</option>
+                                            </>
+                                        )}
+                                    </select>
+                                </div>
+                            </label>
+                            <label className="flex flex-col gap-2">
+                                <span className="text-sm font-semibold text-slate-700">Cantidad Inicial</span>
+                                <input
+                                    value={stock}
+                                    onChange={(e) => setStock(e.target.value)}
+                                    className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4"
+                                    placeholder="0"
+                                    type="number"
+                                />
+                            </label>
                         </div>
                     </div>
-                    {/* Right Column: Image Upload & Config */}
-                    <div className="flex flex-col gap-6 lg:w-1/3">
-                        {/* Status Card (New) */}
-                        <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                            <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
-                                <span className="material-symbols-outlined text-primary">toggle_on</span>
-                                <h2 className="text-base font-bold text-slate-900">Estado</h2>
-                            </div>
-                            <div className="flex flex-col gap-4">
-                                <label className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${status === 'Activo' ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-white'}`}>
-                                    <span className="font-bold text-slate-700">Activo</span>
-                                    <input type="radio" checked={status === 'Activo'} onChange={() => setStatus('Activo')} name="status" className="w-5 h-5 text-green-600 focus:ring-green-500" />
-                                </label>
-                                <label className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${status === 'Inactivo' ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'}`}>
-                                    <span className="font-bold text-slate-700">Inactivo</span>
-                                    <input type="radio" checked={status === 'Inactivo'} onChange={() => setStatus('Inactivo')} name="status" className="w-5 h-5 text-red-600 focus:ring-red-500" />
-                                </label>
-                            </div>
+                </div>
+                {/* Right Column: Image Upload & Config */}
+                <div className="flex flex-col gap-6 lg:w-1/3">
+                    {/* Status Card (New) */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                        <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
+                            <span className="material-symbols-outlined text-primary">toggle_on</span>
+                            <h2 className="text-base font-bold text-slate-900">Estado</h2>
                         </div>
+                        <div className="flex flex-col gap-4">
+                            <label className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${status === 'Activo' ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-white'}`}>
+                                <span className="font-bold text-slate-700">Activo</span>
+                                <input type="radio" checked={status === 'Activo'} onChange={() => setStatus('Activo')} name="status" className="w-5 h-5 text-green-600 focus:ring-green-500" />
+                            </label>
+                            <label className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${status === 'Inactivo' ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'}`}>
+                                <span className="font-bold text-slate-700">Inactivo</span>
+                                <input type="radio" checked={status === 'Inactivo'} onChange={() => setStatus('Inactivo')} name="status" className="w-5 h-5 text-red-600 focus:ring-red-500" />
+                            </label>
+                        </div>
+                    </div>
 
-                        {/* Configuration Card */}
-                        <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                            <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
-                                <span className="material-symbols-outlined text-primary">tune</span>
-                                <h2 className="text-base font-bold text-slate-900">Configuración</h2>
-                            </div>
-                            <div className="flex flex-col gap-5">
+                    {/* Configuration Card */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                        <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
+                            <span className="material-symbols-outlined text-primary">tune</span>
+                            <h2 className="text-base font-bold text-slate-900">Configuración</h2>
+                        </div>
+                        <div className="flex flex-col gap-5">
+                            <label className="flex flex-col gap-2">
+                                <span className="text-sm font-semibold text-slate-700">Unidad de Medida</span>
+                                <select
+                                    value={unit}
+                                    onChange={(e) => setUnit(e.target.value)}
+                                    className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-11 px-3 text-sm appearance-none"
+                                >
+                                    <option value="und">Unidad (und)</option>
+                                    <option value="kg">Kilogramo (kg)</option>
+                                    <option value="lb">Libra (lb)</option>
+                                    <option value="lt">Litro (lt)</option>
+                                    <option value="mt">Metro (mt)</option>
+                                </select>
+                            </label>
+
+                            <div className="p-4 rounded-lg border border-slate-200 bg-slate-50">
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Unidad de Medida</span>
-                                    <select
-                                        value={unit}
-                                        onChange={(e) => setUnit(e.target.value)}
-                                        className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-11 px-3 text-sm appearance-none"
-                                    >
-                                        <option value="und">Unidad (und)</option>
-                                        <option value="kg">Kilogramo (kg)</option>
-                                        <option value="lb">Libra (lb)</option>
-                                        <option value="lt">Litro (lt)</option>
-                                        <option value="mt">Metro (mt)</option>
-                                    </select>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="material-symbols-outlined text-amber-500 text-[20px]">notification_important</span>
+                                        <span className="text-sm font-bold text-slate-900">Alerta de Stock Bajo</span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mb-2">Notificar cuando el inventario sea menor a:</p>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            value={minStock}
+                                            onChange={(e) => setMinStock(e.target.value)}
+                                            className="w-full rounded-lg border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-10 px-3 text-center font-bold"
+                                            type="number"
+                                            min="0"
+                                        />
+                                        <span className="text-sm font-medium text-slate-500">{unit}</span>
+                                    </div>
                                 </label>
-
-                                <div className="p-4 rounded-lg border border-slate-200 bg-slate-50">
-                                    <label className="flex flex-col gap-2">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="material-symbols-outlined text-amber-500 text-[20px]">notification_important</span>
-                                            <span className="text-sm font-bold text-slate-900">Alerta de Stock Bajo</span>
-                                        </div>
-                                        <p className="text-xs text-slate-500 mb-2">Notificar cuando el inventario sea menor a:</p>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                value={minStock}
-                                                onChange={(e) => setMinStock(e.target.value)}
-                                                className="w-full rounded-lg border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-10 px-3 text-center font-bold"
-                                                type="number"
-                                                min="0"
-                                            />
-                                            <span className="text-sm font-medium text-slate-500">{unit}</span>
-                                        </div>
-                                    </label>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }

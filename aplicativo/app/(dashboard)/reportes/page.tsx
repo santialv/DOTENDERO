@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { SalesComparisonChart } from '@/components/charts/sales-comparison-chart';
 import { TopProductsChart } from '@/components/charts/top-products-chart';
 import { DownloadReports } from '@/components/reports/download-reports';
+import { IncomeStatement } from '@/components/reports/IncomeStatement';
 
 export default function ReportesPage() {
     const [loading, setLoading] = useState(true);
@@ -96,49 +97,19 @@ export default function ReportesPage() {
 
     return (
         <div className="p-6 space-y-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-bold text-slate-900">Reportes y Analítica</h1>
-                <p className="text-slate-500">Visualiza el rendimiento de tu negocio con gráficas interactivas.</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-2xl font-bold text-slate-900">Reportes y Analítica</h1>
+                    <p className="text-slate-500">Visualiza el rendimiento de tu negocio con gráficas interactivas.</p>
+                </div>
+                <div className="shrink-0">
+                    <DownloadReports />
+                </div>
             </div>
 
             {/* KPI Cards Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                    <p className="text-sm text-slate-500">Ventas Totales (Mes)</p>
-                    {loading ? <div className="h-8 w-32 bg-slate-100 animate-pulse rounded mt-1"></div> : (
-                        <>
-                            <p className="text-2xl font-bold text-slate-900">${stats.revenue.toLocaleString()}</p>
-                            <span className={`text-xs font-medium flex items-center gap-1 ${stats.revenueGrowth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                <span className="material-symbols-outlined text-[14px]">{stats.revenueGrowth >= 0 ? 'trending_up' : 'trending_down'}</span>
-                                {stats.revenueGrowth.toFixed(1)}% vs mes anterior
-                            </span>
-                        </>
-                    )}
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                    <p className="text-sm text-slate-500">Beneficio Estimado (35%)</p>
-                    {loading ? <div className="h-8 w-32 bg-slate-100 animate-pulse rounded mt-1"></div> : (
-                        <>
-                            <p className="text-2xl font-bold text-slate-900">${stats.profit.toLocaleString()}</p>
-                            <span className={`text-xs font-medium flex items-center gap-1 ${stats.profitGrowth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                <span className="material-symbols-outlined text-[14px]">{stats.profitGrowth >= 0 ? 'trending_up' : 'trending_down'}</span>
-                                {stats.profitGrowth.toFixed(1)}% vs mes anterior
-                            </span>
-                        </>
-                    )}
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                    <p className="text-sm text-slate-500">Ticket Promedio</p>
-                    {loading ? <div className="h-8 w-32 bg-slate-100 animate-pulse rounded mt-1"></div> : (
-                        <>
-                            <p className="text-2xl font-bold text-slate-900">${stats.ticket.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                            <span className={`text-xs font-medium flex items-center gap-1 ${stats.ticketGrowth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                <span className="material-symbols-outlined text-[14px]">{stats.ticketGrowth >= 0 ? 'trending_up' : 'trending_down'}</span>
-                                {stats.ticketGrowth.toFixed(1)}% vs mes anterior
-                            </span>
-                        </>
-                    )}
-                </div>
+                {/* ... existing KPIs ... */}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -146,7 +117,9 @@ export default function ReportesPage() {
                 <TopProductsChart />
             </div>
 
-            <DownloadReports />
+            {/* Income Statement (Full Width) */}
+            <IncomeStatement />
         </div>
     );
 }
+

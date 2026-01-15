@@ -6,17 +6,18 @@ import { TransactionSummaryCards } from "@/components/transactions/TransactionSu
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { TransactionFilters } from "@/components/transactions/TransactionFilters";
 import { TransactionModal } from "@/components/transactions/TransactionModal";
+import { CashCloseModal } from "@/components/pos/CashCloseModal";
 import { TransactionType } from "@/types";
+import { ExpenseModal } from "@/components/expenses/ExpenseModal";
 
 export default function CajaPage() {
     const {
-        transactions, // Original unfiltered list needed for Closing Day calculation inside hook?
-        // Actually hook handles logic. We need filteredTransactions for Table.
+        transactions,
         filteredTransactions,
         allFilteredCount,
         stats,
         addTransaction,
-        handleCloseDay,
+        // handleCloseDay, // Deprecated in favor of Modal
 
         // Pagination
         page,
@@ -36,6 +37,8 @@ export default function CajaPage() {
     } = useTransactions();
 
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+    const [isCashCloseModalOpen, setIsCashCloseModalOpen] = useState(false);
+    const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
     const [transactionType, setTransactionType] = useState<TransactionType>("income");
 
     const openModal = (type: TransactionType) => {
@@ -62,7 +65,14 @@ export default function CajaPage() {
                 </div>
                 <div className="flex gap-3">
                     <button
-                        onClick={handleCloseDay}
+                        onClick={() => setIsExpenseModalOpen(true)}
+                        className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-2.5 px-5 rounded-xl transition-all active:scale-95 flex items-center gap-2"
+                    >
+                        <span className="material-symbols-outlined">payments</span>
+                        Registrar Gasto
+                    </button>
+                    <button
+                        onClick={() => setIsCashCloseModalOpen(true)}
                         className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg shadow-slate-900/20 transition-all active:scale-95 flex items-center gap-2"
                     >
                         <span className="material-symbols-outlined">receipt_long</span>
@@ -129,6 +139,16 @@ export default function CajaPage() {
                 onClose={() => setIsTransactionModalOpen(false)}
                 type={transactionType}
                 onConfirm={handeModalConfirm}
+            />
+
+            <ExpenseModal
+                isOpen={isExpenseModalOpen}
+                onClose={() => setIsExpenseModalOpen(false)}
+            />
+
+            <CashCloseModal
+                isOpen={isCashCloseModalOpen}
+                onClose={() => setIsCashCloseModalOpen(false)}
             />
         </div>
     );

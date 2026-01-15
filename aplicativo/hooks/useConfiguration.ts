@@ -62,7 +62,9 @@ export function useConfiguration() {
                     phone: org.phone || "",
                     email: org.email || "",
                     logoUrl: org.logo_url || "",
-                    rutUrl: org.rut_url || ""
+                    rutUrl: org.rut_url || "",
+                    plan: org.plan || "free",
+                    subscription_status: org.subscription_status || "active"
                 };
             }
 
