@@ -81,7 +81,7 @@ export default function VentaPage() {
 
   return (
     <>
-      <header className="h-20 shrink-0 px-4 md:px-6 py-4 flex items-center justify-between gap-4 md:gap-6 bg-white z-10 border-b border-transparent">
+      <header className="h-auto min-h-[5rem] shrink-0 px-4 md:px-6 py-4 pt-8 md:pt-4 flex items-center justify-between gap-4 md:gap-6 bg-white z-10 border-b border-transparent">
         <div className="flex-1 max-w-3xl flex items-center gap-4">
           <div className="relative group flex-1">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -89,7 +89,7 @@ export default function VentaPage() {
             </div>
             <input
               ref={searchInputRef}
-              className="block w-full pl-12 pr-12 md:pr-28 py-3 bg-white border-none rounded-2xl text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-primary/50 shadow-sm text-base transition-all h-12 box-border"
+              className="block w-full pl-12 pr-12 md:pr-28 py-3 bg-white border-none rounded-2xl text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-primary/50 shadow-sm text-base transition-all h-12 box-border shadow-slate-200/50 border-slate-100 border"
               placeholder="Buscar..."
               type="text"
               value={searchQuery}
@@ -240,8 +240,8 @@ export default function VentaPage() {
 
       {/* MOBILE: Cart Drawer (Overlay) */}
       {isMobileCartOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex flex-col bg-white animate-in slide-in-from-bottom duration-300">
-          <div className="h-16 px-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+        <div className="fixed inset-0 z-[100] md:hidden flex flex-col bg-white animate-in slide-in-from-bottom duration-300">
+          <div className="h-16 px-4 pt-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
             <h2 className="text-xl font-black text-slate-900">Tu Pedido</h2>
             <button
               onClick={() => setIsMobileCartOpen(false)}
@@ -253,7 +253,7 @@ export default function VentaPage() {
 
           {/* Reuse CartSidebar Logic but adapted style manually or reuse component if flexible */}
           {/* For speed, reusing logic manually inside drawer since CartSidebar is styled as aside */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 pb-32">
             {cartItems.map(item => (
               <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex gap-4">
                 <div className="flex-1">
@@ -279,7 +279,7 @@ export default function VentaPage() {
             ))}
           </div>
 
-          <div className="p-4 bg-white border-t border-slate-200 pb-8">
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 pb-8 rounded-t-2xl shadow-lg">
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg font-bold text-slate-500">Total a Pagar</span>
               <span className="text-3xl font-black text-slate-900">${total.toLocaleString()}</span>
