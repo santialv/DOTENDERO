@@ -14,9 +14,12 @@ export async function getWompiSignature(amount: number) {
 }
 
 export async function verifyAndActivateSubscription(transactionId: string, orgId: string) {
+    console.log(`[SUBSCRIPTION] Verifying transaction ${transactionId} for Org ${orgId}`);
     try {
         // 1. Verificar transacción real con Wompi
         const transaction = await wompiService.verifyTransaction(transactionId);
+
+        console.log(`[SUBSCRIPTION] Wompi Status: ${transaction?.status}`);
 
         if (transaction?.status !== 'APPROVED') {
             return {
@@ -27,16 +30,15 @@ export async function verifyAndActivateSubscription(transactionId: string, orgId
         }
 
         // 2. Determinar Plan basado en el monto
-        // TODO: En el futuro, el ID del plan debería venir en los metadatos de la transacción (extra1)
-        // Por ahora, usamos lógica simple basada en los precios definidos en SQL
-        const amount = transaction.amount_in_cents / 100; // Wompi usa centavos
+        const amount = transaction.amount_in_cents / 100;
         let planCode = 'basic_monthly';
 
         if (amount >= 590000) planCode = 'pro_annual'; // ~599k
         else if (amount >= 50000) planCode = 'pro_monthly'; // ~59k
 
+        console.log(`[SUBSCRIPTION] Activating Plan: ${planCode} for Amount ${amount}`);
+
         // 3. Activar Plan usando la Función RPC de Base de Datos
-        // Esta función calcula fechas, guarda historial y actualiza estado, todo en uno.
         const { data, error } = await supabase.rpc('activate_subscription_plan', {
             p_org_id: orgId,
             p_plan_code: planCode,
@@ -45,19 +47,25 @@ export async function verifyAndActivateSubscription(transactionId: string, orgId
         });
 
         if (error) {
-            console.error("RPC Error:", error);
-            throw new Error(`Error en base de datos: ${error.message}`);
+            console.error("[SUBSCRIPTION] RPC Error:", error);
+            throw new Error(`Database Error: ${error.message} (Hint: Did you run the SQL migration?)`);
         }
 
         return {
             success: true,
             message: "¡Plan activado exitosamente!",
             plan: planCode,
+            status: 'APPROVED',
             data
         };
 
     } catch (error: any) {
-        console.error("Error activating subscription:", error);
-        return { success: false, error: error.message || "Error del sistema al activar suscripción." };
+        console.error("[SUBSCRIPTION] System Error:", error);
+        return {
+            success: false,
+            status: 'ERROR',
+            message: error.message || "Error del sistema al activar suscripción.",
+            error: error.message
+        };
     }
 }
