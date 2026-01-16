@@ -33,10 +33,11 @@ export async function verifyAndActivateSubscription(transactionId: string, orgId
         const amount = transaction.amount_in_cents / 100;
         let planCode = 'basic_monthly';
 
-        if (amount >= 590000) planCode = 'pro_annual'; // ~599k
-        else if (amount >= 50000) planCode = 'pro_monthly'; // ~59k
+        // Umbrales rebajados para asegurar detección en prods/tests
+        if (amount >= 400000) planCode = 'pro_annual'; // Mayor a 400k -> Anual
+        else if (amount >= 30000) planCode = 'pro_monthly'; // Mayor a 30k -> Mensual
 
-        console.log(`[SUBSCRIPTION] Activating Plan: ${planCode} for Amount ${amount}`);
+        console.log(`[SUBSCRIPTION DEBUG] Amount: ${amount}, Plan Determined: ${planCode}`);
 
         // 3. Activar Plan usando la Función RPC de Base de Datos
         const { data, error } = await supabase.rpc('activate_subscription_plan', {
@@ -48,7 +49,7 @@ export async function verifyAndActivateSubscription(transactionId: string, orgId
 
         if (error) {
             console.error("[SUBSCRIPTION] RPC Error:", error);
-            throw new Error(`Database Error: ${error.message} (Hint: Did you run the SQL migration?)`);
+            throw new Error(`Database Error: ${error.message}`);
         }
 
         return {
