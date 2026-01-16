@@ -39,7 +39,8 @@ export const SubscriptionCard = () => {
                         if (result.status === 'PENDING') {
                             toast("El pago está en proceso de validación por tu banco.", "warning");
                         } else {
-                            toast(`El pago no fue aprobado. Estado: ${result.status}`, "error");
+                            // Show detailed error message from server
+                            toast(result.message || `Error: ${result.status}`, "error");
                         }
                     }
                 } catch (e) {
