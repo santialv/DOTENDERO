@@ -15,6 +15,13 @@ import { Transaction } from "@/types";
 export default function VentaPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Helper for Haptic Feedback
+  const triggerHaptic = () => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(10); // 10ms vibration
+    }
+  };
+
   const {
     // State
     filteredProducts,
@@ -33,7 +40,7 @@ export default function VentaPage() {
     setSelectedCustomer,
 
     // Actions
-    addToCart,
+    addToCart: originalAddToCart,
     removeFromCart,
     deleteFromCart,
     clearCart,
@@ -41,6 +48,12 @@ export default function VentaPage() {
     resumeOrder,
     checkout
   } = usePOS();
+
+  // Wrapped addToCart with haptic
+  const addToCart = (productId: string | number) => {
+    triggerHaptic();
+    originalAddToCart(productId);
+  };
 
   // Local UI State
   const [isAllCategoriesOpen, setIsAllCategoriesOpen] = useState(false);
@@ -59,7 +72,6 @@ export default function VentaPage() {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [isPaymentModalOpen, lastTransaction, isAllCategoriesOpen, isMobileCartOpen]);
-
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -173,7 +185,10 @@ export default function VentaPage() {
                   label="Todos"
                   icon="apps"
                   active={activeCategory === "Todos"}
-                  onClick={() => setActiveCategory("Todos")}
+                  onClick={() => {
+                    triggerHaptic();
+                    setActiveCategory("Todos");
+                  }}
                 />
               </div>
               {PRODUCT_CATEGORIES.slice(0, 7).map(cat => (
@@ -183,7 +198,10 @@ export default function VentaPage() {
                     icon={cat.icon}
                     color={cat.color}
                     active={activeCategory === cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
+                    onClick={() => {
+                      triggerHaptic();
+                      setActiveCategory(cat.id);
+                    }}
                   />
                 </div>
               ))}
@@ -218,7 +236,10 @@ export default function VentaPage() {
       {cartItems.length > 0 && !isMobileCartOpen && (
         <div className="md:hidden fixed bottom-20 left-4 right-4 z-40 animate-in slide-in-from-bottom duration-300">
           <button
-            onClick={() => setIsMobileCartOpen(true)}
+            onClick={() => {
+              triggerHaptic();
+              setIsMobileCartOpen(true);
+            }}
             className="w-full bg-slate-900 text-white p-4 rounded-2xl shadow-2xl flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
@@ -252,7 +273,6 @@ export default function VentaPage() {
           </div>
 
           {/* Reuse CartSidebar Logic but adapted style manually or reuse component if flexible */}
-          {/* For speed, reusing logic manually inside drawer since CartSidebar is styled as aside */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 pb-32">
             {cartItems.map(item => (
               <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex gap-4">
@@ -285,7 +305,11 @@ export default function VentaPage() {
               <span className="text-3xl font-black text-slate-900">${total.toLocaleString()}</span>
             </div>
             <button
-              onClick={() => { setIsMobileCartOpen(false); setIsPaymentModalOpen(true); }}
+              onClick={() => {
+                triggerHaptic();
+                setIsMobileCartOpen(false);
+                setIsPaymentModalOpen(true);
+              }}
               className="w-full bg-[#13ec80] text-slate-900 font-black text-xl py-4 rounded-xl shadow-lg shadow-green-500/30 active:scale-95 transition-transform flex items-center justify-center gap-2"
             >
               COBRAR AHORA
@@ -296,7 +320,7 @@ export default function VentaPage() {
       )}
 
 
-      {/* Categories Drawer - Same as before */}
+      {/* Categories Drawer */}
       {isAllCategoriesOpen && (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
           <div className="w-full md:w-[400px] h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
@@ -309,7 +333,11 @@ export default function VentaPage() {
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => { setActiveCategory("Todos"); setIsAllCategoriesOpen(false); }}
+                  onClick={() => {
+                    triggerHaptic();
+                    setActiveCategory("Todos");
+                    setIsAllCategoriesOpen(false);
+                  }}
                   className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${activeCategory === "Todos" ? 'bg-primary border-primary' : 'bg-slate-50 border-slate-100'}`}
                 >
                   <span className="material-symbols-outlined text-[24px]">apps</span>
@@ -318,7 +346,11 @@ export default function VentaPage() {
                 {PRODUCT_CATEGORIES.map(cat => (
                   <button
                     key={cat.id}
-                    onClick={() => { setActiveCategory(cat.id); setIsAllCategoriesOpen(false); }}
+                    onClick={() => {
+                      triggerHaptic();
+                      setActiveCategory(cat.id);
+                      setIsAllCategoriesOpen(false);
+                    }}
                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${activeCategory === cat.id ? 'bg-primary/20 border-primary' : 'bg-white border-slate-200 hover:border-primary/50'}`}
                   >
                     <span className={`material-symbols-outlined text-[24px] text-${cat.color}-500`}>{cat.icon}</span>
@@ -368,6 +400,7 @@ export default function VentaPage() {
           setIsCustomerModalOpen(true);
         }}
         onFinalize={async (payments, amountTendered, change) => {
+          triggerHaptic();
           const tx = await checkout(payments, amountTendered, change);
           if (tx) {
             setLastTransaction(tx as any);

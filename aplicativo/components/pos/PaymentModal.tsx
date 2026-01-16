@@ -21,6 +21,13 @@ export function PaymentModal({ total, isOpen, onClose, onFinalize, currentCustom
 
     if (!isOpen) return null;
 
+    // Haptic Helper
+    const triggerHaptic = () => {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(10);
+        }
+    };
+
     const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
     const remaining = Math.max(0, total - totalPaid);
 
@@ -46,6 +53,7 @@ export function PaymentModal({ total, isOpen, onClose, onFinalize, currentCustom
 
     // Helper functions for numeric keypad
     const handleKeypadPress = (val: string) => {
+        triggerHaptic();
         if (val === 'backspace') {
             setAmountTendered(prev => prev.slice(0, -1));
         } else if (val === 'clear') {
@@ -115,6 +123,7 @@ export function PaymentModal({ total, isOpen, onClose, onFinalize, currentCustom
                                     <button
                                         key={m}
                                         onClick={() => {
+                                            triggerHaptic();
                                             if (m === 'Fiado') {
                                                 if (!currentCustomer || currentCustomer.id === 'default') {
                                                     toast("Asigna un cliente para fiar.", "error");
@@ -164,14 +173,14 @@ export function PaymentModal({ total, isOpen, onClose, onFinalize, currentCustom
                                 <button
                                     key={num}
                                     onClick={() => handleKeypadPress(num)}
-                                    className="h-10 md:h-14 bg-white border border-slate-100 rounded-xl text-xl font-bold text-slate-900 shadow-sm active:bg-slate-50"
+                                    className="h-10 md:h-14 bg-white border border-slate-100 rounded-xl text-xl font-bold text-slate-900 shadow-sm active:bg-slate-50 active:scale-95 transition-transform"
                                 >
                                     {num}
                                 </button>
                             ))}
-                            <button onClick={() => handleKeypadPress("000")} className="h-10 md:h-14 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-600">000</button>
-                            <button onClick={() => handleKeypadPress("0")} className="h-10 md:h-14 bg-white border border-slate-100 rounded-xl text-xl font-bold text-slate-900 shadow-sm">0</button>
-                            <button onClick={() => handleKeypadPress("backspace")} className="h-10 md:h-14 bg-slate-50 border border-slate-100 rounded-xl text-slate-600 flex items-center justify-center">
+                            <button onClick={() => handleKeypadPress("000")} className="h-10 md:h-14 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-600 active:bg-slate-200">000</button>
+                            <button onClick={() => handleKeypadPress("0")} className="h-10 md:h-14 bg-white border border-slate-100 rounded-xl text-xl font-bold text-slate-900 shadow-sm active:bg-slate-50 active:scale-95 transition-transform">0</button>
+                            <button onClick={() => handleKeypadPress("backspace")} className="h-10 md:h-14 bg-slate-50 border border-slate-100 rounded-xl text-slate-600 flex items-center justify-center active:bg-red-50 active:text-red-500 transition-colors">
                                 <span className="material-symbols-outlined">backspace</span>
                             </button>
                         </div>
