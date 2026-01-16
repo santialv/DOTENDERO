@@ -11,9 +11,9 @@ interface ProductTableProps {
 
 export function ProductTable({ products, onDelete, calculateMargin }: ProductTableProps) {
     return (
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="w-full">
             {/* Desktop Table View */}
-            <div className="hidden md:block overflow-auto custom-scrollbar flex-1">
+            <div className="hidden md:block w-full">
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
                         <tr>
@@ -119,8 +119,8 @@ export function ProductTable({ products, onDelete, calculateMargin }: ProductTab
                 </table>
             </div>
 
-            {/* Mobile Card View */}
-            <div className="md:hidden flex-1 overflow-auto p-4 space-y-3 pb-24">
+            {/* Mobile Card View - Removes internal scrolling, relies on parent */}
+            <div className="md:hidden flex flex-col gap-3 p-4">
                 {products.length === 0 ? (
                     <div className="text-center text-slate-400 py-10">
                         Sin productos encontrados
@@ -143,20 +143,21 @@ export function ProductTable({ products, onDelete, calculateMargin }: ProductTab
 
                             <div className="flex items-center justify-between pt-2 border-t border-slate-50">
                                 <div className="flex items-center gap-2">
-                                    <span className={`text-xs font-bold ${product.stock <= product.minStock ? 'text-red-600' : 'text-green-600'}`}>
+                                    <div className={`flex items-center gap-1 text-xs font-bold ${product.stock <= product.minStock ? 'text-red-600' : 'text-green-600'}`}>
+                                        <span className="material-symbols-outlined text-[16px]">inventory_2</span>
                                         {product.stock} {product.unit}
-                                    </span>
+                                    </div>
                                     {product.stock <= product.minStock && (
                                         <span className="text-[10px] text-red-500 font-medium bg-red-50 px-1 rounded">Bajo Stock</span>
                                     )}
                                 </div>
-                                <div className="flex gap-1">
-                                    <Link href={`/inventario/editar/${product.id}`} className="p-2 bg-slate-50 text-slate-600 rounded-lg">
+                                <div className="flex gap-2">
+                                    <Link href={`/inventario/editar/${product.id}`} className="p-2 bg-slate-50 text-slate-600 rounded-lg active:scale-95 transition-transform">
                                         <span className="material-symbols-outlined text-[20px]">edit</span>
                                     </Link>
                                     <button
                                         onClick={() => { if (confirm("¿Eliminar?")) onDelete(product.id); }}
-                                        className="p-2 bg-red-50 text-red-500 rounded-lg"
+                                        className="p-2 bg-red-50 text-red-500 rounded-lg active:scale-95 transition-transform"
                                     >
                                         <span className="material-symbols-outlined text-[20px]">delete</span>
                                     </button>

@@ -15,9 +15,14 @@ export function MobileNav() {
 
     return (
         <div className="fixed bottom-0 inset-x-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 flex items-center justify-around px-2 md:hidden shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] pb-safe-area">
+            {/* Left Side */}
+            <NavItem href="/venta" icon="point_of_sale" label="Venta" active={isActive('/venta')} />
             <NavItem href="/reportes" icon="bar_chart" label="Informes" active={isActive('/reportes')} />
-            <NavItem href="/venta" icon="point_of_sale" label="Venta" active={isActive('/venta')} centralAction />
-            <NavItem href="/caja" icon="payments" label="Caja" active={isActive('/caja')} />
+
+            {/* Center Action (Now CAJA) */}
+            <NavItem href="/caja" icon="payments" label="Caja" active={isActive('/caja')} centralAction />
+
+            {/* Right Side */}
             <NavItem href="/inventario" icon="inventory_2" label="Stock" active={isActive('/inventario')} />
             <NavItem href="/configuracion" icon="settings" label="Config" active={isActive('/configuracion')} />
         </div>
