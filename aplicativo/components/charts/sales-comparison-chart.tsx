@@ -110,7 +110,7 @@ export function SalesComparisonChart() {
                                 padding: '12px'
                             }}
                             itemStyle={{ fontSize: '13px', fontWeight: 'bold' }}
-                            formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                            formatter={(value: any) => [`$${(Number(value) || 0).toLocaleString()}`, ""]}
                             cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
                         />
                         <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '13px', fontWeight: 'bold' }} />
