@@ -21,86 +21,74 @@ export default function ReportesPage() {
     useEffect(() => {
         async function loadData() {
             setLoading(true);
-            const now = new Date();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-            const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-            const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0).toISOString();
+            try {
+                // 0. Get Org Context
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+                const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
+                const orgId = profile?.organization_id;
 
-            // 0. Get Org Context
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('organization_id')
-                .eq('id', session.user.id)
-                .single();
-            const orgId = profile?.organization_id;
+                if (!orgId) { setLoading(false); return; }
 
-            if (!orgId) {
+                // 1. Fetch Optimized KPIs from RPC
+                const { data, error } = await supabase.rpc('get_dashboard_kpis', {
+                    p_org_id: orgId
+                });
+
+                if (error) throw error;
+
+                if (data) {
+                    setStats({
+                        revenue: data.revenue || 0,
+                        revenueGrowth: data.revenueGrowth || 0,
+                        profit: data.profit || 0,
+                        profitGrowth: data.profitGrowth || 0,
+                        ticket: data.ticket || 0,
+                        ticketGrowth: data.ticketGrowth || 0
+                    });
+                }
+            } catch (error) {
+                console.error("Error loading dashboard stats:", error);
+            } finally {
                 setLoading(false);
-                return;
             }
-
-            // 1. Fetch Current Month Invoices
-            const { data: currentInvoices } = await supabase
-                .from('invoices')
-                .select('*')
-                .eq('organization_id', orgId)
-                .gte('date', startOfMonth)
-                .neq('status', 'cancelled');
-
-            // 2. Fetch Last Month Invoices
-            const { data: lastMonthInvoices } = await supabase
-                .from('invoices')
-                .select('*')
-                .eq('organization_id', orgId)
-                .gte('date', startOfLastMonth)
-                .lte('date', endOfLastMonth)
-                .neq('status', 'cancelled');
-
-            // Calculations
-            const currentTotal = currentInvoices?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
-            const lastTotal = lastMonthInvoices?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
-            const revenueGrowth = lastTotal === 0 ? 100 : ((currentTotal - lastTotal) / lastTotal) * 100;
-
-            const currentCount = currentInvoices?.length || 0;
-            const lastCount = lastMonthInvoices?.length || 0;
-
-            const currentTicket = currentCount > 0 ? currentTotal / currentCount : 0;
-            const lastTicket = lastCount > 0 ? lastTotal / lastCount : 0;
-            const ticketGrowth = lastTicket === 0 ? 0 : ((currentTicket - lastTicket) / lastTicket) * 100;
-
-            // Simplified Profit (Assuming 30% margin if no cost data available yet, or fetch movements)
-            // For speed, let's just use Revenue * 0.3 estimate for now, or fetch movements if possible.
-            // Let's check movements for real cost?
-            // Fetch movements for these invoices is expensive if many.
-            // Let's use a placeholder logic: Real Revenue - (Real Revenue * 0.7 approx cost)
-            // Or better: just leave Profit as "N/A" or "Calculando..." if we can't be precise?
-            // User wants "Real Data". I'll use 0 for now if I can't look it up easily, or try to sum purchase prices?
-            // Let's do a simple count for now.
-            const estimatedProfit = currentTotal * 0.35; // Mock margin 35%
-            const lastEstimatedProfit = lastTotal * 0.35;
-            const profitGrowth = lastEstimatedProfit === 0 ? 100 : ((estimatedProfit - lastEstimatedProfit) / lastEstimatedProfit) * 100;
-
-            setStats({
-                revenue: currentTotal,
-                revenueGrowth,
-                profit: estimatedProfit,
-                profitGrowth,
-                ticket: currentTicket,
-                ticketGrowth
-            });
-            setLoading(false);
         }
         loadData();
     }, []);
 
+    // Helper for cards
+    const Card = ({ title, value, prefix = "$", diff, loading }: any) => {
+        const isPositive = diff >= 0;
+        return (
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wide">{title}</h3>
+                    {loading ? (
+                        <div className="h-8 w-24 bg-slate-100 rounded animate-pulse mt-1"></div>
+                    ) : (
+                        <p className="text-3xl font-black text-slate-900 mt-1">
+                            {prefix}{value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </p>
+                    )}
+                </div>
+                {!loading && (
+                    <div className={`flex items-center gap-1 text-sm font-bold mt-4 ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                        <span className="material-symbols-outlined text-[18px]">
+                            {isPositive ? 'trending_up' : 'trending_down'}
+                        </span>
+                        <span>{Math.abs(diff).toFixed(1)}% vs mes anterior</span>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 bg-slate-50 min-h-full font-display">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex flex-col gap-2">
-                    <h1 className="text-2xl font-bold text-slate-900">Reportes y Analítica</h1>
-                    <p className="text-slate-500">Visualiza el rendimiento de tu negocio con gráficas interactivas.</p>
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Reportes y Analítica</h1>
+                    <p className="text-slate-500 font-medium">Visualiza el rendimiento de tu negocio en tiempo real.</p>
                 </div>
                 <div className="shrink-0">
                     <DownloadReports />
@@ -109,7 +97,24 @@ export default function ReportesPage() {
 
             {/* KPI Cards Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* ... existing KPIs ... */}
+                <Card
+                    title="Ventas del Mes"
+                    value={stats.revenue}
+                    diff={stats.revenueGrowth}
+                    loading={loading}
+                />
+                <Card
+                    title="Utilidad Real"
+                    value={stats.profit}
+                    diff={stats.profitGrowth}
+                    loading={loading}
+                />
+                <Card
+                    title="Ticket Promedio"
+                    value={stats.ticket}
+                    diff={stats.ticketGrowth}
+                    loading={loading}
+                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -122,4 +127,3 @@ export default function ReportesPage() {
         </div>
     );
 }
-

@@ -8,133 +8,130 @@ export function SalesComparisonChart() {
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const lastYear = currentYear - 1;
+
     useEffect(() => {
         async function loadHistory() {
             setLoading(true);
             try {
-                const now = new Date();
-                const currentYear = now.getFullYear();
-                const lastYear = currentYear - 1;
-
-                const startDate = new Date(lastYear, 0, 1).toISOString();
-                const endDate = new Date(currentYear, 11, 31).toISOString();
-
                 // Get Org Context
                 const { data: { session } } = await supabase.auth.getSession();
-                if (!session) { setLoading(false); return; }
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('organization_id')
-                    .eq('id', session.user.id)
-                    .single();
+                if (!session) return;
+                const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
                 const orgId = profile?.organization_id;
-                if (!orgId) { setLoading(false); return; }
+                if (!orgId) return;
 
-                // Fetch 2 years of data
-                const { data: invoices } = await supabase
-                    .from('invoices')
-                    .select('total, date, status')
-                    .eq('organization_id', orgId)
-                    .gte('date', startDate)
-                    .lte('date', endDate)
-                    .neq('status', 'cancelled');
+                // Call Optimized RPC
+                const { data: stats, error } = await supabase.rpc('get_monthly_sales_stats', {
+                    p_org_id: orgId,
+                    p_start_year: lastYear,
+                    p_end_year: currentYear
+                });
 
-                // Initialize months structure
+                if (error) throw error;
+
+                // Transform Flat Data to Chart Format (Group by Month)
                 const months = [
                     'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
                     'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
                 ];
 
-                const stats = months.map(m => ({
-                    name: m,
-                    [`venta${lastYear}`]: 0,
-                    [`venta${currentYear}`]: 0
-                }));
+                const chartData = months.map((m, index) => {
+                    const monthIndex = index + 1; // 1-12
 
-                if (invoices) {
-                    invoices.forEach(inv => {
-                        const d = new Date(inv.date);
-                        const month = d.getMonth();
-                        const year = d.getFullYear();
+                    // Find values
+                    const valCurrent = stats?.find((s: any) => s.year === currentYear && s.month === monthIndex)?.total || 0;
+                    const valLast = stats?.find((s: any) => s.year === lastYear && s.month === monthIndex)?.total || 0;
 
-                        if (year === lastYear) {
-                            stats[month][`venta${lastYear}`] += (inv.total || 0);
-                        } else if (year === currentYear) {
-                            stats[month][`venta${currentYear}`] += (inv.total || 0);
-                        }
-                    });
-                }
+                    return {
+                        name: m,
+                        [`venta${lastYear}`]: valLast,
+                        [`venta${currentYear}`]: valCurrent
+                    };
+                });
 
-                setData(stats);
+                setData(chartData);
+
             } catch (e) {
-                console.error(e);
+                console.error("Chart Error:", e);
             } finally {
                 setLoading(false);
             }
         }
         loadHistory();
-    }, []);
-
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const lastYear = currentYear - 1;
+    }, [currentYear, lastYear]);
 
     return (
-        <div className="w-full h-[450px] bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <div className="mb-4">
-                <h3 className="text-lg font-semibold text-slate-800">Comparativo de Ventas (YoY)</h3>
-                <p className="text-sm text-slate-500">Comparación mensual {lastYear} vs {currentYear}</p>
+        <div className="w-full h-[450px] bg-white p-6 rounded-2xl shadow-sm border border-slate-100 font-display">
+            <div className="mb-6 flex justify-between items-end">
+                <div>
+                    <h3 className="text-lg font-black text-slate-900">Comparativo de Ventas</h3>
+                    <p className="text-sm text-slate-500 font-medium">Desempeño mensual: {lastYear} vs {currentYear}</p>
+                </div>
+                {loading && <span className="text-xs text-slate-400 animate-pulse">Analizando datos...</span>}
             </div>
+
             {loading ? (
-                <div className="h-[350px] w-full flex items-center justify-center text-slate-400">Cargando...</div>
+                // Skeleton
+                <div className="h-[350px] w-full bg-slate-50 rounded-xl animate-pulse"></div>
             ) : (
                 <ResponsiveContainer width="100%" height={350}>
                     <LineChart
                         data={data}
-                        margin={{
-                            top: 5,
-                            right: 30,
-                            left: 20,
-                            bottom: 40,
-                        }}
+                        margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
                     >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis
                             dataKey="name"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#64748b', fontSize: 12 }}
+                            tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
                             dy={10}
                         />
                         <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#64748b', fontSize: 12 }}
-                            tickFormatter={(value) => `$${value}`} // Shorten if numbers are huge?
+                            tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
+                            tickFormatter={(value) => {
+                                if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                                if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
+                                return `$${value}`;
+                            }}
+                            width={45}
                         />
                         <Tooltip
-                            contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            itemStyle={{ fontSize: '12px' }}
-                            formatter={(value: any) => [`$${(value || 0).toLocaleString()}`, "Ventas"]}
+                            contentStyle={{
+                                backgroundColor: '#fff',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                                padding: '12px'
+                            }}
+                            itemStyle={{ fontSize: '13px', fontWeight: 'bold' }}
+                            formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                            cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
                         />
-                        <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                        <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '13px', fontWeight: 'bold' }} />
+
                         <Line
                             type="monotone"
                             dataKey={`venta${lastYear}`}
-                            name={`Ventas ${lastYear}`}
+                            name={`${lastYear}`}
                             stroke="#94a3b8"
                             strokeWidth={2}
                             dot={false}
                             strokeDasharray="5 5"
-                            activeDot={{ r: 8 }}
+                            activeDot={{ r: 6, fill: '#94a3b8', strokeWidth: 0 }}
                         />
                         <Line
                             type="monotone"
                             dataKey={`venta${currentYear}`}
-                            name={`Ventas ${currentYear}`}
-                            stroke="#10b981"
-                            strokeWidth={2}
-                            activeDot={{ r: 8 }}
+                            name={`${currentYear} (Actual)`}
+                            stroke="#0f172a"
+                            strokeWidth={3}
+                            activeDot={{ r: 8, fill: '#0f172a', stroke: '#fff', strokeWidth: 2 }}
                         />
                     </LineChart>
                 </ResponsiveContainer>

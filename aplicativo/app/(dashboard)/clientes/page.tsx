@@ -1,27 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
+import { useCustomers, Customer } from "@/hooks/useCustomers";
 import { useToast } from "@/components/ui/toast";
-
-interface Customer {
-    id: string;
-    full_name: string;
-    document_number: string;
-    phone: string;
-    email: string;
-    address: string;
-    city: string;
-    current_debt: number;
-}
 
 export default function CustomersPage() {
     const { toast } = useToast();
-    const [customers, setCustomers] = useState<Customer[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState("");
+    const {
+        customers,
+        isLoading,
+        searchTerm,
+        setSearchTerm,
+        showDebtorsOnly,
+        setShowDebtorsOnly,
+        saveCustomer,
+        deleteCustomer,
+        processPayment,
+        page,
+        setPage, // We will manually handle page change using fetchPage logic wrapper if needed, or just let useEffect handle it
+        fetchPage,
+        totalPages,
+        totalCount
+    } = useCustomers();
 
-    // Modal State for New Customer / Edit / Payment
+    // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -36,42 +38,6 @@ export default function CustomersPage() {
         city: ""
     });
     const [paymentAmount, setPaymentAmount] = useState("");
-    const [showDebtorsOnly, setShowDebtorsOnly] = useState(false);
-
-    useEffect(() => {
-        loadCustomers();
-    }, []);
-
-    const loadCustomers = async () => {
-        setLoading(true);
-        // 0. Get Org Context
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { setLoading(false); return; }
-
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('organization_id')
-            .eq('id', session.user.id)
-            .single();
-
-        const orgId = profile?.organization_id;
-
-        if (!orgId) {
-            setLoading(false);
-            return;
-        }
-
-        const { data } = await supabase
-            .from('customers')
-            .select('*')
-            .eq('organization_id', orgId)
-            .order('full_name');
-
-        if (data) {
-            setCustomers(data);
-        }
-        setLoading(false);
-    };
 
     const handleCreate = () => {
         setSelectedCustomer(null);
@@ -105,112 +71,27 @@ export default function CustomersPage() {
         setIsPaymentModalOpen(true);
     };
 
-    const saveCustomer = async () => {
+    const handleSave = async () => {
         if (!formData.full_name) return toast("Nombre requerido", "error");
 
-        try {
-            // Get Org ID Securely
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) throw new Error("No active session");
-            const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
-            const orgId = profile?.organization_id;
+        const success = await saveCustomer({
+            id: selectedCustomer?.id,
+            ...formData
+        });
 
-            if (!orgId) throw new Error("No organization linked");
-
-            if (selectedCustomer) {
-                // Update
-                const { error } = await supabase
-                    .from('customers')
-                    .update(formData)
-                    .eq('id', selectedCustomer.id);
-                if (error) throw error;
-                toast("Cliente actualizado", "success");
-            } else {
-                // Create
-                const { error } = await supabase.from('customers').insert({
-                    organization_id: orgId,
-                    ...formData,
-                    current_debt: 0
-                });
-                if (error) throw error;
-                toast("Cliente creado", "success");
-            }
-
-            setIsModalOpen(false);
-            loadCustomers();
-        } catch (error: any) {
-            console.error(error);
-            toast("Error al guardar cliente", "error");
-        }
+        if (success) setIsModalOpen(false);
     };
 
-    const processPayment = async () => {
+    const handlePayment = async () => {
         if (!selectedCustomer || !paymentAmount) return;
         const amount = parseFloat(paymentAmount);
-        if (amount <= 0) return toast("Monto inválido", "error");
-        if (amount > selectedCustomer.current_debt) return toast("El abono no puede superar la deuda", "error");
-
-        try {
-            // Get Org ID Securely
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) throw new Error("No active session");
-            const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
-            const orgId = profile?.organization_id;
-
-            if (!orgId) throw new Error("No organization linked");
-
-            // 1. Update Debt
-            const newDebt = selectedCustomer.current_debt - amount;
-            const { error: debtError } = await supabase
-                .from('customers')
-                .update({ current_debt: newDebt })
-                .eq('id', selectedCustomer.id);
-
-            if (debtError) throw debtError;
-
-            // 2. Register Value in Expenses (as Income)
-            const { error: incomeError } = await supabase.from('expenses').insert({
-                organization_id: orgId,
-                description: `Abono Cliente: ${selectedCustomer.full_name}`,
-                amount: amount, // Positive for Income
-                type: 'income',
-                customer_id: selectedCustomer.id,
-                payment_method: 'Efectivo'
-            });
-
-            if (incomeError) console.error("Error creating income record", incomeError);
-
-            toast("Abono registrado exitosamente", "success");
-            setIsPaymentModalOpen(false);
-            loadCustomers();
-
-        } catch (error: any) {
-            console.error(error);
-            toast("Error al procesar pago", "error");
-        }
+        const success = await processPayment(selectedCustomer, amount);
+        if (success) setIsPaymentModalOpen(false);
     };
 
-    const deleteCustomer = async (id: string) => {
-        if (!confirm("¿Eliminar cliente?")) return;
-        const { error } = await supabase.from('customers').delete().eq('id', id);
-        if (error) {
-            toast("Error al eliminar", "error");
-        } else {
-            toast("Cliente eliminado", "success");
-            loadCustomers();
-        }
-    };
-
-    const filtered = customers.filter(c => {
-        const matchesSearch = c.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.document_number?.includes(searchTerm);
-
-        if (showDebtorsOnly) {
-            return matchesSearch && c.current_debt > 0;
-        }
-
-        return matchesSearch;
-    });
+    // Pagination Display Range
+    const startItem = totalCount === 0 ? 0 : page * 50 + 1;
+    const endItem = Math.min((page + 1) * 50, totalCount);
 
     return (
         <div className="flex flex-col h-full bg-slate-50 font-display">
@@ -271,13 +152,19 @@ export default function CustomersPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {filtered.length === 0 ? (
+                                {isLoading ? (
+                                    <tr>
+                                        <td colSpan={5} className="p-12 text-center text-slate-400">
+                                            Cargando clientes...
+                                        </td>
+                                    </tr>
+                                ) : customers.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="p-12 text-center text-slate-400">
                                             No se encontraron clientes.
                                         </td>
                                     </tr>
-                                ) : filtered.map(c => (
+                                ) : customers.map(c => (
                                     <tr key={c.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="p-4">
                                             <p className="font-bold text-slate-900">{c.full_name}</p>
@@ -320,6 +207,28 @@ export default function CustomersPage() {
                             </tbody>
                         </table>
                     </div>
+                    {/* Pagination Footer */}
+                    <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
+                        <span className="text-sm font-medium text-slate-500">
+                            Mostrando <span className="text-slate-900 font-bold">{startItem} - {endItem}</span> de <span className="text-slate-900 font-bold">{totalCount}</span> clientes
+                        </span>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => fetchPage(page - 1)}
+                                disabled={page === 0}
+                                className="px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                            >
+                                Anterior
+                            </button>
+                            <button
+                                onClick={() => fetchPage(page + 1)}
+                                disabled={page >= totalPages - 1}
+                                className="px-4 py-2 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-slate-900/10"
+                            >
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -350,7 +259,7 @@ export default function CustomersPage() {
                         </div>
                         <div className="flex justify-end gap-3 mt-6">
                             <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-lg">Cancelar</button>
-                            <button onClick={saveCustomer} className="px-4 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800">Guardar</button>
+                            <button onClick={handleSave} className="px-4 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800">Guardar</button>
                         </div>
                     </div>
                 </div>
@@ -384,7 +293,7 @@ export default function CustomersPage() {
 
                         <div className="flex gap-3">
                             <button onClick={() => setIsPaymentModalOpen(false)} className="flex-1 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-xl">Cancelar</button>
-                            <button onClick={processPayment} className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-500 shadow-lg shadow-green-600/20">Confirmar Pago</button>
+                            <button onClick={handlePayment} className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-500 shadow-lg shadow-green-600/20">Confirmar Pago</button>
                         </div>
                     </div>
                 </div>

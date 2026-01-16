@@ -1,0 +1,168 @@
+// ---------------------------------------------------------------
+// Variables & Config
+// ---------------------------------------------------------------
+
+$green-hue: 150; // DonTendero Green
+$blue-hue: 210;
+$purple-hue: 270;
+
+.heroContainer {
+    height: 100vh;
+    /* Full viewport height */
+    width: 100%;
+    background-color: #0b0f19;
+    /* Deep dark blue/black background */
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+// ---------------------------------------------------------------
+// Content (Text Effect)
+// ---------------------------------------------------------------
+
+.content {
+    color: white;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-weight: 900;
+    line-height: 1.1;
+    padding: 0 5vw;
+
+    // Responsive Typography Calculation
+    $min-value: 32;
+    $max-value: 100; // Slightly smaller to fit better
+    $min-size: 300;
+    $max-size: 1500;
+
+    font-size: calc(#{$min-value}px + #{$max-value - $min-value} * (100vw - #{$min-size}px) / #{$max-size - $min-size});
+
+    span {
+        --idx: 0;
+
+        // Gradient from DonTendero Green (#13ec80 roughly Hue 150) to Blue/Purple
+        // Spanning the phrase length (approx 40 chars)
+        --h: calc(150 + (var(--idx) * 3));
+
+        --s: 90%;
+        --l: 60%;
+
+        --color-light: hsl(var(--h), var(--s), var(--l));
+        --color-dark: hsl(calc(var(--h) + 30), var(--s), 40%);
+
+        position: relative;
+        display: inline-block;
+
+        // The gradient text effect
+        background: linear-gradient(to bottom right, var(--color-light), var(--color-dark));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        color: transparent;
+
+        // Subtle float animation
+        animation: float 3s ease-in-out infinite;
+        animation-delay: calc(var(--idx) * 0.1s);
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+// ---------------------------------------------------------------
+// Three Container (Canvas Background)
+// ---------------------------------------------------------------
+
+.canvasContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.6; // Fade it out
+
+    >canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    // Vignette effect
+    &:before,
+    &:after {
+        content: "";
+        display: block;
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 30vh;
+        z-index: 2;
+    }
+
+    &:before {
+        top: 0;
+        background: linear-gradient(to bottom, #0b0f19, transparent);
+    }
+
+    &:after {
+        background: linear-gradient(to top, #0b0f19, transparent);
+        bottom: 0;
+    }
+}
+
+.scrollIndicator {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.5);
+    z-index: 20;
+    animation: bounce 2s infinite;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+@keyframes bounce {
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    40% {
+        transform: translateX(-50%) translateY(-10px);
+    }
+
+    60% {
+        transform: translateX(-50%) translateY(-5px);
+    }
+}

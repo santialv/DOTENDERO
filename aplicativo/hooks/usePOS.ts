@@ -172,101 +172,62 @@ export function usePOS() {
 
     const checkout = useCallback(async (payments: Payment[], amountTendered: number, change: number) => {
         try {
-            // 1. Get Org ID securely
+            // 1. Get Session
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error("No active session");
 
+            // 2. Preparing Data for RPC
+            const itemsPayload = cartItems.map(item => ({
+                id: item.id,
+                quantity: item.quantity
+            }));
+
+            const paymentsPayload = payments.map(p => ({
+                method: p.method,
+                amount: p.amount
+            }));
+
+            // 3. Get Organization ID (Reliable fetch)
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('organization_id')
                 .eq('id', session.user.id)
                 .single();
 
-            const orgId = profile?.organization_id;
+            if (!profile?.organization_id) throw new Error("No organization found for user");
 
-            if (!orgId) throw new Error("No organization found for user");
-
-            // 2. Create Invoice
-            const { data: invoiceData, error: invoiceError } = await supabase
-                .from('invoices')
-                .insert({
-                    organization_id: orgId,
-                    customer_id: selectedCustomer.id !== 'default' ? selectedCustomer.id : null,
-                    number: `POS-${saleId}`,
-                    payment_method: payments.map(p => p.method).join(','),
-                    total: total,
-                    status: 'paid',
-                    date: new Date().toISOString()
-                })
-                .select()
-                .single();
-
-            if (invoiceError) throw invoiceError;
-            if (invoiceError) throw invoiceError;
-            const invoiceId = invoiceData.id;
-
-            // 2.1 Handle Credit (Fiado) - Update Customer Debt
-            const creditPayment = payments.find(p => p.method === 'Fiado');
-            if (creditPayment && creditPayment.amount > 0) {
-                if (selectedCustomer.id === 'default') {
-                    throw new Error("No se puede fiar a Venta General. Seleccione un cliente.");
-                }
-
-                // Fetch current debt first to be safe (or use RPC increment if available, but read-write is ok here)
-                const { data: custData } = await supabase.from('customers').select('current_debt').eq('id', selectedCustomer.id).single();
-                const currentDebt = custData?.current_debt || 0;
-
-                const { error: debtError } = await supabase
-                    .from('customers')
-                    .update({ current_debt: currentDebt + creditPayment.amount })
-                    .eq('id', selectedCustomer.id);
-
-                if (debtError) throw new Error("Error actualizando deuda del cliente: " + debtError.message);
-            }
-
-            // 3. Process Items (Stock + Movements + Invoice Items)
-            const updates = cartItems.map(async (item) => {
-                // a. Reduce Stock
-                const newStock = (item.stock || 0) - item.quantity;
-                const { error: stockError } = await supabase
-                    .from('products')
-                    .update({ stock: newStock })
-                    .eq('id', item.id);
-
-                if (stockError) throw stockError;
-
-                // b. Insert Movement
-                const { error: moveError } = await supabase.from('movements').insert({
-                    organization_id: orgId,
-                    product_id: item.id,
-                    type: 'OUT',
-                    quantity: item.quantity,
-                    previous_stock: item.stock,
-                    new_stock: newStock,
-                    unit_cost: item.costPrice,
-                    reference: `Venta POS-${saleId}`,
-                    invoice_id: invoiceId
+            // 4. Call the Atomic RPC Function (Server-Side Logic)
+            const { data: saleResult, error: saleError } = await supabase
+                .rpc('process_sale', {
+                    p_org_id: profile.organization_id,
+                    p_seller_id: session.user.id,
+                    p_customer_id: selectedCustomer.id !== 'default' ? selectedCustomer.id : null,
+                    p_items: itemsPayload,
+                    p_payments: paymentsPayload,
+                    p_sale_number: null // Server will generate it if null
                 });
 
-                if (moveError) console.error("Error saving movement", moveError);
+            if (saleError) throw saleError;
 
-                // c. Add Invoice Item
-                await supabase.from('invoice_items').insert({
-                    invoice_id: invoiceId,
-                    product_id: item.id,
-                    product_name: item.name,
-                    quantity: item.quantity,
-                    price: item.finalPrice,
-                    total: item.finalPrice * item.quantity
-                });
+            // 5. Success Handling
+            // Construct a "Transaction" object just for UI display/receipt printing
+            const newTransaction = {
+                id: saleResult.invoice_id,
+                date: new Date().toISOString(),
+                type: "sale",
+                method: payments.map(p => p.method).join(" + "),
+                amount: saleResult.total, // Trusted total from server
+                amountTendered,
+                change,
+                description: `Venta #${saleResult.sale_number}`,
+                items: cartItems, // Keep local items for receipt detail
+                customerId: selectedCustomer.id !== "default" ? selectedCustomer.id : undefined,
+                customerName: selectedCustomer.name,
+                customerData: selectedCustomer,
+                payments
+            };
 
-                return { id: item.id, newStock };
-            });
-
-            await Promise.all(updates);
-
-            // 4. Update Local State
-            // Update stock in local products array to avoid refetch
+            // 6. Update Local State (Optimistic UI)
             setProducts(prev => prev.map(p => {
                 const updated = cartItems.find(c => String(c.id) === String(p.id));
                 if (updated) {
@@ -275,43 +236,30 @@ export function usePOS() {
                 return p;
             }));
 
-            // 5. Construct Transaction object for UI
-            const newTransaction = {
-                id: invoiceId,
-                date: new Date().toISOString(),
-                type: "sale",
-                method: payments.map(p => p.method).join(" + "),
-                amount: total,
-                amountTendered,
-                change,
-                description: `Venta #${saleId}`,
-                items: cartItems,
-                customerId: selectedCustomer.id !== "default" ? selectedCustomer.id : undefined,
-                customerName: selectedCustomer.name,
-                customerData: selectedCustomer,
-                payments
-            };
-
             // Legacy support (localStorage)
             const savedTransactions = JSON.parse(localStorage.getItem("transactions") || "[]");
             localStorage.setItem("transactions", JSON.stringify([...savedTransactions, newTransaction]));
 
-            const nextId = saleId + 1;
-            setSaleId(nextId);
-            localStorage.setItem("lastSaleId", nextId.toString());
+            // Update Sale ID Counter based on server response (keep local in sync)
+            const numPart = parseInt(saleResult.sale_number.split('-')[1] || "0");
+            if (numPart) {
+                setSaleId(numPart + 1);
+                localStorage.setItem("lastSaleId", (numPart + 1).toString());
+            }
 
             setCart([]);
             setSelectedCustomer({ id: "default", name: "Venta General" });
-            toast(`Venta #${saleId} registrada con éxito`, "success");
+            toast(`Venta ${saleResult.sale_number} registrada con éxito`, "success");
 
             return newTransaction;
 
         } catch (error: any) {
             console.error("Checkout Error:", error);
-            toast(`Error en venta: ${error.message}`, "error");
+            const msg = error.message || error.details || 'Error desconocido';
+            toast(`Error en venta: ${msg}`, "error");
             return null;
         }
-    }, [saleId, total, cartItems, selectedCustomer, toast]);
+    }, [saleId, cartItems, selectedCustomer, toast]);
 
     return {
         // State

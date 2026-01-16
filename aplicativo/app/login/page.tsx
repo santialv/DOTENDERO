@@ -20,6 +20,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async (e: React.FormEvent) => {
+        // ... (existing handleLogin logic logic is untouched, strictly preserve it if I were editing it, but here I am just replacing the top part of the file to inject usage)
         e.preventDefault();
         setLoading(true);
 
@@ -251,3 +252,4 @@ export default function LoginPage() {
         </div>
     );
 }
+

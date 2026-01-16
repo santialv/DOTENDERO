@@ -20,7 +20,7 @@ export function useInventory() {
 
     const [uniqueCategories, setUniqueCategories] = useState<string[]>(["Todas"]);
 
-    // 1. Fetch Categories (Once)
+    // 1. Fetch Categories (Optimized RPC)
     useEffect(() => {
         const fetchCategories = async () => {
             const { data: { session } } = await supabase.auth.getSession();
@@ -28,17 +28,15 @@ export function useInventory() {
             const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
             if (!profile?.organization_id) return;
 
-            // Get distinct categories
-            // Supabase doesn't have "distinct" easy helper in JS client without .csv() hack or rpc, 
-            // but we can just fetch 'category' column usually small enough.
-            const { data } = await supabase
-                .from("products")
-                .select("category")
-                .eq('organization_id', profile.organization_id);
+            // Use the lightweight RPC instead of fetching 5000 products
+            const { data, error } = await supabase.rpc('get_unique_categories', {
+                p_org_id: profile.organization_id
+            });
 
             if (data) {
-                const cats = new Set(data.map((p: any) => p.category).filter(Boolean));
-                setUniqueCategories(["Todas", ...Array.from(cats) as string[]]);
+                // RPC returns array of objects { category: "Name" }
+                const cats = data.map((d: any) => d.category);
+                setUniqueCategories(["Todas", ...cats]);
             }
         };
         fetchCategories();
@@ -81,24 +79,6 @@ export function useInventory() {
                 query = query.eq('category', categoryFilter);
             }
 
-            if (stockFilter === "Bajo Stock") {
-                // This implies we need rows where stock <= min_stock. 
-                // Supabase doesn't support comparing two columns directly in filter easily (stock <= min_stock).
-                // WORKAROUND: For "Bajo Stock", we usually filter by specific range or need RLS/RPC.
-                // Or, for simplicity in MVP, we might have to fetch slightly more or use a fixed threshold?
-                // Correct way: We can't do `.filter('stock', 'lte', 'min_stock')`.
-                // Option: Create a computed column in DB or Views.
-                // Option 2 (Client Side for this specific filter?): IF selected, we might have to fetch all?? No.
-                // Option 3: Assume "Bajo Stock" means < 5 or something fixed? No.
-                // Option 4: "Bajo Stock" is hard to server-paginate without a View. 
-                // Let's Skip strict server filter for "Bajo Stock" comparison column-to-column unless we use RPC.
-                // Fallback: We will filter "stock <= 0" for "Sin Stock" easily.
-                // For "Bajo Stock", we can use a fixed value like 10? Or just ignore for now?
-                // Let's implement what works: "Sin Stock" and "Con Stock". 
-                // For "Bajo Stock", we might need to skip server filter or accept limitation.
-                // Let's stick to simple Con Stock / Sin Stock for query.
-            }
-
             if (stockFilter === "Sin Stock") query = query.lte('stock', 0);
             if (stockFilter === "Con Stock") query = query.gt('stock', 0);
 
@@ -131,11 +111,6 @@ export function useInventory() {
                 bagTax: p.bag_tax,
                 status: p.status === 'active' ? 'Activo' : 'Inactivo'
             }));
-
-            // Handle "Bajo Stock" Client-side filtering if absolutely needed? 
-            // If user selected "Bajo Stock", the pagination might look disjointed if we filter local page.
-            // Better: We won't strictly enforce "Bajo Stock" server filter here to avoid SQL complexity (col comparison).
-            // We just return what we got.
 
             setProducts(mappedProducts);
             setTotalCount(count || 0);
@@ -181,16 +156,9 @@ export function useInventory() {
     }, [toast]);
 
     const stats: InventoryStats = useMemo(() => {
-        // Stats are tricky with pagination. We can't sum TOTAL without fetching all.
-        // For accurate stats, we should create a separate RPC or lightweight query.
-        // For now, we can show stats based on cached totals or just placeholders?
-        // Or fetch a lightweight "stats" query (sum only).
-        // Let's leave stats calculation on CURRENT page? No, standard stats usually mean Global.
-        // I will keep the interface but note that they might be inaccurate or require a separate fetch.
-        // Let's implement a separate quick Stats Fetch?
         return {
             totalProducts: totalCount,
-            totalValue: 0, // Would need global aggregation
+            totalValue: 0,
             lowStockCount: 0,
             inactiveCount: 0
         };
@@ -217,7 +185,7 @@ export function useInventory() {
         calculateMargin,
         // Pagination Props
         page,
-        setPage, // Exposed to manually change page (although fetchProducts handles the logic, UI just calls next/prev)
+        setPage,
         fetchPage: fetchProducts,
         totalPages: Math.ceil(totalCount / PAGE_SIZE),
         totalCount
