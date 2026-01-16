@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { addInventoryMovement } from "../../utils/inventory";
 
-interface EntryItem { // Duplicated from ingreo/page.tsx or should be shared?
+interface EntryItem {
     tempId: string;
     productId?: string;
     name: string;
@@ -103,17 +103,10 @@ export default function PurchasesHistoryPage() {
             setPurchases(mapped);
             setPage(pageToLoad);
             setHasMore(data.length === PAGE_SIZE); // If we got a full page, there might be more
-
-            // Note: Stats will only reflect current page unless we do a separate aggregate query.
-            // For now, let's keep it simple as requested.
             calculateStats(mapped);
         }
     };
 
-    // ... calculateStats logic stays same ...
-
-    // Filter Logic needs to handle server-side if properly done, 
-    // but for user request "not strict", we will keep client filter on CURRENT PAGE
     const filteredPurchases = purchases.filter(p =>
         p.provider?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.invoice?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -129,10 +122,7 @@ export default function PurchasesHistoryPage() {
 
         // 1. Revert Inventory
         if (purchase.items) {
-            // Dynamically import or copy logic? We need to import 'addInventoryMovement'
-            // Assuming we added the import at the top of the file as requested.
             purchase.items.forEach((item: any) => {
-                // Negative quantity to revert
                 addInventoryMovement(
                     item.productId || null,
                     null,
@@ -150,14 +140,8 @@ export default function PurchasesHistoryPage() {
         localStorage.setItem("purchaseHistory", JSON.stringify(newHistory));
 
         // 3. Remove from Transactions (Expenses)
-        // We need to find the transaction. We didn't link IDs perfectly (bad design previously), but we can try to match description or ID if we stored it?
-        // In the previous step, I used random UUIDs for both. I didn't store the transaction ID in the purchase record.
-        // Fallback: Filter by description "Compra a [Provider] ([Invoice])" and approximate amount/date?
-        // Or just leave it? No, user wants it clean.
-        // Better effort: Match by Invoice check in description.
         const transactions = JSON.parse(localStorage.getItem("transactions") || "[]");
         const matchDesc = `Compra a ${purchase.provider} (${purchase.invoice})`;
-        // Filter out ONE matching transaction (in case of duplicates, just one)
         const itemIndex = transactions.findIndex((t: any) => t.description === matchDesc && t.amount === purchase.totalAmount);
         if (itemIndex > -1) {
             transactions.splice(itemIndex, 1);
@@ -206,25 +190,25 @@ export default function PurchasesHistoryPage() {
     };
 
     return (
-        <div className="flex flex-col h-full bg-slate-50 font-display relative">
+        <div className="flex flex-col h-full bg-slate-50 font-display relative pb-20 md:pb-0">
             {/* Header */}
-            <div className="px-10 py-8 flex items-end justify-between gap-4 shrink-0">
+            <div className="px-6 md:px-10 py-6 md:py-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-4 shrink-0">
                 <div className="flex flex-col gap-1">
-                    <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900">Historial de Compras</h1>
-                    <p className="text-slate-500 text-base">Gestiona y consulta todas las compras de mercancía realizadas.</p>
+                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight text-slate-900">Historial de Compras</h1>
+                    <p className="text-sm md:text-base text-slate-500">Gestiona y consulta todas las compras de mercancía realizadas.</p>
                 </div>
                 <Link
                     href="/compras/ingreso"
-                    className="h-12 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-95 transition-all flex items-center gap-2"
+                    className="h-10 md:h-12 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-95 transition-all flex items-center gap-2 text-sm md:text-base w-full md:w-auto justify-center"
                 >
                     <span className="material-symbols-outlined">add_circle</span>
                     Nueva Compra
                 </Link>
             </div>
 
-            {/* Stats Cards */}
-            <div className="px-10 pb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-500/20">
+            {/* Stats Cards - Scrollable on mobile */}
+            <div className="px-6 md:px-10 pb-6 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-x-auto no-scrollbar snap-x">
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-500/20 snap-center min-w-[80%] md:min-w-0">
                     <div className="flex items-center gap-4 mb-2">
                         <span className="p-2 bg-white/20 rounded-lg">
                             <span className="material-symbols-outlined">attach_money</span>
@@ -235,7 +219,7 @@ export default function PurchasesHistoryPage() {
                     <p className="text-sm text-blue-200 mt-1">+0% vs mes anterior</p>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm snap-center min-w-[80%] md:min-w-0">
                     <div className="flex items-center gap-4 mb-2">
                         <span className="p-2 bg-orange-100 text-orange-600 rounded-lg">
                             <span className="material-symbols-outlined">receipt_long</span>
@@ -246,21 +230,21 @@ export default function PurchasesHistoryPage() {
                     <p className="text-sm text-slate-400 mt-1">En el historial</p>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm snap-center min-w-[80%] md:min-w-0">
                     <div className="flex items-center gap-4 mb-2">
                         <span className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
                             <span className="material-symbols-outlined">local_shipping</span>
                         </span>
                         <h3 className="font-bold text-lg text-slate-600">Proveedor Frecuente</h3>
                     </div>
-                    <p className="text-3xl font-black text-slate-900 truncate" title={stats.topProvider}>{stats.topProvider}</p>
+                    <p className="text-2xl md:text-3xl font-black text-slate-900 truncate" title={stats.topProvider}>{stats.topProvider}</p>
                     <p className="text-sm text-slate-400 mt-1">Basado en cantidad de compras</p>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="px-10 pb-6 flex gap-4">
-                <div className="relative w-full max-w-md group">
+            <div className="px-6 md:px-10 pb-6 flex gap-4">
+                <div className="relative w-full md:max-w-md group">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">search</span>
                     <input
                         className="w-full h-12 rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all shadow-sm"
@@ -272,10 +256,11 @@ export default function PurchasesHistoryPage() {
             </div>
 
             {/* List */}
-            <div className="flex-1 px-10 pb-10 overflow-hidden">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm h-full overflow-hidden flex flex-col">
+            <div className="flex-1 px-4 md:px-10 pb-10 overflow-hidden flex flex-col">
+                <div className="bg-transparent md:bg-white rounded-2xl md:border md:border-slate-200 md:shadow-sm h-full overflow-hidden flex flex-col">
                     <div className="overflow-auto custom-scrollbar flex-1">
-                        <table className="w-full text-left">
+                        {/* Desktop Table */}
+                        <table className="hidden md:table w-full text-left">
                             <thead className="bg-slate-50 sticky top-0 z-10 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                 <tr>
                                     <th className="p-4">Fecha</th>
@@ -321,7 +306,7 @@ export default function PurchasesHistoryPage() {
                                                             tempId: i.id,
                                                             productId: i.product_id,
                                                             name: i.product_name,
-                                                            barcode: '', // Could join products or omit
+                                                            barcode: '',
                                                             qty: i.quantity,
                                                             cost: i.cost,
                                                             taxPercent: i.tax_percent,
@@ -343,7 +328,7 @@ export default function PurchasesHistoryPage() {
                                                             tempId: i.id,
                                                             productId: i.product_id,
                                                             name: i.product_name,
-                                                            barcode: '', // Added missing field
+                                                            barcode: '',
                                                             qty: i.quantity,
                                                             cost: i.cost,
                                                             taxPercent: i.tax_percent,
@@ -370,25 +355,86 @@ export default function PurchasesHistoryPage() {
                                 ))}
                             </tbody>
                         </table>
+
+                        {/* Mobile Card List */}
+                        <div className="md:hidden flex flex-col gap-3 pb-20">
+                            {filteredPurchases.length === 0 ? (
+                                <div className="text-center text-slate-400 py-10">
+                                    <span className="material-symbols-outlined text-[48px] mb-2opacity-50">receipt_long</span>
+                                    <p className="font-bold">No hay compras</p>
+                                </div>
+                            ) : filteredPurchases.map(purchase => (
+                                <div key={purchase.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-3">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h4 className="font-bold text-slate-900">{purchase.provider}</h4>
+                                            <p className="text-xs text-slate-500">Factura: {purchase.invoice || 'N/A'}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-lg font-black text-slate-900">${purchase.totalAmount.toLocaleString()}</p>
+                                            <p className="text-[10px] text-slate-400">{purchase.date ? new Date(purchase.date).toLocaleDateString() : 'N/A'}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">
+                                            <span className="material-symbols-outlined text-[12px]">layers</span>
+                                            {purchase.itemCount} items
+                                        </span>
+
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={async () => {
+                                                    // Load items logic same as desktop...
+                                                    const { data: items } = await supabase.from('purchase_items').select('*').eq('purchase_id', purchase.id);
+                                                    setSelectedPurchase({
+                                                        ...purchase, items: items?.map(i => ({
+                                                            tempId: i.id,
+                                                            productId: i.product_id,
+                                                            name: i.product_name,
+                                                            barcode: '',
+                                                            qty: i.quantity,
+                                                            cost: i.cost,
+                                                            taxPercent: i.tax_percent,
+                                                            discountPercent: i.discount_percent,
+                                                            isNew: false
+                                                        })) as any
+                                                    });
+                                                }}
+                                                className="p-2 bg-slate-50 text-blue-600 rounded-lg"
+                                            >
+                                                <span className="material-symbols-outlined text-[20px]">visibility</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(purchase)}
+                                                className="p-2 bg-red-50 text-red-600 rounded-lg"
+                                            >
+                                                <span className="material-symbols-outlined text-[20px]">delete</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Pagination Footer */}
-                    <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
-                        <span className="text-sm font-medium text-slate-500">
+                    <div className="px-4 md:px-6 py-4 border-t border-slate-200 bg-white md:bg-slate-50 flex justify-between items-center shrink-0">
+                        <span className="text-xs md:text-sm font-medium text-slate-500">
                             Página <span className="text-slate-900 font-bold">{page + 1}</span>
                         </span>
                         <div className="flex gap-2">
                             <button
                                 onClick={handlePrevPage}
                                 disabled={page === 0}
-                                className="px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                                className="px-3 md:px-4 py-2 text-xs md:text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
                             >
                                 Anterior
                             </button>
                             <button
                                 onClick={handleNextPage}
                                 disabled={!hasMore}
-                                className="px-4 py-2 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-slate-900/10"
+                                className="px-3 md:px-4 py-2 text-xs md:text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-slate-900/10"
                             >
                                 Siguiente
                             </button>
@@ -399,57 +445,60 @@ export default function PurchasesHistoryPage() {
 
             {/* View/Print Modal */}
             {selectedPurchase && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 print:p-0">
                     <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        {/* Printable Area */}
-                        <div id="print-area" className="p-8 overflow-y-auto custom-scrollbar bg-white">
-                            <div className="flex justify-between items-start mb-8 border-b border-slate-100 pb-8">
+                        {/* Printable Area - Responsive for mobile view */}
+                        <div id="print-area" className="p-4 md:p-8 overflow-y-auto custom-scrollbar bg-white">
+                            <div className="flex flex-col md:flex-row justify-between items-start mb-6 md:mb-8 border-b border-slate-100 pb-6 md:pb-8 gap-4">
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 mb-1">Factura de Compra</h2>
-                                    <p className="text-slate-500">ID: {selectedPurchase.id.slice(0, 8)}</p>
+                                    <h2 className="text-xl md:text-2xl font-black text-slate-900 mb-1">Factura de Compra</h2>
+                                    <p className="text-sm text-slate-500">ID: {selectedPurchase.id.slice(0, 8)}</p>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-sm font-bold text-slate-500 uppercase">Proveedor</p>
-                                    <p className="text-xl font-bold text-slate-900">{selectedPurchase.provider}</p>
-                                    <div className="mt-2">
-                                        <p className="text-xs font-bold text-slate-500 uppercase">Factura Nro.</p>
-                                        <p className="font-mono text-slate-900">{selectedPurchase.invoice}</p>
-                                    </div>
-                                    <div className="mt-2">
-                                        <p className="text-xs font-bold text-slate-500 uppercase">Fecha</p>
-                                        <p className="font-mono text-slate-900">{selectedPurchase.date.split('T')[0]}</p>
+                                <div className="text-left md:text-right w-full md:w-auto">
+                                    <p className="text-xs font-bold text-slate-500 uppercase">Proveedor</p>
+                                    <p className="text-lg md:text-xl font-bold text-slate-900">{selectedPurchase.provider}</p>
+                                    <div className="flex md:block gap-8 mt-2">
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-500 uppercase">Factura Nro.</p>
+                                            <p className="font-mono text-slate-900 text-sm">{selectedPurchase.invoice}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-500 uppercase">Fecha</p>
+                                            <p className="font-mono text-slate-900 text-sm">{selectedPurchase.date.split('T')[0]}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <table className="w-full text-left mb-8">
-                                <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase border-y border-slate-200">
-                                    <tr>
-                                        <th className="py-3 px-2">Producto</th>
-                                        <th className="py-3 px-2 text-center">Cant.</th>
-                                        <th className="py-3 px-2 text-right">Costo</th>
-                                        <th className="py-3 px-2 text-right">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 font-medium text-sm">
-                                    {selectedPurchase.items?.map((item: any, idx: number) => (
-                                        <tr key={idx}>
-                                            <td className="py-3 px-2">
-                                                <p className="text-slate-900">{item.name}</p>
-                                                <p className="text-[10px] text-slate-400 font-mono">{item.barcode}</p>
-                                            </td>
-                                            <td className="py-3 px-2 text-center">{item.qty}</td>
-                                            <td className="py-3 px-2 text-right">${item.cost.toLocaleString()}</td>
-                                            <td className="py-3 px-2 text-right font-bold text-slate-900">
-                                                ${(item.cost * item.qty).toLocaleString()}
-                                            </td>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left mb-8 min-w-[500px]">
+                                    <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase border-y border-slate-200">
+                                        <tr>
+                                            <th className="py-3 px-2">Producto</th>
+                                            <th className="py-3 px-2 text-center">Cant.</th>
+                                            <th className="py-3 px-2 text-right">Costo</th>
+                                            <th className="py-3 px-2 text-right">Subtotal</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 font-medium text-sm">
+                                        {selectedPurchase.items?.map((item: any, idx: number) => (
+                                            <tr key={idx}>
+                                                <td className="py-3 px-2">
+                                                    <p className="text-slate-900">{item.name}</p>
+                                                </td>
+                                                <td className="py-3 px-2 text-center">{item.qty}</td>
+                                                <td className="py-3 px-2 text-right">${item.cost.toLocaleString()}</td>
+                                                <td className="py-3 px-2 text-right font-bold text-slate-900">
+                                                    ${(item.cost * item.qty).toLocaleString()}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
 
                             <div className="flex justify-end border-t border-slate-200 pt-6">
-                                <div className="w-64 space-y-2">
+                                <div className="w-full md:w-64 space-y-2">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-slate-500">Items:</span>
                                         <span className="font-bold text-slate-900">{selectedPurchase.itemCount}</span>
@@ -463,10 +512,10 @@ export default function PurchasesHistoryPage() {
                         </div>
 
                         {/* Modal Actions */}
-                        <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3 print:hidden">
+                        <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3 print:hidden shrink-0 pb-safe-area">
                             <button
                                 onClick={() => setSelectedPurchase(null)}
-                                className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition-colors"
+                                className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition-colors text-sm"
                             >
                                 Cerrar
                             </button>
@@ -478,12 +527,12 @@ export default function PurchasesHistoryPage() {
                                         document.body.innerHTML = printContent.innerHTML;
                                         window.print();
                                         document.body.innerHTML = originalContents;
-                                        window.location.reload(); // Reload to restore event listeners/React state safely
+                                        window.location.reload();
                                     }
                                 }}
-                                className="px-6 py-2 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 shadow-lg shadow-slate-900/10 active:scale-95 transition-all flex items-center gap-2"
+                                className="px-6 py-2 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 shadow-lg shadow-slate-900/10 active:scale-95 transition-all flex items-center gap-2 text-sm"
                             >
-                                <span className="material-symbols-outlined">print</span>
+                                <span className="material-symbols-outlined text-[18px]">print</span>
                                 Imprimir
                             </button>
                         </div>
