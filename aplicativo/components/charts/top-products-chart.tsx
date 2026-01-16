@@ -101,7 +101,7 @@ export function TopProductsChart() {
                                 boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                                 padding: '12px'
                             }}
-                            formatter={(value: number) => [<span className="font-bold text-slate-900">{value} Unidades</span>, ""]}
+                            formatter={(value: any) => [<span className="font-bold text-slate-900">{value} Unidades</span>, ""]}
                         />
                         <Bar
                             dataKey="ventas"
