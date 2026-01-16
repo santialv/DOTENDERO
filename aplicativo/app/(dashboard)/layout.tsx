@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
 import { NavItem } from '@/components/nav-item';
+import { MobileNav } from '@/components/mobile-nav';
 import AuthGuard from '@/components/AuthGuard';
 import { supabase } from '@/lib/supabase';
 import { useConfiguration } from "@/hooks/useConfiguration";
@@ -17,8 +18,8 @@ export default function DashboardLayout({
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
     const pathname = usePathname();
-    const router = useRouter(); // Import useRouter
-    const { businessInfo } = useConfiguration(); // Fetch dynamic info
+    const router = useRouter();
+    const { businessInfo } = useConfiguration();
     const isFinance = pathname?.startsWith('/asesoria');
 
     useEffect(() => {
@@ -33,26 +34,20 @@ export default function DashboardLayout({
     }, []);
 
     const brandColor = isFinance ? 'bg-blue-600' : 'bg-[#13ec80]';
-    // User requested "DonTendero POS" (interpreted from 'POST') vs "DonTendero FINANCE"
-    // 'Financiera' placed subtly below.
-    const subLabel = isFinance ? 'FINANCE' : 'POS';
-    const subLabelColor = isFinance ? 'text-blue-600' : 'text-[#13ec80]';
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        // Clear sensitive local data
         localStorage.removeItem("onboarding_data");
         localStorage.removeItem("onboarding_step");
-        // AuthGuard will detect change and redirect, but we can force it too
         router.push('/login');
     };
 
     return (
         <AuthGuard>
             <div className="flex h-screen bg-slate-50">
-                {/* Sidebar */}
+                {/* Sidebar - Hidden on Mobile */}
                 <aside
-                    className={`${isCollapsed ? 'w-20' : 'w-64'} h-full bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 z-20 transition-all duration-300 relative`}
+                    className={`hidden md:flex ${isCollapsed ? 'w-20' : 'w-64'} h-full bg-white border-r border-slate-200 flex-col justify-between shrink-0 z-20 transition-all duration-300 relative`}
                 >
                     {/* Toggle Button */}
                     <button
@@ -106,8 +101,8 @@ export default function DashboardLayout({
                             </div>
                         </div>
 
-                        {/* Admin Link (Only for Super Admin) */}
-                        {userRole === 'super_admin' && (
+                        {/* Admin Link (Only for Super Admin/Admin) */}
+                        {(userRole === 'super_admin' || userRole === 'admin') && (
                             <Link
                                 href="/admin"
                                 className={`flex w-full items-center gap-3 p-2 rounded-xl text-slate-600 hover:text-purple-600 hover:bg-purple-50 transition-colors group ${isCollapsed ? 'justify-center' : ''}`}
@@ -136,9 +131,12 @@ export default function DashboardLayout({
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-x-hidden overflow-y-auto relative flex flex-col bg-slate-50/50">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto relative flex flex-col bg-slate-50/50 pb-20 md:pb-0">
                     {children}
                 </main>
+
+                {/* Mobile Navigation */}
+                <MobileNav />
             </div>
         </AuthGuard>
     );

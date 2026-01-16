@@ -1,6 +1,6 @@
 "use client";
 
-import { CartItem, Customer } from "@/types";
+import { CartItem } from "@/types";
 
 interface CartSidebarProps {
     saleId: number;
@@ -30,7 +30,7 @@ export function CartSidebar({
     heldOrdersCount
 }: CartSidebarProps) {
     return (
-        <aside className="w-[380px] bg-white border-l border-slate-200 flex flex-col shadow-xl shrink-0 z-10">
+        <aside className="hidden md:flex w-[380px] bg-white border-l border-slate-200 flex-col shadow-xl shrink-0 z-10 h-full">
             <div className="h-16 px-6 border-b border-slate-100 flex items-center justify-between shrink-0">
                 <h2 className="text-lg font-bold text-slate-900">Venta Actual</h2>
                 <span className="text-sm font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md">#{saleId}</span>
