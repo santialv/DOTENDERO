@@ -29,10 +29,12 @@ export default function AdminLayout({
                     .eq('id', session.user.id)
                     .single();
 
-                if (profile?.role === 'super_admin') {
+                // PERMISOS: Aceptamos 'super_admin' O 'admin'
+                if (profile?.role === 'super_admin' || profile?.role === 'admin') {
                     setIsAuthorized(true);
                 } else {
-                    router.push("/dashboard"); // Redirect unauthorized users
+                    console.warn("Acceso denegado: Rol insuficiente", profile?.role);
+                    router.push("/dashboard");
                 }
             } catch (error) {
                 console.error("Admin Auth Error:", error);
@@ -54,7 +56,7 @@ export default function AdminLayout({
     }
 
     if (!isAuthorized) {
-        return null; // Don't render anything while redirecting
+        return null;
     }
 
     return <>{children}</>;
