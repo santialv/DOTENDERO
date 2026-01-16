@@ -1,16 +1,20 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from "@/components/ui/toast";
 import { motion } from 'framer-motion';
-import { Store, User, Mail, Lock, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
+import { Store, User, Mail, Lock, Eye, EyeOff, ArrowRight, Construction } from 'lucide-react';
 
 export default function RegisterPage() {
     const router = useRouter();
     const { toast } = useToast();
+
+    // Configuration State
+    const [registrationsAllowed, setRegistrationsAllowed] = useState(true);
+    const [configLoading, setConfigLoading] = useState(true);
 
     // Form State
     const [name, setName] = useState('');
@@ -20,6 +24,30 @@ export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [agreed, setAgreed] = useState(false);
+
+    // Load Configuration
+    useEffect(() => {
+        const checkSettings = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('app_settings')
+                    .select('value')
+                    .eq('key', 'registrations_open')
+                    .single();
+
+                if (data) {
+                    setRegistrationsAllowed(data.value);
+                }
+            } catch (e) {
+                console.error("Config check failed", e);
+                // Default to true if check fails, or false for security? 
+                // Let's stick to true (allow) unless explicitly closed to avoid blocking users on error.
+            } finally {
+                setConfigLoading(false);
+            }
+        };
+        checkSettings();
+    }, []);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -61,6 +89,77 @@ export default function RegisterPage() {
         }
     };
 
+    if (configLoading) {
+        return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-400">Cargando...</div>;
+    }
+
+    // BLOCKED SCREEN
+    if (!registrationsAllowed) {
+        return (
+            <div className="flex min-h-screen flex-row bg-slate-50 overflow-hidden font-sans">
+                {/* Left Side (Dark) - Same as original */}
+                <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-slate-900">
+                    <img
+                        alt="Background"
+                        className="absolute inset-0 h-full w-full object-cover opacity-60 mix-blend-overlay grayscale"
+                        src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=2574"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+                    <div className="relative z-10 flex flex-col justify-end p-20 h-full">
+                        <h2 className="text-4xl font-bold text-white mb-4 leading-tight">Construyendo el futuro del comercio local.</h2>
+                        <p className="text-slate-300 text-lg">Estamos mejorando nuestra plataforma para ofrecerte una experiencia aún más increíble.</p>
+                    </div>
+                </div>
+
+                {/* Right Side (Message) */}
+                <div className="flex flex-1 flex-col justify-center items-center px-8 py-12 sm:px-12 lg:flex-none lg:px-20 xl:px-24 w-full lg:w-1/2 bg-white text-center">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="max-w-md mx-auto"
+                    >
+                        <div className="mx-auto w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center text-amber-600 mb-8 shadow-sm">
+                            <Construction className="w-10 h-10" />
+                        </div>
+
+                        <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-4">
+                            ¡Gracias por tu interés!
+                        </h1>
+
+                        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 mb-8 text-left">
+                            <p className="text-amber-900 font-medium text-lg mb-2">
+                                🔒 Registros Pausados Temporalmente
+                            </p>
+                            <p className="text-amber-800/80 text-sm leading-relaxed">
+                                En DonTendero estamos comprometidos con la excelencia. Actualmente hemos cerrado el ingreso a nuevos usuarios mientras implementamos mejoras críticas en nuestra infraestructura.
+                            </p>
+                        </div>
+
+                        <p className="text-slate-500 mb-8">
+                            Estamos "construyendo el futuro de Colombia" paso a paso. Vuelve pronto, ¡tendremos cupos disponibles muy pronto!
+                        </p>
+
+                        <div className="flex flex-col gap-3">
+                            <Link
+                                href="/login"
+                                className="w-full flex justify-center items-center px-4 py-3 border border-slate-200 rounded-xl text-slate-700 font-bold hover:bg-slate-50 transition-colors"
+                            >
+                                Ya tengo cuenta, iniciar sesión
+                            </Link>
+                            <Link
+                                href="/"
+                                className="text-sm text-slate-400 hover:text-slate-600 underline"
+                            >
+                                Volver al inicio
+                            </Link>
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
+        );
+    }
+
+    // ORIGINAL FORM (When Allowed)
     return (
         <div className="bg-background-light font-sans text-text-main antialiased transition-colors duration-200">
             <div className="flex min-h-screen flex-row">
