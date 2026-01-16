@@ -1,8 +1,7 @@
 import Providers from "@/lib/react-query";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
-
-// ... existing imports
+import { NetworkStatus } from "@/components/ui/network-status";
 
 export default function RootLayout({
   children,
@@ -21,6 +20,7 @@ export default function RootLayout({
       >
         <Providers>
           <ToastProvider>
+            <NetworkStatus />
             {children}
           </ToastProvider>
         </Providers>
