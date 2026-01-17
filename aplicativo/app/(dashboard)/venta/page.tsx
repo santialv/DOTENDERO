@@ -395,6 +395,7 @@ export default function VentaPage() {
         onClose={() => setIsPaymentModalOpen(false)}
         total={total}
         currentCustomer={selectedCustomer}
+        cartItems={cartItems}
         onRequestCustomerSelection={() => {
           setIsPaymentModalOpen(false);
           setIsCustomerModalOpen(true);
