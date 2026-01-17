@@ -49,9 +49,8 @@ export function useCustomers() {
             // Filters
             if (searchTerm) {
                 const term = searchTerm.trim();
-                // Check if term is a number (document) or text (name)
-                // For simplicity assuming ILIKE search on both or specific Logic
-                query = query.or(`full_name.ilike.%${term}%,document_number.ilike.%${term}%`);
+                // Improved Search Query including Email
+                query = query.or(`full_name.ilike.%${term}%,document_number.ilike.%${term}%,email.ilike.%${term}%`);
             }
 
             if (showDebtorsOnly) {
@@ -100,6 +99,20 @@ export function useCustomers() {
 
             if (!orgId) throw new Error("No organization linked");
 
+            if (customerData.document_number) {
+                const { data: existing } = await supabase
+                    .from('customers')
+                    .select('id, full_name')
+                    .eq('organization_id', orgId)
+                    .eq('document_number', customerData.document_number)
+                    .maybeSingle();
+
+                if (existing && existing.id !== customerData.id) {
+                    toast(`El documento ya pertenece a: ${existing.full_name}`, "error");
+                    return false;
+                }
+            }
+
             if (customerData.id) {
                 // Update
                 const { error } = await supabase
@@ -139,7 +152,7 @@ export function useCustomers() {
         }
     };
 
-    const processPayment = async (customer: Customer, amount: number) => {
+    const processPayment = async (customer: Customer, amount: number, reference?: string) => {
         if (amount <= 0) { toast("Monto inválido", "error"); return false; }
         if (amount > customer.current_debt) { toast("El abono no puede superar la deuda", "error"); return false; }
 
@@ -159,9 +172,14 @@ export function useCustomers() {
             if (debtError) throw debtError;
 
             // 2. Register Value in Expenses (Income)
+            // If reference provided, append to description
+            const desc = reference
+                ? `Abono Cliente: ${customer.full_name} (Ref: ${reference})`
+                : `Abono Cliente: ${customer.full_name}`;
+
             await supabase.from('expenses').insert({
                 organization_id: orgId,
-                description: `Abono Cliente: ${customer.full_name}`,
+                description: desc,
                 amount: amount,
                 type: 'income',
                 customer_id: customer.id,

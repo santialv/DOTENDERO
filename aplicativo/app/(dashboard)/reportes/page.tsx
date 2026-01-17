@@ -5,7 +5,9 @@ import { supabase } from '@/lib/supabase';
 import { SalesComparisonChart } from '@/components/charts/sales-comparison-chart';
 import { TopProductsChart } from '@/components/charts/top-products-chart';
 import { DownloadReports } from '@/components/reports/download-reports';
-import { IncomeStatement } from '@/components/reports/IncomeStatement';
+import { IncomeStatement } from '@/components/reports/IncomeStatement'; // Kept for type safety if needed, or remove if unused. Actually remove if unused.
+import { DailyStartLedger } from '@/components/reports/DailyStartLedger'; // Remove if unused.
+import Link from 'next/link';
 
 export default function ReportesPage() {
     const [loading, setLoading] = useState(true);
@@ -122,8 +124,45 @@ export default function ReportesPage() {
                 <TopProductsChart />
             </div>
 
-            {/* Income Statement (Full Width) */}
-            <IncomeStatement />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <Link
+                    href="/reportes/libro-diario"
+                    target="_blank"
+                    className="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col gap-2 relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span className="material-symbols-outlined text-6xl text-blue-600">menu_book</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
+                            <span className="material-symbols-outlined">menu_book</span>
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900">Libro Diario</h3>
+                    </div>
+                    <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                        Consulta todos los movimientos detallados de ingresos y egresos, filtrados por fecha y responsable.
+                    </p>
+                </Link>
+
+                <Link
+                    href="/reportes/resultados"
+                    target="_blank"
+                    className="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col gap-2 relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span className="material-symbols-outlined text-6xl text-green-600">finance_chip</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-green-50 rounded-xl text-green-600">
+                            <span className="material-symbols-outlined">trending_up</span>
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900">Estado de Resultados</h3>
+                    </div>
+                    <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                        Analiza la rentabilidad de tu negocio (P&L). Compara ingresos vs costos y gastos operativos.
+                    </p>
+                </Link>
+            </div>
         </div>
     );
 }

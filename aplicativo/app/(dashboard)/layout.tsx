@@ -9,6 +9,7 @@ import { MobileNav } from '@/components/mobile-nav';
 import AuthGuard from '@/components/AuthGuard';
 import { supabase } from '@/lib/supabase';
 import { useConfiguration } from "@/hooks/useConfiguration";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export default function DashboardLayout({
     children,
@@ -81,7 +82,6 @@ export default function DashboardLayout({
                             <NavItem href="/inventario" icon="inventory_2" label="Inventario" collapsed={isCollapsed} />
                             <NavItem href="/compras" icon="shopping_cart_checkout" label="Compras" collapsed={isCollapsed} />
                             <NavItem href="/clientes" icon="groups" label="Clientes" collapsed={isCollapsed} />
-                            <NavItem href="/cartera" icon="account_balance_wallet" label="Cartera" collapsed={isCollapsed} />
                             <NavItem href="/reportes" icon="bar_chart" label="Reportes" collapsed={isCollapsed} />
                             <div className="my-2 border-t border-slate-100 mx-2"></div>
                             <NavItem href="/asesoria" icon="support_agent" label="Asesoría Financiera" collapsed={isCollapsed} />
@@ -132,6 +132,9 @@ export default function DashboardLayout({
 
                 {/* Main Content */}
                 <main className="flex-1 overflow-x-hidden overflow-y-auto relative flex flex-col bg-slate-50/50 pb-20 md:pb-0">
+                    <div className="fixed bottom-24 right-4 z-50 md:bottom-8 md:right-8">
+                        <NotificationBell />
+                    </div>
                     {children}
                 </main>
 

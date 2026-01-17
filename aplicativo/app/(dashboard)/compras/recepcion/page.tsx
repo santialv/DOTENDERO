@@ -20,7 +20,7 @@ export default function ReceivingPage() {
                 </div>
                 <div className="flex gap-3">
                     <button className="px-6 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-bold text-sm hover:bg-slate-50 transition-colors shadow-sm">Cancelar</button>
-                    <button className="px-6 py-2.5 rounded-lg bg-primary text-text-main font-bold text-sm shadow-md hover:brightness-105 transition-all flex items-center gap-2">
+                    <button className="px-6 py-2.5 rounded-lg bg-[#13ec80] text-slate-900 font-bold text-sm shadow-md hover:bg-[#10d673] transition-all flex items-center gap-2">
                         <span className="material-symbols-outlined text-[18px]">save</span>
                         Guardar Borrador
                     </button>
@@ -148,8 +148,8 @@ export default function ReceivingPage() {
                                 <span className="text-sm font-medium text-slate-500">Total a Pagar</span>
                                 <span className="text-3xl font-black text-slate-900 tracking-tight">$76,800</span>
                             </div>
-                            <button className="w-full md:w-auto px-8 py-4 bg-primary text-text-main rounded-xl font-bold text-lg shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
-                                <span className="material-symbols-outlined">check_circle</span>
+                            <button className="w-full md:w-auto px-8 py-4 bg-[#13ec80] text-slate-900 rounded-xl font-bold text-lg shadow-lg shadow-green-500/30 hover:shadow-green-500/50 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                                <span className="material-symbols-outlined font-bold">check_circle</span>
                                 Confirmar Recepción
                             </button>
                         </div>

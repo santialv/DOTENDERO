@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useToast } from "@/components/ui/toast";
 import { Transaction } from "@/types";
 import { useConfiguration } from "@/hooks/useConfiguration";
@@ -11,71 +12,135 @@ interface SuccessModalProps {
 
 export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
     const { toast } = useToast();
-
     const { businessInfo } = useConfiguration();
+    const [showEmailForm, setShowEmailForm] = useState(false);
+    const [manualEmail, setManualEmail] = useState("");
+    const [isSending, setIsSending] = useState(false);
 
     if (!transaction) return null;
+
+    const handleSendEmail = () => {
+        setIsSending(true);
+        import("@/lib/email-service").then(async (service) => {
+            const success = await service.sendInvoiceEmail({
+                id: transaction.id,
+                customerName: transaction.customerName || "",
+                customerEmail: transaction.customerData?.email,
+                additionalEmail: manualEmail,
+                amount: transaction.amount,
+                date: transaction.date,
+                items: transaction.items || []
+            });
+
+            setIsSending(false);
+            if (success) {
+                toast(`Factura enviada exitosamente.`, "success");
+                setShowEmailForm(false);
+                setManualEmail("");
+            } else {
+                toast(`Error envíando factura. Verifique los correos.`, "error");
+            }
+        });
+    };
 
     return (
         <>
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200 print:hidden">
-                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden text-center p-8">
-                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-500">
-                        <span className="material-symbols-outlined text-[48px]">check_circle</span>
-                    </div>
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">¡Venta Exitosa!</h2>
-                    {/* We use 'Efectivo' check or check change directly */}
-                    {transaction.change !== undefined && transaction.change > 0 && (
-                        <div className="bg-green-50 p-4 rounded-xl border border-green-100 mb-6">
-                            <p className="text-sm font-bold text-green-700 uppercase mb-1">Entregar de Cambio</p>
-                            <p className="text-3xl font-black text-green-600">${transaction.change.toLocaleString()}</p>
+                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden text-center p-8 transition-all">
+                    {!showEmailForm ? (
+                        <>
+                            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-500">
+                                <span className="material-symbols-outlined text-[48px]">check_circle</span>
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-900 mb-2">¡Venta Exitosa!</h2>
+                            {transaction.change !== undefined && transaction.change > 0 && (
+                                <div className="bg-green-50 p-4 rounded-xl border border-green-100 mb-6">
+                                    <p className="text-sm font-bold text-green-700 uppercase mb-1">Entregar de Cambio</p>
+                                    <p className="text-3xl font-black text-green-600">${transaction.change.toLocaleString()}</p>
+                                </div>
+                            )}
+                            <div className="flex gap-2 mt-4">
+                                <button
+                                    onClick={() => window.print()}
+                                    className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-3 rounded-xl transition-colors flex flex-col items-center justify-center gap-1 text-xs"
+                                >
+                                    <span className="material-symbols-outlined text-lg">print</span>
+                                    <span>Imprimir</span>
+                                </button>
+
+                                <button
+                                    onClick={onNewSale}
+                                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold py-3 rounded-xl transition-colors flex flex-col items-center justify-center gap-1 text-xs"
+                                >
+                                    <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                                    <span>Nueva</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setShowEmailForm(true)}
+                                    className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-3 rounded-xl transition-colors flex flex-col items-center justify-center gap-1 text-xs"
+                                >
+                                    <span className="material-symbols-outlined text-lg">mail</span>
+                                    <span>Enviar</span>
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
+                                <span className="material-symbols-outlined text-[32px]">forward_to_inbox</span>
+                            </div>
+                            <h3 className="font-bold text-lg mb-4 text-slate-900">Enviar Factura</h3>
+
+                            <div className="space-y-3 text-left mb-6">
+                                {transaction.customerData?.email && (
+                                    <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200 text-sm">
+                                        <span className="material-symbols-outlined text-slate-400">person</span>
+                                        <div className="flex-1 overflow-hidden">
+                                            <p className="text-xs text-slate-500 font-bold uppercase">Cliente</p>
+                                            <p className="truncate text-slate-700 font-medium">{transaction.customerData.email}</p>
+                                        </div>
+                                        <span className="material-symbols-outlined text-green-500">check_circle</span>
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block">
+                                        {transaction.customerData?.email ? 'Enviar copia a (Opcional)' : 'Enviar a'}
+                                    </label>
+                                    <input
+                                        type="email"
+                                        placeholder="ejemplo@correo.com"
+                                        value={manualEmail}
+                                        onChange={e => setManualEmail(e.target.value)}
+                                        className="w-full p-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none transition-colors font-medium bg-white"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setShowEmailForm(false)}
+                                    className="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleSendEmail}
+                                    disabled={isSending || (!transaction.customerData?.email && !manualEmail)}
+                                    className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {isSending ? (
+                                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                    ) : (
+                                        <>
+                                            <span>Enviar Correo</span>
+                                            <span className="material-symbols-outlined text-sm">send</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     )}
-                    <div className="flex gap-2 mt-4">
-                        <button
-                            onClick={() => {
-                                window.print();
-                            }}
-                            className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-3 rounded-xl transition-colors flex flex-col items-center justify-center gap-1 text-xs"
-                        >
-                            <span className="material-symbols-outlined text-lg">print</span>
-                            <span>Imprimir</span>
-                        </button>
-
-                        <button
-                            onClick={onNewSale}
-                            className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold py-3 rounded-xl transition-colors flex flex-col items-center justify-center gap-1 text-xs"
-                        >
-                            <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                            <span>Nueva</span>
-                        </button>
-
-                        {transaction.customerData?.email && (
-                            <button
-                                onClick={() => {
-                                    import("@/lib/email-service").then(async (service) => {
-                                        const success = await service.sendInvoiceEmail({
-                                            id: transaction.id,
-                                            customerName: transaction.customerName || "",
-                                            customerEmail: transaction.customerData!.email!,
-                                            amount: transaction.amount,
-                                            date: transaction.date,
-                                            items: transaction.items || []
-                                        });
-                                        if (success) {
-                                            toast(`¡Factura reenviada exitosamente a ${transaction.customerData!.email}!`, "success");
-                                        } else {
-                                            toast(`Error al reenviar la factura.`, "error");
-                                        }
-                                    });
-                                }}
-                                className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-3 rounded-xl transition-colors flex flex-col items-center justify-center gap-1 text-xs"
-                            >
-                                <span className="material-symbols-outlined text-lg">send</span>
-                                <span>Enviar</span>
-                            </button>
-                        )}
-                    </div>
                 </div>
             </div>
 

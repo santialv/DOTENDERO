@@ -1,19 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-
-interface Customer {
-    id: string;
-    full_name: string;
-    document_number: string;
-    phone?: string;
-    email?: string;
-    current_debt: number;
-}
+import { Customer } from "@/types";
 
 interface CustomerModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSelect: (customer: { id: string, name: string }) => void;
+    onSelect: (customer: Customer) => void;
 }
 
 export const CustomerModal = ({ isOpen, onClose, onSelect }: CustomerModalProps) => {
@@ -35,13 +27,23 @@ export const CustomerModal = ({ isOpen, onClose, onSelect }: CustomerModalProps)
             .order('full_name');
 
         if (data) {
-            setCustomers(data);
+            // Map Supabase response to Customer type
+            const mapped: Customer[] = data.map((c: any) => ({
+                id: c.id,
+                name: c.full_name || "Sin Nombre",
+                full_name: c.full_name,
+                document_number: c.document_number,
+                phone: c.phone,
+                email: c.email,
+                current_debt: c.current_debt || 0
+            }));
+            setCustomers(mapped);
         }
         setLoading(false);
     };
 
     const filtered = customers.filter(c =>
-        c.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.document_number?.includes(searchTerm)
     );
 
@@ -73,15 +75,18 @@ export const CustomerModal = ({ isOpen, onClose, onSelect }: CustomerModalProps)
                 <div className="flex-1 overflow-y-auto p-2">
                     {loading ? (
                         <div className="p-8 text-center text-slate-500">Cargando clientes...</div>
-                    ) : filtered.length === 0 ? (
+                    ) : filtered.length === 0 && searchTerm ? (
                         <div className="p-8 text-center text-slate-500">
                             No se encontraron clientes.
-                            {/* Future: Add 'Create Client' button here */}
                         </div>
                     ) : (
                         <div className="space-y-1">
+                            {/* Venta General Option */}
                             <button
-                                onClick={() => { onSelect({ id: 'default', name: 'Venta General' }); onClose(); }}
+                                onClick={() => {
+                                    onSelect({ id: 'default', name: 'Venta General', current_debt: 0 });
+                                    onClose();
+                                }}
                                 className="w-full text-left p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 flex items-center gap-3 transition-colors mb-2"
                             >
                                 <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold">
@@ -96,17 +101,17 @@ export const CustomerModal = ({ isOpen, onClose, onSelect }: CustomerModalProps)
                             {filtered.map(c => (
                                 <button
                                     key={c.id}
-                                    onClick={() => { onSelect({ id: c.id, name: c.full_name }); onClose(); }}
+                                    onClick={() => { onSelect(c); onClose(); }}
                                     className="w-full text-left p-3 rounded-xl hover:bg-blue-50 border border-transparent hover:border-blue-100 flex items-center gap-3 transition-colors group"
                                 >
                                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold uppercase">
-                                        {c.full_name.substring(0, 2)}
+                                        {c.name.substring(0, 2)}
                                     </div>
                                     <div className="flex-1">
-                                        <p className="font-bold text-slate-900 group-hover:text-blue-700">{c.full_name}</p>
+                                        <p className="font-bold text-slate-900 group-hover:text-blue-700">{c.name}</p>
                                         <p className="text-xs text-slate-500 flex gap-2">
                                             <span>CC: {c.document_number}</span>
-                                            {c.current_debt > 0 && <span className="text-red-500 font-bold">Deuda: ${c.current_debt.toLocaleString()}</span>}
+                                            {(c.current_debt || 0) > 0 && <span className="text-red-500 font-bold">Deuda: ${(c.current_debt || 0).toLocaleString()}</span>}
                                         </p>
                                     </div>
                                     <span className="material-symbols-outlined text-transparent group-hover:text-blue-500">check_circle</span>

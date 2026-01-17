@@ -50,37 +50,47 @@ export function IncomeStatement({ className }: IncomeStatementProps) {
 
             // 2. COGS (Costo de Ventas)
             // Query movements directly for accurate historical cost
-            const { data: movements, error: movError } = await supabase
-                .from('movements')
-                .select('quantity, unit_cost')
-                .eq('organization_id', orgId)
-                .eq('type', 'OUT')
-                .not('invoice_id', 'is', null) // Only sales
-                .gte('created_at', `${startDate}T00:00:00`)
-                .lte('created_at', `${endDate}T23:59:59`);
+            let cogs = 0;
+            try {
+                const { data: movements, error: movError } = await supabase
+                    .from('movements')
+                    .select('quantity, unit_cost')
+                    .eq('organization_id', orgId)
+                    .eq('type', 'OUT')
+                    .not('invoice_id', 'is', null) // Only sales
+                    .gte('created_at', `${startDate}T00:00:00`)
+                    .lte('created_at', `${endDate}T23:59:59`);
 
-            if (movError) throw movError;
-            const cogs = movements?.reduce((sum, m) => sum + (m.quantity * (m.unit_cost || 0)), 0) || 0;
+                if (movError) {
+                    console.warn("COGS Warning (ignoring):", movError.message);
+                } else {
+                    cogs = movements?.reduce((sum, m) => sum + (m.quantity * (m.unit_cost || 0)), 0) || 0;
+                }
+            } catch (err) {
+                console.warn("COGS Calculation failed:", err);
+            }
 
             // 3. Expenses (Gastos Operativos)
             const { data: expenses, error: expError } = await supabase
-                .from('cash_expenses')
-                .select('amount, category')
+                .from('expenses')
+                .select('*')
                 .eq('organization_id', orgId)
-                .gte('created_at', `${startDate}T00:00:00`)
-                .lte('created_at', `${endDate}T23:59:59`);
+                .eq('type', 'expense')
+                .gte('date', `${startDate}T00:00:00`)
+                .lte('date', `${endDate}T23:59:59`);
 
             if (expError) throw expError;
 
             // Group Expenses
             const expenseGroup: Record<string, number> = {};
-            expenses?.forEach(exp => {
-                const label = getCategoryLabel(exp.category);
+            expenses?.forEach((exp: any) => {
+                const cat = exp.category || 'other';
+                const label = getCategoryLabel(cat);
                 expenseGroup[label] = (expenseGroup[label] || 0) + exp.amount;
             });
 
             const expenseList = Object.entries(expenseGroup).map(([category, total]) => ({ category, total }));
-            const totalExpenses = expenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0;
+            const totalExpenses = expenses?.reduce((sum: number, exp: any) => sum + exp.amount, 0) || 0;
 
             // Totals
             const grossProfit = revenue - cogs;
@@ -97,8 +107,8 @@ export function IncomeStatement({ className }: IncomeStatementProps) {
                 margin
             });
 
-        } catch (error) {
-            console.error("Error generating income statement:", error);
+        } catch (error: any) {
+            console.error("Error generating income statement:", error.message || error);
         } finally {
             setLoading(false);
         }

@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useCustomers, Customer } from "@/hooks/useCustomers";
 import { useToast } from "@/components/ui/toast";
 
+import { useRouter } from "next/navigation";
+
 export default function CustomersPage() {
+    const router = useRouter();
     const { toast } = useToast();
     const {
         customers,
@@ -38,6 +41,7 @@ export default function CustomersPage() {
         city: ""
     });
     const [paymentAmount, setPaymentAmount] = useState("");
+    const [paymentReference, setPaymentReference] = useState("");
 
     const handleCreate = () => {
         setSelectedCustomer(null);
@@ -68,6 +72,7 @@ export default function CustomersPage() {
     const handleOpenPayment = (customer: Customer) => {
         setSelectedCustomer(customer);
         setPaymentAmount("");
+        setPaymentReference("");
         setIsPaymentModalOpen(true);
     };
 
@@ -85,7 +90,7 @@ export default function CustomersPage() {
     const handlePayment = async () => {
         if (!selectedCustomer || !paymentAmount) return;
         const amount = parseFloat(paymentAmount);
-        const success = await processPayment(selectedCustomer, amount);
+        const success = await processPayment(selectedCustomer, amount, paymentReference);
         if (success) setIsPaymentModalOpen(false);
     };
 
@@ -167,7 +172,12 @@ export default function CustomersPage() {
                                 ) : customers.map(c => (
                                     <tr key={c.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="p-4">
-                                            <p className="font-bold text-slate-900">{c.full_name}</p>
+                                            <button
+                                                onClick={() => router.push(`/clientes/${c.id}`)}
+                                                className="font-bold text-slate-900 hover:text-blue-600 hover:underline text-left"
+                                            >
+                                                {c.full_name}
+                                            </button>
                                             <p className="text-xs text-slate-500">{c.city}</p>
                                         </td>
                                         <td className="p-4 font-mono text-sm text-slate-600">{c.document_number || 'N/A'}</td>
@@ -177,7 +187,16 @@ export default function CustomersPage() {
                                         </td>
                                         <td className="p-4 text-right">
                                             {c.current_debt > 0 ? (
-                                                <span className="text-red-600 font-black">${c.current_debt.toLocaleString()}</span>
+                                                <div className="flex flex-col items-end">
+                                                    <button
+                                                        onClick={() => router.push(`/clientes/${c.id}`)}
+                                                        className="text-red-600 font-black hover:text-blue-600 hover:underline flex items-center gap-1 group"
+                                                        title="Ver historial de deuda"
+                                                    >
+                                                        ${c.current_debt.toLocaleString()}
+                                                        <span className="material-symbols-outlined text-[16px] opacity-0 group-hover:opacity-100 transition-opacity">visibility</span>
+                                                    </button>
+                                                </div>
                                             ) : (
                                                 <span className="text-green-600 font-bold">$0</span>
                                             )}
@@ -280,15 +299,27 @@ export default function CustomersPage() {
                             <p className="text-3xl font-black text-red-600">${selectedCustomer.current_debt.toLocaleString()}</p>
                         </div>
 
-                        <div className="mb-6">
-                            <label className="block text-left text-xs font-bold text-slate-500 uppercase mb-1">Monto a abonar</label>
-                            <input
-                                type="number"
-                                className="w-full p-3 border-2 border-slate-200 rounded-xl text-center text-xl font-bold focus:border-green-500 outline-none transition-colors"
-                                placeholder="$0"
-                                value={paymentAmount}
-                                onChange={e => setPaymentAmount(e.target.value)}
-                            />
+                        <div className="mb-6 space-y-3">
+                            <div>
+                                <label className="block text-left text-xs font-bold text-slate-500 uppercase mb-1">Monto a abonar</label>
+                                <input
+                                    type="number"
+                                    className="w-full p-3 border-2 border-slate-200 rounded-xl text-center text-xl font-bold focus:border-green-500 outline-none transition-colors"
+                                    placeholder="$0"
+                                    value={paymentAmount}
+                                    onChange={e => setPaymentAmount(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-left text-xs font-bold text-slate-500 uppercase mb-1">Referencia / Nota (Opcional)</label>
+                                <input
+                                    type="text"
+                                    className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-slate-400 outline-none transition-colors"
+                                    placeholder="Ej: Pago Factura #123"
+                                    value={paymentReference}
+                                    onChange={e => setPaymentReference(e.target.value)}
+                                />
+                            </div>
                         </div>
 
                         <div className="flex gap-3">

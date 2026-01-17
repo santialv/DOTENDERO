@@ -411,9 +411,9 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={handleCloseShift}
-                                        className="px-6 py-2 bg-primary text-text-main font-bold rounded-lg shadow-sm hover:bg-primary-hover flex items-center gap-2"
+                                        className="px-6 py-2 bg-[#13ec80] hover:bg-[#10d673] text-slate-900 font-bold rounded-lg shadow-sm flex items-center gap-2"
                                     >
-                                        <Save className="w-4 h-4" />
+                                        <Save className="w-4 h-4 font-bold" />
                                         Cerrar Caja
                                     </motion.button>
                                 </div>

@@ -30,7 +30,18 @@ export function SalesComparisonChart() {
                     p_end_year: currentYear
                 });
 
-                if (error) throw error;
+                if (error) {
+                    console.error("Supabase RPC Error:", error);
+                    throw error;
+                }
+
+                // console.log("Stats fetched:", stats?.length); // Debug success
+
+                if (!stats || !Array.isArray(stats)) {
+                    console.warn("No stats returned or invalid format", stats);
+                    setData([]);
+                    return;
+                }
 
                 // Transform Flat Data to Chart Format (Group by Month)
                 const months = [
@@ -41,9 +52,9 @@ export function SalesComparisonChart() {
                 const chartData = months.map((m, index) => {
                     const monthIndex = index + 1; // 1-12
 
-                    // Find values
-                    const valCurrent = stats?.find((s: any) => s.year === currentYear && s.month === monthIndex)?.total || 0;
-                    const valLast = stats?.find((s: any) => s.year === lastYear && s.month === monthIndex)?.total || 0;
+                    // Find values safely
+                    const valCurrent = stats.find((s: any) => s.year === currentYear && s.month === monthIndex)?.total || 0;
+                    const valLast = stats.find((s: any) => s.year === lastYear && s.month === monthIndex)?.total || 0;
 
                     return {
                         name: m,
@@ -54,8 +65,8 @@ export function SalesComparisonChart() {
 
                 setData(chartData);
 
-            } catch (e) {
-                console.error("Chart Error:", e);
+            } catch (e: any) {
+                console.error("Chart Logic Error:", e.message || e);
             } finally {
                 setLoading(false);
             }

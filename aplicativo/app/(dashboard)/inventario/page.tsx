@@ -17,6 +17,8 @@ export default function InventoryPage() {
         setCategoryFilter,
         stockFilter,
         setStockFilter,
+        statusFilter, // New
+        setStatusFilter, // New
         uniqueCategories,
         // Pagination
         page,
@@ -46,8 +48,8 @@ export default function InventoryPage() {
                         <span className="material-symbols-outlined mr-2 text-[18px]">file_download</span>
                         Exportar
                     </button>
-                    <Link href="/inventario/nuevo" className="flex h-10 px-4 items-center justify-center rounded-lg bg-primary hover:bg-primary-dark text-text-main text-sm font-bold transition-colors shadow-sm whitespace-nowrap">
-                        <span className="material-symbols-outlined mr-2 text-[18px]">add</span>
+                    <Link href="/inventario/nuevo" className="flex h-10 px-4 items-center justify-center rounded-lg bg-[#13ec80] hover:bg-[#10d673] text-slate-900 text-sm font-black transition-colors shadow-sm whitespace-nowrap gap-2">
+                        <span className="material-symbols-outlined text-[18px] font-bold">add</span>
                         Nuevo Producto
                     </Link>
                 </div>
@@ -55,7 +57,10 @@ export default function InventoryPage() {
 
             <div className="px-4 md:px-10 pb-8 flex flex-col gap-6 flex-1 overflow-hidden">
                 {/* Stats */}
-                <InventoryStatsCards stats={stats} />
+                <InventoryStatsCards
+                    stats={stats}
+                    onLowStockClick={() => setStockFilter("Bajo Stock")}
+                />
 
                 {/* Main Content Card */}
                 {/* Removed fixed overflow-hidden that blocked mobile scroll */}
@@ -112,6 +117,22 @@ export default function InventoryPage() {
                                     <option value="Con Stock">Con Stock</option>
                                     <option value="Bajo Stock">Bajo Stock</option>
                                     <option value="Sin Stock">Sin Stock</option>
+                                </select>
+                            </div>
+
+                            {/* Status Filter (New) */}
+                            <div className="relative group flex-1 md:flex-none">
+                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                    <span className="material-symbols-outlined text-[18px] text-slate-400">expand_more</span>
+                                </div>
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="h-9 w-full md:w-auto pl-3 pr-8 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-900 hover:border-primary/50 transition-colors outline-none cursor-pointer appearance-none shadow-sm"
+                                >
+                                    <option value="Todos">Estado: Todos</option>
+                                    <option value="Activo">Activos</option>
+                                    <option value="Inactivo">Inactivos</option>
                                 </select>
                             </div>
                         </div>

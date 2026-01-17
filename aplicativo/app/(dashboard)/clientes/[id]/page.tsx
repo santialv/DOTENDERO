@@ -141,18 +141,27 @@ export default function CustomerDetailPage() {
                                         <tr>
                                             <th className="p-4">Fecha</th>
                                             <th className="p-4">Factura</th>
+                                            <th className="p-4">Método</th>
                                             <th className="p-4 text-right">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
                                         {invoices.length === 0 ? (
-                                            <tr><td colSpan={3} className="p-8 text-center text-slate-400">Sin compras registradas</td></tr>
+                                            <tr><td colSpan={4} className="p-8 text-center text-slate-400">Sin compras registradas</td></tr>
                                         ) : invoices.map(inv => (
                                             <tr key={inv.id} className="hover:bg-slate-50">
                                                 <td className="p-4 text-slate-600">
                                                     {new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(inv.date))}
                                                 </td>
                                                 <td className="p-4 font-mono font-bold text-slate-800">{inv.number}</td>
+                                                <td className="p-4">
+                                                    <span className={`px-2 py-1 rounded text-xs font-bold ${inv.payment_method === 'Fiado'
+                                                            ? 'bg-red-100 text-red-700'
+                                                            : 'bg-green-100 text-green-700'
+                                                        }`}>
+                                                        {inv.payment_method}
+                                                    </span>
+                                                </td>
                                                 <td className="p-4 text-right font-bold text-slate-900">${inv.total.toLocaleString()}</td>
                                             </tr>
                                         ))}

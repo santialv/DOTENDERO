@@ -97,15 +97,39 @@ export default function EditProductPage() {
             return;
         }
 
+        if (!salePrice) {
+            toast("El precio de venta es obligatorio.", "error");
+            return;
+        }
+
         let finalBarcode = barcode;
-        if (skuMode === 'auto' && (!barcode || barcode.startsWith("SKU-"))) {
-            if (!finalBarcode) {
-                const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-                finalBarcode = `SKU-${randomSuffix}`;
-            }
+
+        // If still in auto mode but no barcode generated yet (fallback), generate one now
+        if (skuMode === 'auto' && (!finalBarcode || finalBarcode === "SIN-CODIGO")) {
+            const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+            finalBarcode = `SKU-${randomSuffix}`;
         } else if (!finalBarcode) {
             if (!confirm("El código de barras está vacío. ¿Desea guardar sin código?")) return;
             finalBarcode = "SIN-CODIGO";
+        }
+
+        // Check duplicate barcode (excluding current product)
+        if (finalBarcode !== "SIN-CODIGO") {
+            try {
+                const { data: duplicate } = await supabase
+                    .from("products")
+                    .select("id")
+                    .eq("barcode", finalBarcode)
+                    .neq("id", productId)
+                    .maybeSingle();
+
+                if (duplicate) {
+                    toast(`El código de barras "${finalBarcode}" ya está registrado en otro producto.`, "error");
+                    return;
+                }
+            } catch (err) {
+                console.error("Error checking duplicate:", err);
+            }
         }
 
         try {
@@ -114,9 +138,9 @@ export default function EditProductPage() {
                 description,
                 category: category || "General",
                 barcode: finalBarcode,
-                cost_price: parseFloat(costPrice) || 0,
-                sale_price: parseFloat(salePrice) || 0,
-                tax: parseFloat(tax) || 0,
+                cost: parseFloat(costPrice) || 0,
+                price: parseFloat(salePrice) || 0,
+                tax_rate: parseFloat(tax) || 0,
                 stock: parseFloat(stock) || 0,
                 min_stock: parseFloat(minStock) || 0,
                 unit,
@@ -154,7 +178,7 @@ export default function EditProductPage() {
                         <span className="material-symbols-outlined text-[12px]">chevron_right</span>
                         <span className="font-medium text-primary">Editar</span>
                     </div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none">Editar Producto</h1>
+                    <h1 className="text-2xl text-slate-900 tracking-tight leading-none">Editar Producto</h1>
                 </div>
                 <div className="flex gap-3">
                     <Link href="/inventario" className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-white transition-colors text-sm flex items-center">
@@ -162,9 +186,9 @@ export default function EditProductPage() {
                     </Link>
                     <button
                         onClick={handleSave}
-                        className="px-6 py-2 rounded-lg bg-primary hover:bg-primary-dark text-text-main font-bold shadow-sm shadow-primary/30 transition-all transform active:scale-95 text-sm flex items-center gap-2"
+                        className="px-6 py-2 rounded-lg bg-[#13ec80] hover:bg-[#10d673] text-slate-900 font-black shadow-sm shadow-green-500/30 transition-all transform active:scale-95 text-sm flex items-center gap-2"
                     >
-                        <span className="material-symbols-outlined text-lg">save</span>
+                        <span className="material-symbols-outlined text-lg font-bold">save</span>
                         Guardar Cambios
                     </button>
                 </div>
@@ -182,13 +206,13 @@ export default function EditProductPage() {
                                     <span className="material-symbols-outlined text-primary">edit_document</span>
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-slate-900">Detalles Generales</h2>
+                                    <h2 className="text-lg text-slate-900">Detalles Generales</h2>
                                     <p className="text-sm text-slate-400">Información básica del producto para identificación.</p>
                                 </div>
                             </div>
                             <div className="flex flex-col gap-5">
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Nombre del Producto <span className="text-red-500">*</span></span>
+                                    <span className="text-sm text-slate-700">Nombre del Producto <span className="text-red-500">*</span></span>
                                     <input
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
@@ -198,7 +222,7 @@ export default function EditProductPage() {
                                     />
                                 </label>
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Descripción</span>
+                                    <span className="text-sm text-slate-700">Descripción</span>
                                     <textarea
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
@@ -208,7 +232,7 @@ export default function EditProductPage() {
                                 </label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <label className="flex flex-col gap-2 relative">
-                                        <span className="text-sm font-semibold text-slate-700">Categoría</span>
+                                        <span className="text-sm text-slate-700">Categoría</span>
                                         <select
                                             value={category}
                                             onChange={(e) => setCategory(e.target.value)}
@@ -225,7 +249,7 @@ export default function EditProductPage() {
                                     </label>
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm font-semibold text-slate-700">Código de Barras</span>
+                                            <span className="text-sm text-slate-700">Código de Barras</span>
                                             <div className="flex bg-slate-100 p-0.5 rounded-lg">
                                                 <button
                                                     onClick={() => setSkuMode('manual')}
@@ -234,7 +258,13 @@ export default function EditProductPage() {
                                                     Manual
                                                 </button>
                                                 <button
-                                                    onClick={() => setSkuMode('auto')}
+                                                    onClick={() => {
+                                                        setSkuMode('auto');
+                                                        if (!barcode || !barcode.startsWith('SKU-')) {
+                                                            const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+                                                            setBarcode(`SKU-${randomSuffix}`);
+                                                        }
+                                                    }}
                                                     className={`px-2 py-0.5 text-xs font-medium rounded-md transition-all ${skuMode === 'auto' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                                 >
                                                     Auto
@@ -246,10 +276,11 @@ export default function EditProductPage() {
                                                 {skuMode === 'auto' ? 'autorenew' : 'qr_code_scanner'}
                                             </span>
                                             <input
-                                                value={skuMode === 'auto' ? (barcode || "Se generará automáticamente") : barcode}
+                                                value={barcode}
                                                 onChange={(e) => setBarcode(e.target.value)}
                                                 disabled={skuMode === 'auto'}
-                                                className={`w-full rounded-lg border bg-slate-50 focus:ring-2 focus:ring-primary focus:border-primary h-12 pl-10 pr-4 font-mono transition-colors ${skuMode === 'auto' ? 'border-primary/30 text-primary italic' : 'border-slate-200 text-slate-900'}`}
+                                                readOnly={skuMode === 'auto'}
+                                                className={`w-full rounded-lg border bg-slate-50 focus:ring-2 focus:ring-primary focus:border-primary h-12 pl-10 pr-4 font-mono transition-colors ${skuMode === 'auto' ? 'border-primary/30 text-primary font-bold' : 'border-slate-200 text-slate-900'}`}
                                                 placeholder="Escanea o escribe"
                                                 type="text"
                                             />
@@ -265,13 +296,13 @@ export default function EditProductPage() {
                                     <span className="material-symbols-outlined text-primary">payments</span>
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-slate-900">Precios e Inventario</h2>
+                                    <h2 className="text-lg text-slate-900">Precios e Inventario</h2>
                                     <p className="text-sm text-slate-400">Define los costos y el stock actual.</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Precio de Costo ($)</span>
+                                    <span className="text-sm text-slate-700">Precio de Costo ($)</span>
                                     <input
                                         value={costPrice}
                                         onChange={(e) => setCostPrice(e.target.value)}
@@ -282,23 +313,23 @@ export default function EditProductPage() {
                                     />
                                 </label>
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Precio de Venta ($)</span>
+                                    <span className="text-sm text-slate-700">Precio de Venta ($)</span>
                                     <div className="relative">
                                         <input
                                             value={salePrice}
                                             onChange={(e) => setSalePrice(e.target.value)}
-                                            className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 font-bold text-lg"
+                                            className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 text-lg"
                                             placeholder="0.00"
                                             step="0.01"
                                             type="number"
                                         />
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded hidden md:block">
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded hidden md:block">
                                             Margen: {margin.toFixed(1)}%
                                         </div>
                                     </div>
                                 </label>
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Impuesto (IVA)</span>
+                                    <span className="text-sm text-slate-700">Impuesto (IVA)</span>
                                     <select
                                         value={tax}
                                         onChange={(e) => setTax(e.target.value)}
@@ -310,7 +341,7 @@ export default function EditProductPage() {
                                     </select>
                                 </label>
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Stock Actual</span>
+                                    <span className="text-sm text-slate-700">Stock Actual</span>
                                     <input
                                         value={stock}
                                         onChange={(e) => setStock(e.target.value)}
@@ -328,15 +359,15 @@ export default function EditProductPage() {
                         <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                             <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
                                 <span className="material-symbols-outlined text-primary">toggle_on</span>
-                                <h2 className="text-base font-bold text-slate-900">Estado</h2>
+                                <h2 className="text-base text-slate-900">Estado</h2>
                             </div>
                             <div className="flex flex-col gap-4">
                                 <label className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${status === 'Activo' ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-white'}`}>
-                                    <span className="font-bold text-slate-700">Activo</span>
+                                    <span className="text-slate-700">Activo</span>
                                     <input type="radio" checked={status === 'Activo'} onChange={() => setStatus('Activo')} name="status" className="w-5 h-5 text-green-600 focus:ring-green-500" />
                                 </label>
                                 <label className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${status === 'Inactivo' ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'}`}>
-                                    <span className="font-bold text-slate-700">Inactivo</span>
+                                    <span className="text-slate-700">Inactivo</span>
                                     <input type="radio" checked={status === 'Inactivo'} onChange={() => setStatus('Inactivo')} name="status" className="w-5 h-5 text-red-600 focus:ring-red-500" />
                                 </label>
                             </div>
@@ -346,11 +377,11 @@ export default function EditProductPage() {
                         <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                             <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
                                 <span className="material-symbols-outlined text-primary">tune</span>
-                                <h2 className="text-base font-bold text-slate-900">Configuración</h2>
+                                <h2 className="text-base text-slate-900">Configuración</h2>
                             </div>
                             <div className="flex flex-col gap-5">
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Unidad de Medida</span>
+                                    <span className="text-sm text-slate-700">Unidad de Medida</span>
                                     <select
                                         value={unit}
                                         onChange={(e) => setUnit(e.target.value)}
@@ -368,18 +399,18 @@ export default function EditProductPage() {
                                     <label className="flex flex-col gap-2">
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="material-symbols-outlined text-amber-500 text-[20px]">notification_important</span>
-                                            <span className="text-sm font-bold text-slate-900">Alerta de Stock Bajo</span>
+                                            <span className="text-sm text-slate-900">Alerta de Stock Bajo</span>
                                         </div>
                                         <p className="text-xs text-slate-500 mb-2">Notificar cuando el inventario sea menor a:</p>
                                         <div className="flex items-center gap-2">
                                             <input
                                                 value={minStock}
                                                 onChange={(e) => setMinStock(e.target.value)}
-                                                className="w-full rounded-lg border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-10 px-3 text-center font-bold"
+                                                className="w-full rounded-lg border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-10 px-3 text-center"
                                                 type="number"
                                                 min="0"
                                             />
-                                            <span className="text-sm font-medium text-slate-500">{unit}</span>
+                                            <span className="text-sm text-slate-500">{unit}</span>
                                         </div>
                                     </label>
                                 </div>

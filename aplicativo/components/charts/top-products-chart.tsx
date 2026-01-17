@@ -23,7 +23,7 @@ export function TopProductsChart() {
                 if (!orgId) { setLoading(false); return; }
 
                 // Optimized RPC Call
-                const { data: products, error } = await supabase.rpc('get_top_products_stats', {
+                const { data: products, error } = await supabase.rpc('get_top_selling_products', {
                     p_org_id: orgId
                 });
 
@@ -32,7 +32,7 @@ export function TopProductsChart() {
                 if (products) {
                     const formatted = products.map((p: any) => ({
                         name: p.product_name || "Sin Nombre",
-                        ventas: Number(p.total_sold) || 0
+                        ventas: Number(p.value) || 0
                     }));
                     setData(formatted);
                 }

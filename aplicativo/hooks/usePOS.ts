@@ -20,7 +20,7 @@ export function usePOS() {
     const [selectedCustomer, setSelectedCustomer] = useState<Customer>({ id: "default", name: "Venta General" });
     const [heldOrders, setHeldOrders] = useState<any[]>([]);
 
-    // Load Products
+    // Load Products (Smart Loading Strategy)
     useEffect(() => {
         async function fetchProducts() {
             const { data: { session } } = await supabase.auth.getSession();
@@ -34,37 +34,117 @@ export function usePOS() {
 
             if (!profile?.organization_id) return;
 
-            const { data } = await supabase
-                .from('products')
-                .select('*')
-                .eq('status', 'active')
-                .eq('organization_id', profile.organization_id);
+            // If user is searching, fetch all matching products
+            if (searchQuery.trim() !== "") {
+                const { data } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('status', 'active')
+                    .eq('organization_id', profile.organization_id)
+                    .or(`name.ilike.%${searchQuery}%,barcode.ilike.%${searchQuery}%,id.eq.${searchQuery}`)
+                    .limit(50); // Limit search results to 50 for performance
 
-            if (data) {
-                const mapped = data.map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    description: p.description,
-                    category: p.category,
-                    barcode: p.barcode,
-                    price: p.price,
-                    costPrice: p.cost,
-                    salePrice: p.price,
-                    stock: p.stock,
-                    minStock: p.min_stock,
-                    unit: p.unit,
-                    status: p.status === 'active' ? 'Activo' : 'Inactivo',
-                    image: p.image_url,
-                    tax: p.tax_rate,
-                    bagTax: p.bag_tax,
-                    icaRate: p.ica_rate
-                }));
-                // Remove type casting if possible, but keeping 'as any' for safety with Product type strictness during migration
-                setProducts(mapped as any);
+                if (data) {
+                    const mapped = data.map(p => ({
+                        id: p.id,
+                        name: p.name,
+                        description: p.description,
+                        category: p.category,
+                        barcode: p.barcode,
+                        price: p.price,
+                        costPrice: p.cost,
+                        salePrice: p.price,
+                        stock: p.stock,
+                        minStock: p.min_stock,
+                        unit: p.unit,
+                        status: p.status === 'active' ? 'Activo' : 'Inactivo',
+                        image: p.image_url,
+                        tax: p.tax_rate,
+                        bagTax: p.bag_tax,
+                        icaRate: p.ica_rate
+                    }));
+                    setProducts(mapped as any);
+                }
+                return;
+            }
+
+            // Default: Load top 20 most sold products
+            try {
+                // Try to get top selling products from invoice_items
+                const { data: topProducts, error: topError } = await supabase
+                    .rpc('get_top_products_for_pos', {
+                        p_org_id: profile.organization_id,
+                        p_limit: 20
+                    });
+
+                if (!topError && topProducts && topProducts.length > 0) {
+                    // Load full product details for top sellers
+                    const productIds = topProducts.map((p: any) => p.product_id);
+                    const { data } = await supabase
+                        .from('products')
+                        .select('*')
+                        .eq('status', 'active')
+                        .eq('organization_id', profile.organization_id)
+                        .in('id', productIds);
+
+                    if (data) {
+                        const mapped = data.map(p => ({
+                            id: p.id,
+                            name: p.name,
+                            description: p.description,
+                            category: p.category,
+                            barcode: p.barcode,
+                            price: p.price,
+                            costPrice: p.cost,
+                            salePrice: p.price,
+                            stock: p.stock,
+                            minStock: p.min_stock,
+                            unit: p.unit,
+                            status: p.status === 'active' ? 'Activo' : 'Inactivo',
+                            image: p.image_url,
+                            tax: p.tax_rate,
+                            bagTax: p.bag_tax,
+                            icaRate: p.ica_rate
+                        }));
+                        setProducts(mapped as any);
+                    }
+                } else {
+                    // Fallback: Load 20 random products if no sales history
+                    const { data } = await supabase
+                        .from('products')
+                        .select('*')
+                        .eq('status', 'active')
+                        .eq('organization_id', profile.organization_id)
+                        .limit(20);
+
+                    if (data) {
+                        const mapped = data.map(p => ({
+                            id: p.id,
+                            name: p.name,
+                            description: p.description,
+                            category: p.category,
+                            barcode: p.barcode,
+                            price: p.price,
+                            costPrice: p.cost,
+                            salePrice: p.price,
+                            stock: p.stock,
+                            minStock: p.min_stock,
+                            unit: p.unit,
+                            status: p.status === 'active' ? 'Activo' : 'Inactivo',
+                            image: p.image_url,
+                            tax: p.tax_rate,
+                            bagTax: p.bag_tax,
+                            icaRate: p.ica_rate
+                        }));
+                        setProducts(mapped as any);
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading products:", error);
             }
         }
         fetchProducts();
-    }, []);
+    }, [searchQuery]); // Re-fetch when search query changes
 
     // Load Sale ID & Held Orders
     useEffect(() => {
@@ -78,12 +158,13 @@ export function usePOS() {
     // Derived State
     const filteredProducts = useMemo(() => {
         return products.filter(p => {
+            // Safety check: POS should strictly only show active products
+            if (p.status !== 'Activo') return false;
+            // Filter by category (search filtering is now done server-side)
             if (activeCategory !== "Todos" && p.category !== activeCategory) return false;
-            if (searchQuery.trim() === "") return true;
-            const q = searchQuery.toLowerCase();
-            return p.name.toLowerCase().includes(q) || String(p.id).toLowerCase().includes(q);
+            return true;
         });
-    }, [products, activeCategory, searchQuery]);
+    }, [products, activeCategory]);
 
     // Cart Logic
     const cartItems = useMemo(() => {

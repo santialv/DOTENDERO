@@ -32,13 +32,16 @@ export type CartItem = Product & {
 
 export type Customer = {
     id: string;
-    name: string;
+    name: string; // Used as display name (often full_name)
+    full_name?: string;
     email?: string;
     phone?: string;
-    cc?: string;
+    cc?: string; // Legacy?
+    document_number?: string;
     address?: string;
     city?: string;
     department?: string;
+    current_debt?: number;
 };
 
 export type PaymentMethod = "Efectivo" | "Tarjeta" | "QR" | "Fiado";

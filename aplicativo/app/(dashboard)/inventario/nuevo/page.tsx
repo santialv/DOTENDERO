@@ -59,6 +59,11 @@ export default function CreateProductPage() {
             return;
         }
 
+        if (!salePrice) {
+            toast("El precio de venta es obligatorio.", "error");
+            return;
+        }
+
         try {
             // Get Organization Securely
             const { data: { session } } = await supabase.auth.getSession();
@@ -81,8 +86,10 @@ export default function CreateProductPage() {
             }
 
             let finalBarcode = barcode;
-            if (skuMode === 'auto') {
-                const randomSuffix = Math.floor(100000 + Math.random() * 900000); // 6 digit random
+
+            // If still in auto mode but no barcode generated yet (fallback), generate one now
+            if (skuMode === 'auto' && (!finalBarcode || finalBarcode === "SIN-CODIGO")) {
+                const randomSuffix = Math.floor(100000 + Math.random() * 900000);
                 finalBarcode = `SKU-${randomSuffix}`;
             } else if (!finalBarcode) {
                 if (!confirm("El código de barras está vacío. ¿Desea guardar sin código?")) return;
@@ -164,7 +171,7 @@ export default function CreateProductPage() {
                         <span className="material-symbols-outlined text-[12px]">chevron_right</span>
                         <span className="font-medium text-primary">Crear Nuevo</span>
                     </div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none">Crear Nuevo Producto</h1>
+                    <h1 className="text-2xl text-slate-900 tracking-tight leading-none">Crear Nuevo Producto</h1>
                 </div>
                 <div className="flex gap-3">
                     <Link href="/inventario" className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-white transition-colors text-sm flex items-center">
@@ -172,15 +179,15 @@ export default function CreateProductPage() {
                     </Link>
                     <button
                         onClick={() => handleSave(false)}
-                        className="px-4 py-2 rounded-lg border border-primary text-primary font-bold hover:bg-primary/5 transition-all text-sm hidden md:block"
+                        className="px-4 py-2 rounded-lg border-2 border-[#13ec80] text-[#0f3d2a] hover:bg-[#13ec80]/10 font-bold transition-all text-sm hidden md:block"
                     >
                         Guardar y Crear Otro
                     </button>
                     <button
                         onClick={() => handleSave(true)}
-                        className="px-6 py-2 rounded-lg bg-primary hover:bg-primary-dark text-text-main font-bold shadow-sm shadow-primary/30 transition-all transform active:scale-95 text-sm flex items-center gap-2"
+                        className="px-6 py-2 rounded-lg bg-[#13ec80] hover:bg-[#10d673] text-slate-900 font-black shadow-sm shadow-green-500/30 transition-all transform active:scale-95 text-sm flex items-center gap-2"
                     >
-                        <span className="material-symbols-outlined text-lg">save</span>
+                        <span className="material-symbols-outlined text-lg font-bold">save</span>
                         Guardar Producto
                     </button>
                 </div>
@@ -198,13 +205,13 @@ export default function CreateProductPage() {
                                     <span className="material-symbols-outlined text-primary">edit_document</span>
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-slate-900">Detalles Generales</h2>
+                                    <h2 className="text-lg text-slate-900">Detalles Generales</h2>
                                     <p className="text-sm text-slate-400">Información básica del producto para identificación.</p>
                                 </div>
                             </div>
                             <div className="flex flex-col gap-5">
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Nombre del Producto <span className="text-red-500">*</span></span>
+                                    <span className="text-sm text-slate-700">Nombre del Producto <span className="text-red-500">*</span></span>
                                     <input
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
@@ -214,7 +221,7 @@ export default function CreateProductPage() {
                                     />
                                 </label>
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Descripción</span>
+                                    <span className="text-sm text-slate-700">Descripción</span>
                                     <textarea
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
@@ -224,7 +231,7 @@ export default function CreateProductPage() {
                                 </label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <label className="flex flex-col gap-2 relative">
-                                        <span className="text-sm font-semibold text-slate-700">Categoría</span>
+                                        <span className="text-sm text-slate-700">Categoría</span>
                                         <select
                                             value={category}
                                             onChange={(e) => setCategory(e.target.value)}
@@ -241,16 +248,24 @@ export default function CreateProductPage() {
                                     </label>
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm font-semibold text-slate-700">Código de Barras</span>
+                                            <span className="text-sm text-slate-700">Código de Barras</span>
                                             <div className="flex bg-slate-100 p-0.5 rounded-lg">
                                                 <button
-                                                    onClick={() => setSkuMode('manual')}
+                                                    onClick={() => {
+                                                        setSkuMode('manual');
+                                                        setBarcode(""); // Clear on manual switch if desired, or keep it. Let's clear to avoid confusion if they switch back and forth.
+                                                    }}
                                                     className={`px-2 py-0.5 text-xs font-medium rounded-md transition-all ${skuMode === 'manual' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                                 >
                                                     Manual
                                                 </button>
                                                 <button
-                                                    onClick={() => setSkuMode('auto')}
+                                                    onClick={() => {
+                                                        setSkuMode('auto');
+                                                        // Generate immediately
+                                                        const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+                                                        setBarcode(`SKU-${randomSuffix}`);
+                                                    }}
                                                     className={`px-2 py-0.5 text-xs font-medium rounded-md transition-all ${skuMode === 'auto' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                                 >
                                                     Auto
@@ -262,11 +277,12 @@ export default function CreateProductPage() {
                                                 {skuMode === 'auto' ? 'autorenew' : 'qr_code_scanner'}
                                             </span>
                                             <input
-                                                value={skuMode === 'auto' ? "Se generará automáticamente" : barcode}
+                                                value={barcode}
                                                 onChange={(e) => setBarcode(e.target.value)}
                                                 disabled={skuMode === 'auto'}
+                                                readOnly={skuMode === 'auto'}
                                                 autoFocus={skuMode === 'manual'}
-                                                className={`w-full rounded-lg border bg-slate-50 focus:ring-2 focus:ring-primary focus:border-primary h-12 pl-10 pr-4 font-mono transition-colors ${skuMode === 'auto' ? 'border-primary/30 text-primary italic' : 'border-slate-200 text-slate-900 placeholder:text-slate-400'}`}
+                                                className={`w-full rounded-lg border bg-slate-50 focus:ring-2 focus:ring-primary focus:border-primary h-12 pl-10 pr-4 font-mono transition-colors ${skuMode === 'auto' ? 'border-primary/30 text-primary font-bold' : 'border-slate-200 text-slate-900 placeholder:text-slate-400'}`}
                                                 placeholder={skuMode === 'manual' ? "Haz clic aquí y escanea el código..." : "Automático"}
                                                 type="text"
                                             />
@@ -283,13 +299,13 @@ export default function CreateProductPage() {
                                 <span className="material-symbols-outlined text-primary">payments</span>
                             </div>
                             <div>
-                                <h2 className="text-lg font-bold text-slate-900">Precios e Inventario</h2>
+                                <h2 className="text-lg text-slate-900">Precios e Inventario</h2>
                                 <p className="text-sm text-slate-400">Define los costos y el stock inicial.</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                             <label className="flex flex-col gap-2">
-                                <span className="text-sm font-semibold text-slate-700">Precio de Costo ($)</span>
+                                <span className="text-sm text-slate-700">Precio de Costo ($)</span>
                                 <input
                                     value={costPrice}
                                     onChange={(e) => setCostPrice(e.target.value)}
@@ -300,17 +316,17 @@ export default function CreateProductPage() {
                                 />
                             </label>
                             <label className="flex flex-col gap-2">
-                                <span className="text-sm font-semibold text-slate-700">Precio de Venta ($)</span>
+                                <span className="text-sm text-slate-700">Precio de Venta ($)</span>
                                 <div className="relative">
                                     <input
                                         value={salePrice}
                                         onChange={(e) => setSalePrice(e.target.value)}
-                                        className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 font-bold text-lg"
+                                        className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 text-lg"
                                         placeholder="0.00"
                                         step="0.01"
                                         type="number"
                                     />
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded hidden md:block">
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded hidden md:block">
                                         Margen: {margin.toFixed(1)}%
                                     </div>
                                 </div>
@@ -318,11 +334,11 @@ export default function CreateProductPage() {
 
                         </div>
                         <div className="mt-5 border-t border-slate-100 pt-5">
-                            <h3 className="text-sm font-bold text-slate-900 mb-3 block">Otros Impuestos</h3>
+                            <h3 className="text-sm text-slate-900 mb-3 block">Otros Impuestos</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <label className="flex flex-col gap-2">
                                     <div className="flex justify-between">
-                                        <span className="text-sm font-semibold text-slate-700">ICA (Industria y Comercio)</span>
+                                        <span className="text-sm text-slate-700">ICA (Industria y Comercio)</span>
                                         <span className="text-xs text-slate-400">Por mil (‰)</span>
                                     </div>
                                     <div className="relative">
@@ -338,7 +354,7 @@ export default function CreateProductPage() {
                                     </div>
                                 </label>
                                 <div className="flex flex-col gap-2">
-                                    <span className="text-sm font-semibold text-slate-700">Impuesto a la Bolsa</span>
+                                    <span className="text-sm text-slate-700">Impuesto a la Bolsa</span>
                                     <div className={`p-3 rounded-lg border transition-colors ${hasBagTax ? 'bg-primary/5 border-primary/30' : 'bg-slate-50 border-slate-200'}`}>
                                         <label className="flex items-center gap-3 cursor-pointer mb-2">
                                             <input
@@ -347,12 +363,12 @@ export default function CreateProductPage() {
                                                 onChange={(e) => setHasBagTax(e.target.checked)}
                                                 className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
                                             />
-                                            <span className="font-medium text-slate-800">Aplica Impuesto Nacional</span>
+                                            <span className="text-slate-800">Aplica Impuesto Nacional</span>
                                         </label>
                                         {hasBagTax && (
                                             <div className="pl-8">
                                                 <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
                                                     <input
                                                         value={bagTaxValue}
                                                         onChange={(e) => setBagTaxValue(e.target.value)}
@@ -370,12 +386,12 @@ export default function CreateProductPage() {
                         </div>
                         <div className="mt-5 border-t border-slate-100 pt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
                             <label className="flex flex-col gap-2">
-                                <span className="text-sm font-semibold text-slate-700">Tipo de Impuesto</span>
+                                <span className="text-sm text-slate-700">Tipo de Impuesto</span>
                                 <div className="flex gap-2">
                                     <select
                                         value={taxType}
                                         onChange={(e) => setTaxType(e.target.value as "IVA" | "ICO")}
-                                        className="w-1/3 rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 appearance-none font-bold"
+                                        className="w-1/3 rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 appearance-none"
                                     >
                                         <option value="IVA">IVA</option>
                                         <option value="ICO">Impoconsumo</option>
@@ -403,7 +419,7 @@ export default function CreateProductPage() {
                                 </div>
                             </label>
                             <label className="flex flex-col gap-2">
-                                <span className="text-sm font-semibold text-slate-700">Cantidad Inicial</span>
+                                <span className="text-sm text-slate-700">Cantidad Inicial</span>
                                 <input
                                     value={stock}
                                     onChange={(e) => setStock(e.target.value)}
@@ -421,15 +437,15 @@ export default function CreateProductPage() {
                     <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                         <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
                             <span className="material-symbols-outlined text-primary">toggle_on</span>
-                            <h2 className="text-base font-bold text-slate-900">Estado</h2>
+                            <h2 className="text-base text-slate-900">Estado</h2>
                         </div>
                         <div className="flex flex-col gap-4">
                             <label className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${status === 'Activo' ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-white'}`}>
-                                <span className="font-bold text-slate-700">Activo</span>
+                                <span className="text-slate-700">Activo</span>
                                 <input type="radio" checked={status === 'Activo'} onChange={() => setStatus('Activo')} name="status" className="w-5 h-5 text-green-600 focus:ring-green-500" />
                             </label>
                             <label className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${status === 'Inactivo' ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'}`}>
-                                <span className="font-bold text-slate-700">Inactivo</span>
+                                <span className="text-slate-700">Inactivo</span>
                                 <input type="radio" checked={status === 'Inactivo'} onChange={() => setStatus('Inactivo')} name="status" className="w-5 h-5 text-red-600 focus:ring-red-500" />
                             </label>
                         </div>
@@ -439,11 +455,11 @@ export default function CreateProductPage() {
                     <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                         <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
                             <span className="material-symbols-outlined text-primary">tune</span>
-                            <h2 className="text-base font-bold text-slate-900">Configuración</h2>
+                            <h2 className="text-base text-slate-900">Configuración</h2>
                         </div>
                         <div className="flex flex-col gap-5">
                             <label className="flex flex-col gap-2">
-                                <span className="text-sm font-semibold text-slate-700">Unidad de Medida</span>
+                                <span className="text-sm text-slate-700">Unidad de Medida</span>
                                 <select
                                     value={unit}
                                     onChange={(e) => setUnit(e.target.value)}
@@ -461,18 +477,18 @@ export default function CreateProductPage() {
                                 <label className="flex flex-col gap-2">
                                     <div className="flex items-center gap-2 mb-1">
                                         <span className="material-symbols-outlined text-amber-500 text-[20px]">notification_important</span>
-                                        <span className="text-sm font-bold text-slate-900">Alerta de Stock Bajo</span>
+                                        <span className="text-sm text-slate-900">Alerta de Stock Bajo</span>
                                     </div>
                                     <p className="text-xs text-slate-500 mb-2">Notificar cuando el inventario sea menor a:</p>
                                     <div className="flex items-center gap-2">
                                         <input
                                             value={minStock}
                                             onChange={(e) => setMinStock(e.target.value)}
-                                            className="w-full rounded-lg border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-10 px-3 text-center font-bold"
+                                            className="w-full rounded-lg border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-10 px-3 text-center"
                                             type="number"
                                             min="0"
                                         />
-                                        <span className="text-sm font-medium text-slate-500">{unit}</span>
+                                        <span className="text-sm text-slate-500">{unit}</span>
                                     </div>
                                 </label>
                             </div>

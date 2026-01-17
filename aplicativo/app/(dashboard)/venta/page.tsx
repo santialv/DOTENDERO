@@ -179,7 +179,7 @@ export default function VentaPage() {
               </button>
             </div>
 
-            <div className="flex overflow-x-auto pb-2 gap-3 md:grid md:grid-cols-6 lg:grid-cols-8 no-scrollbar scroll-smooth snap-x">
+            <div className="flex overflow-x-auto pb-3 gap-2.5 md:gap-3 no-scrollbar scroll-smooth snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
               <div className="snap-start shrink-0">
                 <CategoryButton
                   label="Todos"

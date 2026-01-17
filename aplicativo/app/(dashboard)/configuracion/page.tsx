@@ -23,9 +23,9 @@ export default function ConfigurationPage() {
                 </div>
                 <button
                     onClick={saveConfiguration}
-                    className="flex h-10 px-6 items-center justify-center rounded-lg bg-primary hover:bg-primary-dark text-text-main text-sm font-bold transition-colors shadow-sm w-full md:w-auto"
+                    className="flex h-10 px-6 items-center justify-center rounded-lg bg-[#13ec80] hover:bg-[#10d673] text-slate-900 text-sm font-black transition-colors shadow-sm w-full md:w-auto gap-2"
                 >
-                    <span className="material-symbols-outlined mr-2 text-[18px]">save</span>
+                    <span className="material-symbols-outlined text-[18px] font-bold">save</span>
                     Guardar Cambios
                 </button>
             </div>

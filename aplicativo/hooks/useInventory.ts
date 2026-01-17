@@ -16,6 +16,7 @@ export function useInventory() {
     const [searchTerm, setSearchTerm] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("Todas");
     const [stockFilter, setStockFilter] = useState("Cualquiera");
+    const [statusFilter, setStatusFilter] = useState("Todos"); // New Filter: Todos, Activo, Inactivo
     const [isLoading, setIsLoading] = useState(true);
 
     const [uniqueCategories, setUniqueCategories] = useState<string[]>(["Todas"]);
@@ -82,6 +83,10 @@ export function useInventory() {
             if (stockFilter === "Sin Stock") query = query.lte('stock', 0);
             if (stockFilter === "Con Stock") query = query.gt('stock', 0);
 
+            // Status Filter
+            if (statusFilter === "Activo") query = query.eq('status', 'active');
+            if (statusFilter === "Inactivo") query = query.eq('status', 'inactive');
+
             // Pagination
             const from = pageToLoad * PAGE_SIZE;
             const to = from + PAGE_SIZE - 1;
@@ -122,7 +127,7 @@ export function useInventory() {
         } finally {
             setIsLoading(false);
         }
-    }, [searchTerm, categoryFilter, stockFilter, toast]);
+    }, [searchTerm, categoryFilter, stockFilter, statusFilter, toast]);
 
     // Debounce Search & Filter Change Effect
     useEffect(() => {
@@ -178,6 +183,8 @@ export function useInventory() {
         setCategoryFilter,
         stockFilter,
         setStockFilter,
+        statusFilter,
+        setStatusFilter,
         uniqueCategories,
         stats,
         isLoading,
