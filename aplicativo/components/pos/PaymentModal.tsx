@@ -387,15 +387,16 @@ export function PaymentModal({
                                         const finalPayments = [...payments, newPayment];
                                         onFinalize(finalPayments, totalPaid + val, change);
                                     } else {
-                                        if ((currentPaymentMethod || "Efectivo") !== 'Fiado') {
+                                        const method = currentPaymentMethod || "Efectivo";
+                                        if (method !== 'Fiado') {
                                             if (!window.confirm(`El monto ingresado ($${val.toLocaleString()}) es MENOR al total pendiente ($${remaining.toLocaleString()}).\n\n¿Desea registrar un PAGO PARCIAL?`)) {
                                                 return;
                                             }
                                         }
-                                        addPayment(currentPaymentMethod || "Efectivo", val);
+                                        addPayment(method, val);
                                     }
                                 }}
-                                className={`flex-[2] text-white font-bold text-xl py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${(currentPaymentMethod !== 'Fiado' && (!amountTendered || parseFloat(amountTendered) <= 0))
+                                className={`flex-[2] text-white font-bold text-xl py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${((currentPaymentMethod || "Efectivo") as PaymentMethod) !== 'Fiado' && (!amountTendered || parseFloat(amountTendered) <= 0)
                                     ? 'bg-slate-300 cursor-not-allowed'
                                     : 'bg-slate-900 hover:bg-slate-800 active:scale-95'
                                     }`}
