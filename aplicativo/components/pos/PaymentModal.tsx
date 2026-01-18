@@ -387,16 +387,14 @@ export function PaymentModal({
                                         const finalPayments = [...payments, newPayment];
                                         onFinalize(finalPayments, totalPaid + val, change);
                                     } else {
-                                        const method = currentPaymentMethod || "Efectivo";
-                                        if (method !== 'Fiado') {
-                                            if (!window.confirm(`El monto ingresado ($${val.toLocaleString()}) es MENOR al total pendiente ($${remaining.toLocaleString()}).\n\n¿Desea registrar un PAGO PARCIAL?`)) {
-                                                return;
-                                            }
+                                        // Aquí ya sabemos que no es 'Fiado' por el return anterior
+                                        if (!window.confirm(`El monto ingresado ($${val.toLocaleString()}) es MENOR al total pendiente ($${remaining.toLocaleString()}).\n\n¿Desea registrar un PAGO PARCIAL?`)) {
+                                            return;
                                         }
-                                        addPayment(method, val);
+                                        addPayment(currentPaymentMethod || "Efectivo", val);
                                     }
                                 }}
-                                className={`flex-[2] text-white font-bold text-xl py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${((currentPaymentMethod || "Efectivo") as PaymentMethod) !== 'Fiado' && (!amountTendered || parseFloat(amountTendered) <= 0)
+                                className={`flex-[2] text-white font-bold text-xl py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${(!amountTendered || parseFloat(amountTendered) <= 0)
                                     ? 'bg-slate-300 cursor-not-allowed'
                                     : 'bg-slate-900 hover:bg-slate-800 active:scale-95'
                                     }`}
