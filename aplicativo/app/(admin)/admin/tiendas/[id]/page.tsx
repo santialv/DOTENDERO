@@ -47,20 +47,35 @@ export default function StoreDetailPage() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
 
-            // 1. Get current Admin Org ID (to save it)
-            const { data: profile } = await supabase
+            // 1. Get current Admin Org ID (Securely from DB Home)
+            // 1. Get current Admin Org ID (Securely from DB Home)
+            console.log("Iniciando Ghost Login para:", session.user.email);
+
+            const { data: profile, error: profileError } = await supabase
                 .from('profiles')
-                .select('organization_id')
+                .select('home_organization_id, role')
                 .eq('id', session.user.id)
                 .single();
 
-            const originalOrgId = profile?.organization_id;
-
-            // Only save if we are not already in ghost mode (prevent nesting issues ideally)
-            // But if we are admin, we are likely in our own org.
-            if (originalOrgId) {
-                localStorage.setItem('ghost_admin_return_org', originalOrgId);
+            if (profileError) {
+                console.error("Error fetching profile:", profileError);
+                alert("Error de red al verificar perfil.");
+                setSwitching(false);
+                return;
             }
+
+            console.log("Perfil encontrado:", profile);
+
+            const homeOrgId = profile?.home_organization_id;
+
+            if (!homeOrgId) {
+                alert("Error de seguridad: Tu usuario no tiene una Organización Hogar definida.");
+                setSwitching(false);
+                return;
+            }
+
+            // Save for UI Banner helper (but DB is the truth)
+            localStorage.setItem('ghost_admin_return_org', homeOrgId);
 
             // 2. Switch Org
             const { error } = await supabase

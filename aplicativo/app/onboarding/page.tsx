@@ -20,6 +20,8 @@ type OnboardingData = {
     phone: string;
     rutPath?: string;
     plan: 'free' | 'pro' | 'premium';
+    department: string;
+    acceptedTerms: boolean;
 };
 
 export default function OnboardingPage() {
@@ -35,12 +37,14 @@ export default function OnboardingPage() {
         legalName: "",
         nit: "",
         city: "",
+        department: "",
         regime: "No Responsable de IVA",
         activityCode: "",
         address: "",
         phone: "",
         rutPath: "",
         plan: "free",
+        acceptedTerms: false
     });
 
     // Save state on change
@@ -51,11 +55,14 @@ export default function OnboardingPage() {
 
     const handleNext = () => {
         if (step === 1 && !data.storeName) return toast("Por favor escribe el nombre de tu tienda", "error");
-        if (step === 2 && (!data.nit || !data.city)) return toast("Estos datos son necesarios para la facturación", "error");
+        if (step === 2 && (!data.nit || !data.city || !data.department || data.nit.length < 6)) return toast("Completa el Departamento, Ciudad y un NIT válido (mín. 6 dígitos)", "error");
         if (step === 3 && (!data.activityCode)) return toast("Selecciona tu actividad económica", "error");
         // Step 4 is Upload, optional
         if (step === 5 && (!data.address || !data.phone)) return toast("Completa los datos de contacto", "error");
-        if (step === 6 && !data.plan) return toast("Selecciona un plan para continuar", "error");
+        if (step === 6) {
+            if (!data.plan) return toast("Selecciona un plan para continuar", "error");
+            if (!data.acceptedTerms) return toast("Debes aceptar los Términos y Condiciones", "error");
+        }
 
         if (step === 6) {
             handleFinalSubmit();
@@ -285,6 +292,24 @@ export default function OnboardingPage() {
                     />
                 </div>
                 <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Departamento</label>
+                    <div className="relative">
+                        <select
+                            value={data.department}
+                            onChange={e => setData({ ...data, department: e.target.value })}
+                            className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-primary outline-none transition-all appearance-none"
+                        >
+                            <option value="">Seleccionar Departamento</option>
+                            {["Antioquia", "Cundinamarca", "Valle del Cauca", "Atlántico", "Santander", "Bolívar", "Nariño", "Córdoba", "Tolima", "Risaralda", "Caldas", "Huila", "Cauca", "Norte de Santander", "Boyacá", "Meta", "Magdalena", "Cesar", "Quindío", "Sucre", "Casanare", "La Guajira", "Chocó", "Caquetá", "Putumayo", "Arauca", "San Andrés y Providencia", "Guaviare", "Amazonas", "Vichada", "Vaupés", "Guainía"].sort().map(d => (
+                                <option key={d} value={d}>{d}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <span className="material-symbols-outlined">expand_more</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Ciudad</label>
                     <div className="relative">
                         <select
@@ -293,6 +318,7 @@ export default function OnboardingPage() {
                             className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-primary outline-none transition-all appearance-none"
                         >
                             <option value="">Seleccionar Ciudad</option>
+                            {/* In a real app we would filter cities by department */}
                             {COLOMBIA_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
@@ -505,6 +531,20 @@ export default function OnboardingPage() {
                     </div>
                     <p className="text-xs text-slate-500">Soporte prioritario, múltiples bodegas y analítica predictiva.</p>
                 </button>
+            </div>
+
+            {/* Terms and Conditions */}
+            <div className="flex items-center gap-3 pt-4 border-t border-slate-100 mt-2">
+                <input
+                    type="checkbox"
+                    id="terms"
+                    checked={data.acceptedTerms}
+                    onChange={(e) => setData({ ...data, acceptedTerms: e.target.checked })}
+                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                />
+                <label htmlFor="terms" className="text-xs text-slate-600 cursor-pointer select-none">
+                    He leído y acepto los <a href="/legal/terminos" target="_blank" className="font-bold hover:underline text-slate-900">Términos y Condiciones</a> y la <a href="/legal/privacidad" target="_blank" className="font-bold hover:underline text-slate-900">Política de Datos</a>.
+                </label>
             </div>
         </div>
     );

@@ -31,7 +31,11 @@ export default function LoginPage() {
             });
 
             if (error) {
-                toast(error.message || "Credenciales inválidas", "error");
+                if (error.message === "Invalid login credentials") {
+                    toast("¡Uy! Ese usuario o contraseña no cuadran. Revísalos bien.", "error");
+                } else {
+                    toast(error.message || "Credenciales inválidas", "error");
+                }
             } else if (data.user) {
                 toast("Bienvenido de nuevo", "success");
 

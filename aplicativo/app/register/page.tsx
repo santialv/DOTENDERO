@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useToast } from "@/components/ui/toast";
 import { motion } from 'framer-motion';
 import { Store, User, Mail, Lock, Eye, EyeOff, ArrowRight, Construction } from 'lucide-react';
@@ -99,11 +100,14 @@ export default function RegisterPage() {
             <div className="bg-white transition-colors duration-300 font-sans">
                 <div className="flex flex-col lg:flex-row min-h-screen w-full">
                     {/* Left Section: Hero Image */}
-                    <section className="relative lg:w-1/2 w-full min-h-[40vh] lg:min-h-screen overflow-hidden">
-                        <img
+                    <section className="relative lg:w-1/2 w-full min-h-[50vh] lg:min-h-screen overflow-hidden">
+                        <Image
                             alt="Tienda de barrio colombiana colorida y tradicional"
-                            className="absolute inset-0 w-full h-full object-cover"
+                            className="object-cover"
                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSbBngjIIPk_mihUUaZBCWi8SY7QdO3mZM-SSzVSsAZSPD0A3kMVwgCEZXhXYVIUoBbDi4svyF-CyxzMx3cmIGWMc-XkifH3xZUhoCduT4gqllB5_eES-glo3G7mAK5A0tZb0vVRrKm4WOC95a0YH2JR_R_-b_-i9O43nO-BSfiUz0WliHAy7ETDWPYBYi6AQCVcNKbPnSFs8czSbMD05os-JTXLHkBacHmJlccw6oDUPWbeJV5f6fhZgw92pDXEsQWhuiJ6FVEy4"
+                            fill
+                            priority
+                            sizes="(max-width: 1024px) 100vw, 50vw"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 to-slate-900/30 flex flex-col justify-end p-8 lg:p-16">
                             <div className="max-w-xl">
@@ -192,10 +196,13 @@ export default function RegisterPage() {
                         transition={{ duration: 0.8, ease: "easeOut" }}
                         className="absolute inset-0 h-full w-full"
                     >
-                        <img
+                        <Image
                             alt="Tienda de barrio"
-                            className="absolute inset-0 h-full w-full object-cover opacity-60 mix-blend-overlay"
+                            className="object-cover opacity-60 mix-blend-overlay"
                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEOdEkdUjBG-tgn0hpYWw7k7t01mA6H2fn09LYT9ntJLCXJTNxQSPmZxm91x04cbnaAn0E16aIhBLQlM-h_3A838kcizKPdvbmXpFRZLR9RLl5fAoMJUOYemzh4aSn4_ZdTK1m2shjn8Wseh5w0NNzxIq9YT5eWpO9tG6sXbXDXxqJ9OAAfXg9YTHs-KrJwJyk4B_rSpe1w3iGF4DoMG_nHHMIPB5skRSCDkNANz6C4QOw-wETm2qcGzELGGc5BamfEb5s2ASsAh8"
+                            fill
+                            priority
+                            sizes="50vw"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-background-dark/90 via-background-dark/40 to-transparent"></div>
                     </motion.div>

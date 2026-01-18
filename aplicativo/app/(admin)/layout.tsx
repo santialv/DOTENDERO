@@ -29,12 +29,12 @@ export default function AdminLayout({
                     .eq('id', session.user.id)
                     .single();
 
-                // PERMISOS: Aceptamos 'super_admin' O 'admin'
-                if (profile?.role === 'super_admin' || profile?.role === 'admin') {
+                // PERMISOS: SOLO 'super_admin' puede entrar aquí.
+                if (profile?.role === 'super_admin') {
                     setIsAuthorized(true);
                 } else {
-                    console.warn("Acceso denegado: Rol insuficiente", profile?.role);
-                    router.push("/dashboard");
+                    console.warn("Acceso denegado: El panel es solo para Super Admins", profile?.role);
+                    router.push("/venta"); // Redirigir a su tienda normal
                 }
             } catch (error) {
                 console.error("Admin Auth Error:", error);

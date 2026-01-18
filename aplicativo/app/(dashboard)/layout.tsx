@@ -55,8 +55,20 @@ export default function DashboardLayout({
             const { data: { session } } = await supabase.auth.getSession();
             if (!session || !ghostOrgId) return;
 
-            // Switch back to original Org
-            await supabase.from('profiles').update({ organization_id: ghostOrgId }).eq('id', session.user.id);
+            // 1. Get Home Org ID (Securely)
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('home_organization_id')
+                .eq('id', session.user.id)
+                .single();
+
+            if (!profile?.home_organization_id) {
+                alert("Error crítico: No tienes una organización hogar para volver.");
+                return;
+            }
+
+            // 2. Switch back to Home Org
+            await supabase.from('profiles').update({ organization_id: profile.home_organization_id }).eq('id', session.user.id);
 
             localStorage.removeItem('ghost_admin_return_org');
             // Force reload to refresh context
@@ -125,8 +137,8 @@ export default function DashboardLayout({
                             </div>
                         </div>
 
-                        {/* Admin Link (Only for Super Admin/Admin) */}
-                        {(userRole === 'super_admin' || userRole === 'admin') && (
+                        {/* Admin Link (Only for Super Admin) */}
+                        {userRole === 'super_admin' && (
                             <Link
                                 href="/admin"
                                 className={`flex w-full items-center gap-3 p-2 rounded-xl text-slate-600 hover:text-purple-600 hover:bg-purple-50 transition-colors group ${isCollapsed ? 'justify-center' : ''}`}
