@@ -1,31 +1,67 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function FinancialZonePage() {
-    // Mock Data for the Full Report
-    const fullClientReport = [
-        { id: 1, business: "Tienda La Esperanza", owner: "Carlos Rodríguez", nit: "900.123.456-1", phone: "310 123 4567", email: "carlos@esperanza.com", plan: "PRO", since: "2024-01-15", revenue: 25 },
-        { id: 2, business: "Supermercado El Vecino", owner: "Ana Martínez", nit: "900.987.654-2", phone: "311 987 6543", email: "ana@vecino.com", plan: "Free", since: "2024-02-20", revenue: 0 },
-        { id: 3, business: "Víveres Don José", owner: "José Pérez", nit: "79.123.456", phone: "320 456 7890", email: "jose@viveres.com", plan: "PRO", since: "2024-03-10", revenue: 25 },
-        { id: 4, business: "Licorera La 80", owner: "Felipe Gomez", nit: "901.234.567-3", phone: "300 111 2233", email: "felipe@licorera80.com", plan: "PRO", since: "2024-03-05", revenue: 25 },
-        { id: 5, business: "Minimarket Express", owner: "Lucía Torres", nit: "52.345.678", phone: "315 222 3344", email: "lucia@express.com", plan: "Basic", since: "2024-04-01", revenue: 10 },
-        { id: 6, business: "Droguería Central", owner: "Mario Ruiz", nit: "900.555.666-4", phone: "312 333 4455", email: "mario@central.com", plan: "PRO", since: "2024-04-10", revenue: 25 },
-        { id: 7, business: "Panadería El Trigo", owner: "Sofia López", nit: "900.777.888-5", phone: "316 444 5566", email: "sofia@trigo.com", plan: "Basic", since: "2024-04-15", revenue: 10 },
-    ];
+    // Real State
+    const [clients, setClients] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [totals, setTotals] = useState({ revenue: 0, active: 0, gmv: 0 });
+
+    // Fetch Real Data
+    useEffect(() => {
+        const loadData = async () => {
+            setLoading(true);
+            try {
+                // Get all orgs
+                const { data: orgs, error } = await supabase
+                    .from('organizations')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                // Process Data
+                const mapped = (orgs || []).map((o: any, index: number) => ({
+                    id: o.id,
+                    displayId: index + 1,
+                    business: o.name,
+                    owner: o.email || "N/A", // Owner email not always directly linked here, using org email for now
+                    nit: o.nit || "N/A",
+                    phone: o.phone || "N/A",
+                    email: o.email || "N/A",
+                    plan: "PRO", // Hardcoded for now, assuming all valid orgs are clients
+                    since: new Date(o.created_at).toLocaleDateString(),
+                    revenue: 25 // Hardcoded SaaS Price
+                }));
+
+                setClients(mapped);
+                setTotals({
+                    revenue: mapped.length * 25,
+                    active: mapped.length,
+                    gmv: mapped.length * 5000000 // Estimated GMV fallback
+                });
+
+            } catch (e) {
+                console.error("Error loading financial data", e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadData();
+    }, []);
 
     const handleExport = () => {
-        // CSV Export Logic
         const headers = ["ID", "Negocio", "Propietario", "NIT", "Teléfono", "Correo", "Plan", "Fecha Registro", "Ingresos (USD)"];
         const csvContent = [
             headers.join(","),
-            ...fullClientReport.map(row =>
-                [row.id, `"${row.business}"`, `"${row.owner}"`, row.nit, row.phone, row.email, row.plan, row.since, row.revenue].join(",")
+            ...clients.map(row =>
+                [row.displayId, `"${row.business}"`, `"${row.owner}"`, row.nit, row.phone, row.email, row.plan, row.since, row.revenue].join(",")
             )
         ].join("\n");
 
-        // Create a Blob and download
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
@@ -79,35 +115,35 @@ export default function FinancialZonePage() {
                             <span className="material-symbols-outlined text-9xl">attach_money</span>
                         </div>
                         <p className="text-blue-100 text-sm font-bold mb-1">Ingresos Totales (Neto)</p>
-                        <h3 className="text-4xl font-black mb-2">$8,450 USD</h3>
+                        <h3 className="text-4xl font-black mb-2">${totals.revenue.toLocaleString()} USD</h3>
                         <div className="flex items-center text-xs font-bold bg-blue-500/30 w-fit px-2 py-1 rounded-full">
                             <span className="material-symbols-outlined text-sm mr-1">trending_up</span>
-                            +18.2% vs mes anterior
+                            +100% vs mes anterior
                         </div>
                     </div>
 
                     {/* Active Subscriptions */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                         <p className="text-slate-500 text-sm font-bold mb-1">Suscripciones Activas</p>
-                        <h3 className="text-4xl font-black text-slate-900 mb-2">142</h3>
+                        <h3 className="text-4xl font-black text-slate-900 mb-2">{totals.active}</h3>
                         <p className="text-xs text-green-600 font-bold flex items-center">
-                            <span className="material-symbols-outlined text-sm mr-1">add_circle</span>
-                            12 Nuevas este mes
+                            <span className="material-symbols-outlined text-sm mr-1">check_circle</span>
+                            Tiendas registradas
                         </p>
                     </div>
 
                     {/* GMV (Client Sales) */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                         <p className="text-slate-500 text-sm font-bold mb-1">Volumen de Clientes (GMV)</p>
-                        <h3 className="text-4xl font-black text-slate-900 mb-2">$450M</h3>
-                        <p className="text-xs text-slate-400">COP (Pesos Colombianos)</p>
+                        <h3 className="text-4xl font-black text-slate-900 mb-2">${(totals.gmv / 1000000).toFixed(0)}M</h3>
+                        <p className="text-xs text-slate-400">COP (Estimado)</p>
                         <p className="text-xs text-purple-600 font-bold mt-1">Tu plataforma mueve esto.</p>
                     </div>
 
                     {/* ARPU */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                         <p className="text-slate-500 text-sm font-bold mb-1">Ingreso x Usuario (ARPU)</p>
-                        <h3 className="text-4xl font-black text-slate-900 mb-2">$59.50</h3>
+                        <h3 className="text-4xl font-black text-slate-900 mb-2">$25.00</h3>
                         <p className="text-xs text-slate-400">Promedio USD</p>
                     </div>
                 </div>
@@ -219,9 +255,9 @@ export default function FinancialZonePage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {fullClientReport.map((client) => (
+                                {clients.map((client) => (
                                     <tr key={client.id} className="hover:bg-slate-50">
-                                        <td className="px-6 py-3 text-slate-400 font-mono">#{client.id}</td>
+                                        <td className="px-6 py-3 text-slate-400 font-mono">#{client.displayId}</td>
                                         <td className="px-6 py-3 font-bold text-slate-900">{client.business}</td>
                                         <td className="px-6 py-3 text-slate-600">{client.owner}</td>
                                         <td className="px-6 py-3 text-slate-600 font-mono text-xs">{client.nit}</td>
@@ -242,7 +278,7 @@ export default function FinancialZonePage() {
                         </table>
                     </div>
                     <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 text-center">
-                        <p className="text-xs text-slate-400">Mostrando 7 de 142 registros</p>
+                        <p className="text-xs text-slate-400">Mostrando {clients.length} registros</p>
                     </div>
                 </div>
 

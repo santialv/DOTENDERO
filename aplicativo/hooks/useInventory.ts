@@ -160,14 +160,93 @@ export function useInventory() {
         }
     }, [toast]);
 
-    const stats: InventoryStats = useMemo(() => {
-        return {
-            totalProducts: totalCount,
-            totalValue: 0,
-            lowStockCount: 0,
-            inactiveCount: 0
-        };
-    }, [totalCount]);
+    const [stats, setStats] = useState<InventoryStats>({
+        totalProducts: 0,
+        totalValue: 0,
+        lowStockCount: 0,
+        inactiveCount: 0
+    });
+
+    const fetchStats = useCallback(async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
+        if (!profile?.organization_id) return;
+        const orgId = profile.organization_id;
+
+        try {
+            // Attempt 1: Try Optimized RPC
+            const { data, error } = await supabase.rpc('get_inventory_stats_v2', { org_id: orgId });
+
+            if (!error && data && data.length > 0) {
+                // RPC returned an array (Supabase RPC returns arrays for TABLE returns)
+                const s = data[0];
+                setStats({
+                    totalProducts: s.total_products || 0,
+                    totalValue: s.total_value || 0,
+                    lowStockCount: s.low_stock_count || 0,
+                    inactiveCount: s.inactive_count || 0
+                });
+                return;
+            } else {
+                throw new Error("RPC failed or empty");
+            }
+
+        } catch (e) {
+            console.warn("Stats RPC unavailable, using client-side fallback (slower)", e);
+
+            // Fallback: Fetch specific columns to calculate stats locally
+            // We fetch all products for the org. CAUTION: Heavy for large datasets.
+            const { data: products, error } = await supabase
+                .from('products')
+                .select('stock, cost, min_stock, status')
+                .eq('organization_id', orgId);
+
+            if (error) {
+                console.error("Fallback stats fetch failed", error);
+                return;
+            }
+
+            if (products) {
+                let totalP = 0;
+                let totalV = 0;
+                let lowStock = 0;
+                let inactive = 0;
+
+                products.forEach(p => {
+                    totalP++;
+                    if (p.status === 'inactive') {
+                        inactive++;
+                    } else {
+                        // Active Product calculations
+                        const stock = p.stock || 0;
+                        const cost = p.cost || 0;
+                        const min = p.min_stock || 0;
+
+                        totalV += (stock * cost);
+
+                        if (stock <= min) {
+                            lowStock++;
+                        }
+                    }
+                });
+
+                setStats({
+                    totalProducts: totalP,
+                    totalValue: totalV,
+                    lowStockCount: lowStock,
+                    inactiveCount: inactive
+                });
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchStats();
+    }, [fetchStats]);
+
+    // Update stats on products change (simple count match only if simple)
+    // But since pagination, we rely on the separate fetch.
 
     const calculateMargin = (cost: number, price: number) => {
         if (price === 0) return 0;

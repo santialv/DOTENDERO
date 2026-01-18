@@ -93,67 +93,88 @@ export default function RegisterPage() {
         return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-400">Cargando...</div>;
     }
 
-    // BLOCKED SCREEN
+    // BLOCKED SCREEN (Exact Design)
     if (!registrationsAllowed) {
         return (
-            <div className="flex min-h-screen flex-row bg-slate-50 overflow-hidden font-sans">
-                {/* Left Side (Dark) - Same as original */}
-                <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-slate-900">
-                    <img
-                        alt="Background"
-                        className="absolute inset-0 h-full w-full object-cover opacity-60 mix-blend-overlay grayscale"
-                        src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=2574"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
-                    <div className="relative z-10 flex flex-col justify-end p-20 h-full">
-                        <h2 className="text-4xl font-bold text-white mb-4 leading-tight">Construyendo el futuro del comercio local.</h2>
-                        <p className="text-slate-300 text-lg">Estamos mejorando nuestra plataforma para ofrecerte una experiencia aún más increíble.</p>
-                    </div>
-                </div>
-
-                {/* Right Side (Message) */}
-                <div className="flex flex-1 flex-col justify-center items-center px-8 py-12 sm:px-12 lg:flex-none lg:px-20 xl:px-24 w-full lg:w-1/2 bg-white text-center">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="max-w-md mx-auto"
-                    >
-                        <div className="mx-auto w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center text-amber-600 mb-8 shadow-sm">
-                            <Construction className="w-10 h-10" />
+            <div className="bg-white transition-colors duration-300 font-sans">
+                <div className="flex flex-col lg:flex-row min-h-screen w-full">
+                    {/* Left Section: Hero Image */}
+                    <section className="relative lg:w-1/2 w-full min-h-[40vh] lg:min-h-screen overflow-hidden">
+                        <img
+                            alt="Tienda de barrio colombiana colorida y tradicional"
+                            className="absolute inset-0 w-full h-full object-cover"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSbBngjIIPk_mihUUaZBCWi8SY7QdO3mZM-SSzVSsAZSPD0A3kMVwgCEZXhXYVIUoBbDi4svyF-CyxzMx3cmIGWMc-XkifH3xZUhoCduT4gqllB5_eES-glo3G7mAK5A0tZb0vVRrKm4WOC95a0YH2JR_R_-b_-i9O43nO-BSfiUz0WliHAy7ETDWPYBYi6AQCVcNKbPnSFs8czSbMD05os-JTXLHkBacHmJlccw6oDUPWbeJV5f6fhZgw92pDXEsQWhuiJ6FVEy4"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 to-slate-900/30 flex flex-col justify-end p-8 lg:p-16">
+                            <div className="max-w-xl">
+                                <h1 className="text-4xl lg:text-6xl font-extrabold text-white leading-tight mb-6 font-display">
+                                    Impulsando el corazón de nuestros barrios.
+                                </h1>
+                                <div className="inline-block bg-[#22C55E] px-5 py-3 rounded-lg shadow-lg">
+                                    <p className="text-white text-lg lg:text-xl font-semibold">
+                                        Estamos poniendo la casa en orden para que tu negocio crezca como nunca.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
+                    </section>
 
-                        <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-4">
-                            ¡Gracias por tu interés!
-                        </h1>
+                    {/* Right Section: Content */}
+                    <section className="lg:w-1/2 w-full flex flex-col items-center justify-center p-6 lg:p-20 bg-white">
+                        <div className="w-full max-w-md text-center space-y-8">
 
-                        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 mb-8 text-left">
-                            <p className="text-amber-900 font-medium text-lg mb-2">
-                                🔒 Registros Pausados Temporalmente
-                            </p>
-                            <p className="text-amber-800/80 text-sm leading-relaxed">
-                                En DonTendero estamos comprometidos con la excelencia. Actualmente hemos cerrado el ingreso a nuevos usuarios mientras implementamos mejoras críticas en nuestra infraestructura.
-                            </p>
+                            {/* Icon */}
+                            <div className="flex justify-center">
+                                <div className="w-24 h-24 bg-[#F0FDF4] rounded-3xl flex items-center justify-center shadow-sm border border-[#22C55E]/10">
+                                    <span className="material-symbols-outlined text-[#22C55E] text-6xl">storefront</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 font-display">
+                                    ¡Qué bueno tenerte por acá!
+                                </h2>
+                                <p className="text-slate-600 text-lg">
+                                    Gracias por confiar en DonTendero.
+                                </p>
+                            </div>
+
+                            {/* Info Box */}
+                            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 text-left shadow-sm">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <span className="material-symbols-outlined text-[#22C55E] text-2xl">info</span>
+                                    <h3 className="font-bold text-slate-800 text-lg">
+                                        Registros Pausados por el Momento
+                                    </h3>
+                                </div>
+                                <p className="text-slate-600 leading-relaxed text-sm lg:text-base">
+                                    ¡Oiga, vecino! Le cuento que estamos haciendo unas mejoras importantes en nuestra plataforma para que sea mucho más fácil manejar su tienda. Por ahora, no estamos recibiendo nuevos registros, pero no se preocupe, que pronto abriremos de nuevo.
+                                </p>
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="space-y-6">
+                                <p className="text-slate-500 font-medium">
+                                    Estamos "echando para adelante" con tecnología para los tenderos de Colombia.
+                                </p>
+                                <div className="flex flex-col gap-4">
+                                    <Link
+                                        href="/login"
+                                        className="w-full flex justify-center items-center py-4 px-6 bg-[#22C55E] hover:bg-[#166534] text-white rounded-xl font-bold text-lg transition-all shadow-md active:scale-[0.98]"
+                                    >
+                                        Ya tengo cuenta, iniciar sesión
+                                    </Link>
+                                    <Link
+                                        href="/"
+                                        className="text-slate-500 hover:text-[#22C55E] transition-colors text-sm font-semibold flex items-center justify-center gap-2"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">arrow_back</span>
+                                        Volver al inicio
+                                    </Link>
+                                </div>
+                            </div>
                         </div>
-
-                        <p className="text-slate-500 mb-8">
-                            Estamos "construyendo el futuro de Colombia" paso a paso. Vuelve pronto, ¡tendremos cupos disponibles muy pronto!
-                        </p>
-
-                        <div className="flex flex-col gap-3">
-                            <Link
-                                href="/login"
-                                className="w-full flex justify-center items-center px-4 py-3 border border-slate-200 rounded-xl text-slate-700 font-bold hover:bg-slate-50 transition-colors"
-                            >
-                                Ya tengo cuenta, iniciar sesión
-                            </Link>
-                            <Link
-                                href="/"
-                                className="text-sm text-slate-400 hover:text-slate-600 underline"
-                            >
-                                Volver al inicio
-                            </Link>
-                        </div>
-                    </motion.div>
+                    </section>
                 </div>
             </div>
         );

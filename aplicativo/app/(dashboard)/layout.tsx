@@ -43,6 +43,30 @@ export default function DashboardLayout({
         router.push('/login');
     };
 
+    // Ghost Mode Logic
+    const [ghostOrgId, setGhostOrgId] = useState<string | null>(null);
+    useEffect(() => {
+        const stored = localStorage.getItem('ghost_admin_return_org');
+        if (stored) setGhostOrgId(stored);
+    }, []);
+
+    const exitGhostMode = async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session || !ghostOrgId) return;
+
+            // Switch back to original Org
+            await supabase.from('profiles').update({ organization_id: ghostOrgId }).eq('id', session.user.id);
+
+            localStorage.removeItem('ghost_admin_return_org');
+            // Force reload to refresh context
+            window.location.href = '/admin/tiendas';
+        } catch (e) {
+            console.error(e);
+            alert("Error exiting ghost mode");
+        }
+    };
+
     return (
         <AuthGuard>
             <div className="flex h-screen bg-slate-50">
@@ -132,6 +156,28 @@ export default function DashboardLayout({
 
                 {/* Main Content */}
                 <main className="flex-1 overflow-x-hidden overflow-y-auto relative flex flex-col bg-slate-50/50 pb-20 md:pb-0">
+                    {/* Ghost Mode Banner */}
+                    {ghostOrgId && (
+                        <div className="bg-slate-900 border-b-4 border-red-500 text-white px-6 py-3 shadow-md flex flex-col md:flex-row justify-between items-center gap-4 z-40 sticky top-0">
+                            <div className="flex items-center gap-3">
+                                <span className="p-2 bg-red-500/20 rounded-full animate-pulse">
+                                    <span className="material-symbols-outlined text-red-400">visibility</span>
+                                </span>
+                                <div>
+                                    <p className="font-black text-sm uppercase tracking-wider text-red-400">Modo Fantasma Activo</p>
+                                    <p className="text-xs text-slate-400">Estás visualizando la tienda como administrador. Cualquier cambio será real.</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={exitGhostMode}
+                                className="bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase shadow-lg shadow-red-500/20 transition-all flex items-center gap-2"
+                            >
+                                <span className="material-symbols-outlined text-sm">logout</span>
+                                Salir del Modo Fantasma
+                            </button>
+                        </div>
+                    )}
+
                     <div className="fixed bottom-24 right-4 z-50 md:bottom-8 md:right-8">
                         <NotificationBell />
                     </div>

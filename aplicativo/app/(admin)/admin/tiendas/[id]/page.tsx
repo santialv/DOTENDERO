@@ -12,6 +12,7 @@ export default function StoreDetailPage() {
 
     const [store, setStore] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [switching, setSwitching] = useState(false);
 
     useEffect(() => {
         if (id) loadStoreDetails();
@@ -33,6 +34,50 @@ export default function StoreDetailPage() {
             console.error("Error loading store details:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleGhostLogin = async () => {
+        if (!store) return;
+        const confirmed = window.confirm(`¿Estás seguro que quieres entrar como "${store.name}"?`);
+        if (!confirmed) return;
+
+        setSwitching(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+
+            // 1. Get current Admin Org ID (to save it)
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', session.user.id)
+                .single();
+
+            const originalOrgId = profile?.organization_id;
+
+            // Only save if we are not already in ghost mode (prevent nesting issues ideally)
+            // But if we are admin, we are likely in our own org.
+            if (originalOrgId) {
+                localStorage.setItem('ghost_admin_return_org', originalOrgId);
+            }
+
+            // 2. Switch Org
+            const { error } = await supabase
+                .from('profiles')
+                .update({ organization_id: store.id })
+                .eq('id', session.user.id);
+
+            if (error) throw error;
+
+            // 3. Redirect
+            // Force reload to ensure all contexts refresh
+            window.location.href = '/venta';
+
+        } catch (error) {
+            console.error("Ghost login failed", error);
+            alert("Error al entrar en modo Ghost");
+            setSwitching(false);
         }
     };
 
@@ -123,7 +168,12 @@ export default function StoreDetailPage() {
 
                 {/* Actions */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button className="p-4 bg-white border border-slate-200 rounded-xl hover:shadow-md transition-all flex items-center gap-3 group text-left">
+                    <button
+                        onClick={handleGhostLogin}
+                        disabled={switching}
+                        className="p-4 bg-white border border-slate-200 rounded-xl hover:shadow-md transition-all flex items-center gap-3 group text-left relative overflow-hidden"
+                    >
+                        {switching && <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div></div>}
                         <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                             <span className="material-symbols-outlined">login</span>
                         </div>

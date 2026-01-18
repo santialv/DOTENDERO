@@ -79,7 +79,7 @@ export default function EditProductPage() {
                 setStock(String(product.stock));
                 setMinStock(String(product.min_stock));
                 setUnit(product.unit);
-                setStatus(product.status || 'Activo');
+                setStatus(product.status === 'active' ? 'Activo' : 'Inactivo');
 
             } catch (err) {
                 console.error(err);
@@ -144,7 +144,7 @@ export default function EditProductPage() {
                 stock: parseFloat(stock) || 0,
                 min_stock: parseFloat(minStock) || 0,
                 unit,
-                status,
+                status: status === 'Activo' ? 'active' : 'inactive',
                 updated_at: new Date().toISOString()
             };
 
