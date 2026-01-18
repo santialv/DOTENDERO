@@ -69,30 +69,8 @@ export function useConfiguration() {
                 };
             }
 
-            // RECOVERY MECHANISM from LocalStorage
-            if (!loadedInfo.nit || !loadedInfo.name) {
-                const localData = localStorage.getItem("onboarding_data");
-                if (localData) {
-                    try {
-                        const parsed = JSON.parse(localData);
-                        console.log("Recuperando datos de LocalStorage:", parsed);
-                        loadedInfo = {
-                            ...loadedInfo,
-                            name: loadedInfo.name || parsed.storeName || "",
-                            nit: loadedInfo.nit || parsed.nit || "",
-                            city: loadedInfo.city || parsed.city || "",
-                            regime: loadedInfo.regime || parsed.regime || "No Responsable de IVA",
-                            activityCode: loadedInfo.activityCode || parsed.activityCode || "",
-                            address: loadedInfo.address || parsed.address || "",
-                            phone: loadedInfo.phone || parsed.phone || "",
-                            rutUrl: loadedInfo.rutUrl || parsed.rutPath || ""
-                        };
-                        toast("Datos recuperados de tu sesión anterior. Por favor guarda.", "info");
-                    } catch (e) {
-                        console.error("Error parsing local onboarding data", e);
-                    }
-                }
-            }
+            // Se eliminó el mecanismo de recuperación de LocalStorage por seguridad.
+            // Esto evita que datos de una sesión anterior aparezcan en una cuenta nueva vacía.
 
             setBusinessInfo(loadedInfo);
 
