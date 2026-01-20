@@ -206,38 +206,60 @@ function OnboardingContent() {
     }, [searchParams, userId, toast]);
 
     // AUTO-RECOVERY: Check if user already has a store but profile is broken
+    const [isRecovering, setIsRecovering] = useState(false);
+
     useEffect(() => {
         const attemptRecovery = async () => {
+            if (isRecovering) return;
 
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.user?.email) return;
 
             // Check if email owns an org
-            const { data: existingOrg } = await supabase
+            const { data: existingOrg, error } = await supabase
                 .from('organizations')
                 .select('id, name')
                 .eq('email', session.user.email)
                 .single();
 
-            if (existingOrg) {
+            if (existingOrg && !error) {
                 console.log("¡Recuperación! Tienda encontrada:", existingOrg);
+
                 // Only recover if we are in early steps
                 if (step < 7) {
+                    setIsRecovering(true);
                     toast(`Tienda encontrada: ${existingOrg.name}. Reconectando...`, "info");
 
-                    // Fix Profile
-                    await supabase
-                        .from('profiles')
-                        .update({ organization_id: existingOrg.id })
-                        .eq('id', session.user.id);
+                    try {
+                        // Fix Profile
+                        const { error: updateError } = await supabase
+                            .from('profiles')
+                            .update({ organization_id: existingOrg.id })
+                            .eq('id', session.user.id);
 
-                    // Redirect
-                    window.location.href = "/venta";
+                        if (updateError) throw updateError;
+
+                        // Wait for propagation
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+
+                        // Force hard redirect to break client-side router cache if any
+                        window.location.replace("/venta");
+                    } catch (e: any) {
+                        console.error("Recovery failed:", e);
+                        toast("Error al recuperar cuenta: " + e.message, "error");
+                        setIsRecovering(false);
+                    }
                 }
             }
         };
-        attemptRecovery();
-    }, [step]);
+
+        // simple debounce check
+        const timer = setTimeout(() => {
+            attemptRecovery();
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [step, isRecovering]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
