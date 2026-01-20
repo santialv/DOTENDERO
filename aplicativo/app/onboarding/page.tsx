@@ -239,28 +239,32 @@ function OnboardingContent() {
 
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) throw new Error("Sesión no encontrada");
+            if (!session) throw new Error("Sesión no encontrada. Por favor inicia sesión de nuevo.");
 
-            // 1. Forzar actualización del perfil
-            console.log("Actualizando perfil para Org:", foundStore.id);
-            const { error: updateError } = await supabase
+            // 1. Usar UPSERT para asegurar que el perfil exista y tenga la Org vinculada
+            console.log("Sincronizando Perfil -> Org:", foundStore.id);
+            const { error: upsertError } = await supabase
                 .from('profiles')
-                .update({ organization_id: foundStore.id })
-                .eq('id', session.user.id);
+                .upsert({
+                    id: session.user.id,
+                    email: session.user.email,
+                    organization_id: foundStore.id,
+                    role: 'admin'
+                });
 
-            if (updateError) throw updateError;
+            if (upsertError) throw upsertError;
 
-            // 2. Pequeña espera para asegurar propagación en Supabase
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // 2. Espera de seguridad para la base de datos
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-            toast("¡Todo listo! Entrando...", "success");
+            toast("¡Todo listo! Entrando a tu panel...", "success");
 
-            // 3. Redirección DURA para limpiar estados de React
+            // 3. Redirección forzada al Dashboard
             window.location.href = "/venta";
 
         } catch (e: any) {
-            console.error("Error en recuperación:", e);
-            toast("No pudimos conectar: " + e.message, "error");
+            console.error("Error crítico en recuperación:", e);
+            toast("Error técnico: " + (e.message || "Fallo en la conexión"), "error");
             setIsRecovering(false);
         }
     };
