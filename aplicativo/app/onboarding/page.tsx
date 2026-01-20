@@ -210,6 +210,7 @@ function OnboardingContent() {
 
     useEffect(() => {
         const attemptRecovery = async () => {
+            // Avoid double entry, but only check state if we haven't started.
             if (isRecovering) return;
 
             const { data: { session } } = await supabase.auth.getSession();
@@ -239,27 +240,27 @@ function OnboardingContent() {
 
                         if (updateError) throw updateError;
 
-                        // Wait for propagation
-                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        // Force Redirect IMMEDIATELY
+                        console.log("Redirecting to /venta now...");
+                        window.location.assign("/venta");
+                        return;
 
-                        // Force hard redirect to break client-side router cache if any
-                        window.location.replace("/venta");
                     } catch (e: any) {
                         console.error("Recovery failed:", e);
-                        toast("Error al recuperar cuenta: " + e.message, "error");
+                        toast("Error al recuperar cuenta. Por favor contacta soporte.", "error");
                         setIsRecovering(false);
                     }
                 }
             }
         };
 
-        // simple debounce check
+        // Short delay to allow component mount
         const timer = setTimeout(() => {
             attemptRecovery();
         }, 1000);
 
         return () => clearTimeout(timer);
-    }, [step, isRecovering]);
+    }, [step]); // removed isRecovering from dep array to avoid re-trigger
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
