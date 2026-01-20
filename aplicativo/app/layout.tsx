@@ -2,6 +2,7 @@ import Providers from "@/lib/react-query";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 import { NetworkStatus } from "@/components/ui/network-status";
+import { Analytics } from "@vercel/analytics/react";
 
 export default function RootLayout({
   children,
@@ -22,6 +23,7 @@ export default function RootLayout({
           <ToastProvider>
             <NetworkStatus />
             {children}
+            <Analytics />
           </ToastProvider>
         </Providers>
       </body>

@@ -205,62 +205,68 @@ function OnboardingContent() {
         if (userId) checkPayment();
     }, [searchParams, userId, toast]);
 
-    // AUTO-RECOVERY: Check if user already has a store but profile is broken
+    // --- RECOVERY LOGIC (MANUAL) ---
+    const [foundStore, setFoundStore] = useState<{ id: string, name: string } | null>(null);
     const [isRecovering, setIsRecovering] = useState(false);
 
     useEffect(() => {
-        const attemptRecovery = async () => {
-            // Avoid double entry, but only check state if we haven't started.
-            if (isRecovering) return;
+        const checkExistingStore = async () => {
+            // Only check if we are at the start
+            if (step > 1) return;
 
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.user?.email) return;
 
             // Check if email owns an org
-            const { data: existingOrg, error } = await supabase
+            const { data: existingOrg } = await supabase
                 .from('organizations')
                 .select('id, name')
                 .eq('email', session.user.email)
                 .single();
 
-            if (existingOrg && !error) {
-                console.log("¡Recuperación! Tienda encontrada:", existingOrg);
-
-                // Only recover if we are in early steps
-                if (step < 7) {
-                    setIsRecovering(true);
-                    toast(`Tienda encontrada: ${existingOrg.name}. Reconectando...`, "info");
-
-                    try {
-                        // Fix Profile
-                        const { error: updateError } = await supabase
-                            .from('profiles')
-                            .update({ organization_id: existingOrg.id })
-                            .eq('id', session.user.id);
-
-                        if (updateError) throw updateError;
-
-                        // Force Redirect IMMEDIATELY
-                        console.log("Redirecting to /venta now...");
-                        window.location.assign("/venta");
-                        return;
-
-                    } catch (e: any) {
-                        console.error("Recovery failed:", e);
-                        toast("Error al recuperar cuenta. Por favor contacta soporte.", "error");
-                        setIsRecovering(false);
-                    }
-                }
+            if (existingOrg) {
+                console.log("Tienda encontrada:", existingOrg);
+                setFoundStore(existingOrg);
             }
         };
+        checkExistingStore();
+    }, [step]);
 
-        // Short delay to allow component mount
-        const timer = setTimeout(() => {
-            attemptRecovery();
-        }, 1000);
+    const handleManualRecovery = async () => {
+        if (!foundStore) return;
+        setIsRecovering(true);
+        toast("Reconectando tu tienda...", "info");
 
-        return () => clearTimeout(timer);
-    }, [step]); // removed isRecovering from dep array to avoid re-trigger
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error("No session");
+
+            // Fix Profile
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ organization_id: foundStore.id })
+                .eq('id', session.user.id);
+
+            if (updateError) throw updateError;
+
+            toast("¡Conexión exitosa! Redirigiendo...", "success");
+
+            // Wait brief moment then redirect
+            setTimeout(() => {
+                window.location.assign("/venta");
+            }, 1000);
+
+        } catch (e: any) {
+            console.error("Recovery failed:", e);
+            toast("Error al recuperar: " + e.message, "error");
+            setIsRecovering(false);
+        }
+    };
+
+    const handleIgnoreRecovery = () => {
+        setFoundStore(null);
+        toast("Vale, crearemos una tienda nueva.", "info");
+    };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -710,6 +716,53 @@ function OnboardingContent() {
             </div>
         </div>
     );
+
+    // --- Render Recovery Card (Blocking) ---
+    if (foundStore) {
+        return (
+            <div className="min-h-screen bg-[#F3F9F4] font-display flex flex-col items-center justify-center p-4">
+                <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden p-8 text-center animate-in zoom-in-95 duration-500">
+                    <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600">
+                        <span className="material-symbols-outlined text-4xl">store</span>
+                    </div>
+
+                    <h2 className="text-2xl font-black text-slate-900 mb-2">¡Hola de nuevo!</h2>
+                    <p className="text-slate-500 mb-6">
+                        Hemos encontrado una tienda vinculada a tu correo: <br />
+                        <span className="font-bold text-slate-800 text-lg block mt-2">{foundStore.name}</span>
+                    </p>
+
+                    <div className="flex flex-col gap-3">
+                        <button
+                            onClick={handleManualRecovery}
+                            disabled={isRecovering}
+                            className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                            {isRecovering ? (
+                                <>
+                                    <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
+                                    Reconectando...
+                                </>
+                            ) : (
+                                <>
+                                    <span className="material-symbols-outlined">login</span>
+                                    Entrar a mi Tienda
+                                </>
+                            )}
+                        </button>
+
+                        <button
+                            onClick={handleIgnoreRecovery}
+                            disabled={isRecovering}
+                            className="w-full h-12 text-slate-500 font-bold hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+                        >
+                            No, quiero crear una nueva
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#F3F9F4] font-display relative overflow-y-auto overflow-x-hidden flex flex-col">
