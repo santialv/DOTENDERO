@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/toast";
 import { COLOMBIA_CITIES } from "@/lib/cities";
 import { CIIU_ACTIVITIES } from "@/lib/ciiu";
 import { WompiButton } from "@/components/payments/WompiButton";
+import { verifyAndActivateSubscription } from "@/app/actions/wompi";
 
 // Types
 type OnboardingData = {
@@ -24,7 +25,7 @@ type OnboardingData = {
     acceptedTerms: boolean;
 };
 
-export default function OnboardingPage() {
+function OnboardingContent() {
     const router = useRouter();
     const { toast } = useToast();
     const [step, setStep] = useState(1);
@@ -173,6 +174,37 @@ export default function OnboardingPage() {
         initSession();
     }, []);
 
+    // Payment Verification Logic
+    const searchParams = useSearchParams();
+    const [paymentComplete, setPaymentComplete] = useState(false);
+
+    useEffect(() => {
+        const checkPayment = async () => {
+            const transactionId = searchParams.get('id');
+            if (transactionId && userId) {
+                toast("Verificando pago...", "info");
+
+                // Get org id
+                const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', userId).single();
+
+                if (profile?.organization_id) {
+                    const result = await verifyAndActivateSubscription(transactionId, profile.organization_id);
+
+                    if (result.success) {
+                        toast("¡Pago recibido! Tu tienda está activa.", "success");
+                        setPaymentComplete(true);
+                        setStep(8); // Ensure we are on the final step
+                        window.history.replaceState({}, '', window.location.pathname);
+                    } else if (result.status !== 'PENDING') {
+                        toast(`El pago no fue aprobado: ${result.message}`, "error");
+                    }
+                }
+            }
+        };
+
+        if (userId) checkPayment();
+    }, [searchParams, userId, toast]);
+
     // AUTO-RECOVERY: Check if user already has a store but profile is broken
     useEffect(() => {
         const attemptRecovery = async () => {
@@ -189,20 +221,23 @@ export default function OnboardingPage() {
 
             if (existingOrg) {
                 console.log("¡Recuperación! Tienda encontrada:", existingOrg);
-                toast(`Tienda encontrada: ${existingOrg.name}. Reconectando...`, "info");
+                // Only recover if we are in early steps
+                if (step < 7) {
+                    toast(`Tienda encontrada: ${existingOrg.name}. Reconectando...`, "info");
 
-                // Fix Profile
-                await supabase
-                    .from('profiles')
-                    .update({ organization_id: existingOrg.id })
-                    .eq('id', session.user.id);
+                    // Fix Profile
+                    await supabase
+                        .from('profiles')
+                        .update({ organization_id: existingOrg.id })
+                        .eq('id', session.user.id);
 
-                // Redirect
-                window.location.href = "/venta";
+                    // Redirect
+                    window.location.href = "/venta";
+                }
             }
         };
         attemptRecovery();
-    }, []);
+    }, [step]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -592,7 +627,7 @@ export default function OnboardingPage() {
                     </p>
 
                     <div className="flex flex-col md:flex-row items-center justify-center gap-6">
-                        {data.plan !== 'free' ? (
+                        {data.plan !== 'free' && !paymentComplete ? (
                             <div className="flex flex-col items-center gap-4">
                                 <p className="text-sm font-bold text-slate-600 italic">Has seleccionado el {data.plan.toUpperCase()}. Para activar todas las funciones, realiza tu primer pago:</p>
                                 <WompiButton
@@ -786,5 +821,13 @@ export default function OnboardingPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function OnboardingPage() {
+    return (
+        <Suspense fallback={<div className='h-screen flex items-center justify-center font-bold'>Cargando Onboarding...</div>}>
+            <OnboardingContent />
+        </Suspense>
     );
 }

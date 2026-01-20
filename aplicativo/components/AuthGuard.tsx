@@ -1,19 +1,66 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/toast";
 import { WompiButton } from "@/components/payments/WompiButton";
 import { Lock, CreditCard, ShieldCheck } from "lucide-react";
 
-export default function AuthGuard({ children }: { children: React.ReactNode }) {
+function AuthGuardContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { toast } = useToast();
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [loading, setLoading] = useState(true);
     const [subscriptionInfo, setSubscriptionInfo] = useState<{ plan: string, status: string } | null>(null);
+    const [verifyingPayment, setVerifyingPayment] = useState(false);
+
+    // Check for payment return
+    useEffect(() => {
+        const checkPayment = async () => {
+            const transactionId = searchParams?.get('id');
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (transactionId && session?.user) {
+                setVerifyingPayment(true);
+                toast("Verificando tu pago...", "info");
+
+                try {
+                    // We need the org ID to verify
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('organization_id')
+                        .eq('id', session.user.id)
+                        .single();
+
+                    if (profile?.organization_id) {
+                        const { verifyAndActivateSubscription } = await import("@/app/actions/wompi");
+                        const result = await verifyAndActivateSubscription(transactionId, profile.organization_id);
+
+                        if (result.success) {
+                            toast("¡Pago exitoso! Bienvenido.", "success");
+                            // Clear URL
+                            const newUrl = window.location.pathname;
+                            window.history.replaceState({}, '', newUrl);
+                            // Force reload to update context
+                            window.location.reload();
+                            return;
+                        } else if (result.status !== 'PENDING') {
+                            toast(`Error en el pago: ${result.message}`, "error");
+                        }
+                    }
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    setVerifyingPayment(false);
+                }
+            }
+        };
+
+        checkPayment();
+    }, [searchParams]);
 
     useEffect(() => {
         const checkSession = async () => {
@@ -90,12 +137,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         return () => subscription.unsubscribe();
     }, [router, pathname, toast]);
 
-    if (loading) {
+    if (loading || verifyingPayment) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-slate-50">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
-                    <p className="text-slate-500 font-medium animate-pulse">Verificando seguridad...</p>
+                    <p className="text-slate-500 font-medium animate-pulse">
+                        {verifyingPayment ? "Confirmando pago con el banco..." : "Verificando seguridad..."}
+                    </p>
                 </div>
             </div>
         );
@@ -152,4 +201,19 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     return <>{children}</>;
+}
+
+export default function AuthGuard({ children }: { children: React.ReactNode }) {
+    return (
+        <Suspense fallback={
+            <div className='h-screen w-full flex items-center justify-center bg-slate-50'>
+                <div className='flex flex-col items-center gap-4'>
+                    <div className='w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin'></div>
+                    <p className='text-slate-500 font-medium animate-pulse'>Cargando...</p>
+                </div>
+            </div>
+        }>
+            <AuthGuardContent>{children}</AuthGuardContent>
+        </Suspense>
+    );
 }
