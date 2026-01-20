@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/toast";
 import { WompiButton } from "@/components/payments/WompiButton";
 import { Lock, CreditCard, ShieldCheck } from "lucide-react";
+import { reportError } from "@/lib/error-reporting";
 
 function AuthGuardContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -122,7 +123,10 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
                 setIsAuthorized(true);
 
             } catch (error) {
-                console.error("Guardián: Fallo al verificar sesión", error);
+                reportError(error, {
+                    location: "AuthGuard:verifySession",
+                    metadata: { path: pathname }
+                });
 
                 // Si el token es inválido o no se encuentra (AuthApiError), 
                 // forzamos el cierre de sesión para limpiar el localStorage.

@@ -2,13 +2,14 @@
 
 import { wompiService } from "@/lib/wompi";
 import { supabase } from "@/lib/supabase";
+import { reportError } from "@/lib/error-reporting";
 
 export async function getWompiSignature(amount: number) {
     try {
         const transactionData = wompiService.prepareTransaction(amount);
         return { success: true, data: transactionData };
     } catch (error) {
-        console.error("Error generating Wompi signature:", error);
+        reportError(error, { location: "Wompi:getWompiSignature" });
         return { success: false, error: "Failed to generate payment signature" };
     }
 }
@@ -61,7 +62,10 @@ export async function verifyAndActivateSubscription(transactionId: string, orgId
         };
 
     } catch (error: any) {
-        console.error("[SUBSCRIPTION] System Error:", error);
+        reportError(error, {
+            location: "Wompi:verifyAndActivateSubscription",
+            metadata: { transactionId, orgId }
+        });
         return {
             success: false,
             status: 'ERROR',

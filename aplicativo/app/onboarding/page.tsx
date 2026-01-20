@@ -8,6 +8,7 @@ import { COLOMBIA_CITIES } from "@/lib/cities";
 import { CIIU_ACTIVITIES } from "@/lib/ciiu";
 import { WompiButton } from "@/components/payments/WompiButton";
 import { verifyAndActivateSubscription } from "@/app/actions/wompi";
+import { reportError } from "@/lib/error-reporting";
 
 // Types
 type OnboardingData = {
@@ -263,7 +264,10 @@ function OnboardingContent() {
             window.location.href = "/venta";
 
         } catch (e: any) {
-            console.error("Error crítico en recuperación:", e);
+            reportError(e, {
+                location: "Onboarding:handleManualRecovery",
+                metadata: { storeId: foundStore.id, storeName: foundStore.name }
+            });
             toast("Error técnico: " + (e.message || "Fallo en la conexión"), "error");
             setIsRecovering(false);
         }
@@ -295,7 +299,7 @@ function OnboardingContent() {
             setData({ ...data, rutPath: filePath });
             toast("RUT subido correctamente", "success");
         } catch (error: any) {
-            console.error(error);
+            reportError(error, { location: "Onboarding:handleFileUpload" });
             toast("Error subiendo el archivo: " + error.message, "error");
         } finally {
             setUploading(false);
@@ -702,7 +706,10 @@ function OnboardingContent() {
                                         window.location.href = "/venta";
 
                                     } catch (e) {
-                                        console.error("Error final:", e);
+                                        reportError(e, {
+                                            location: "Onboarding:renderManifesto:finalButton",
+                                            metadata: { storeName: data.storeName, plan: data.plan }
+                                        });
                                         router.push("/venta");
                                     }
                                 }}
