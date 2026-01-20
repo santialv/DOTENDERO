@@ -235,13 +235,14 @@ function OnboardingContent() {
     const handleManualRecovery = async () => {
         if (!foundStore) return;
         setIsRecovering(true);
-        toast("Reconectando tu tienda...", "info");
+        toast("Sincronizando cuenta con " + foundStore.name, "info");
 
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) throw new Error("No session");
+            if (!session) throw new Error("Sesión no encontrada");
 
-            // Fix Profile
+            // 1. Forzar actualización del perfil
+            console.log("Actualizando perfil para Org:", foundStore.id);
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({ organization_id: foundStore.id })
@@ -249,16 +250,17 @@ function OnboardingContent() {
 
             if (updateError) throw updateError;
 
-            toast("¡Conexión exitosa! Redirigiendo...", "success");
+            // 2. Pequeña espera para asegurar propagación en Supabase
+            await new Promise(resolve => setTimeout(resolve, 800));
 
-            // Wait brief moment then redirect
-            setTimeout(() => {
-                window.location.assign("/venta");
-            }, 1000);
+            toast("¡Todo listo! Entrando...", "success");
+
+            // 3. Redirección DURA para limpiar estados de React
+            window.location.href = "/venta";
 
         } catch (e: any) {
-            console.error("Recovery failed:", e);
-            toast("Error al recuperar: " + e.message, "error");
+            console.error("Error en recuperación:", e);
+            toast("No pudimos conectar: " + e.message, "error");
             setIsRecovering(false);
         }
     };

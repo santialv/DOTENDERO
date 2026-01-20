@@ -91,13 +91,22 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
 
                 // CASO 1: USUARIO NUEVO (Sin Organización) -> A ONBOARDING
                 else if (!profile.organization_id) {
-                    console.warn("Guardián: Usuario NUEVO sin organización. Redirigiendo a Onboarding.");
-                    if (pathname !== "/onboarding") {
-                        router.replace("/onboarding");
-                        // Return to avoid setIsAuthorized(true) below
+                    console.warn("Guardián: Verificando organización...");
+
+                    // Esperar latencia de Supabase
+                    await new Promise(res => setTimeout(res, 1500));
+                    const { data: retryProfile } = await supabase.from("profiles").select("organization_id").eq("id", session.user.id).single();
+
+                    if (retryProfile?.organization_id) {
+                        console.log("Guardián: Organización encontrada en segundo intento.");
+                        window.location.reload();
                         return;
                     }
-                    // Si ya está en onboarding, permitimos
+
+                    if (pathname !== "/onboarding") {
+                        router.replace("/onboarding");
+                        return;
+                    }
                     setIsAuthorized(true);
                     return;
                 }
