@@ -110,7 +110,10 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
                             });
 
                         if (!linkError) {
-                            window.location.reload();
+                            console.log("Guardián: Vinculación exitosa. Acceso concedido.");
+                            // NO Recargar página para evitar bucles. Asumir éxito.
+                            setIsAuthorized(true);
+                            setLoading(false);
                             return;
                         }
                     }
