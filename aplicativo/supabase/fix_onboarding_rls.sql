@@ -23,5 +23,6 @@ create policy "Users can see own profile" on profiles
 -- 4. Allow profile update for organization link
 drop policy if exists "Allow link org to profile" on profiles;
 create policy "Allow link org to profile" on profiles
-  for update
-  using (id = auth.uid());
+  for all -- Permitimos 'all' para manejar upsert (insert+update)
+  using (id = auth.uid())
+  with check (id = auth.uid());

@@ -79,21 +79,18 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
                     .from('profiles')
                     .select('organization_id, organizations(plan, subscription_status)')
                     .eq('id', session.user.id)
-                    .single();
+                    .maybeSingle();
 
-                if (!profile) {
+                if (!profile?.organization_id) {
                     console.warn("Usuario sin perfil. Posible error de integridad.");
-                    // Treat as new user -> Redirect to Onboarding
-                    if (pathname !== "/onboarding") {
+                    if (pathname === "/onboarding") {
+                        setIsAuthorized(true);
+                    } else {
+                        console.warn("Guardián: Redirigiendo a onboarding.");
                         router.replace("/onboarding");
-                        return;
                     }
-                }
 
-                // CASO 1: USUARIO NUEVO (Sin Organización) -> INTENTAR AUTO-RECUPERACIÓN
-                else if (!profile.organization_id) {
-                    console.warn("Guardián: Usuario sin organización. Buscando por correo...");
-
+                    // Intentar auto-vincular de forma silenciosa si existe una tienda
                     const { data: existingOrgs } = await supabase
                         .from("organizations")
                         .select("id")
@@ -102,37 +99,28 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
 
                     if (existingOrgs && existingOrgs.length > 0) {
                         const autoOrgId = existingOrgs[0].id;
-                        console.log("Guardián: Tienda huérfana encontrada. Auto-vinculando...");
-
-                        await supabase
+                        const { error: linkError } = await supabase
                             .from("profiles")
-                            .update({ organization_id: autoOrgId })
-                            .eq("id", session.user.id);
+                            .upsert({
+                                id: session.user.id,
+                                organization_id: autoOrgId,
+                                email: session.user.email,
+                                role: 'admin'
+                            });
 
-                        // Recargar para aplicar cambios de RLS y contexto
-                        window.location.reload();
-                        return;
+                        if (!linkError) {
+                            window.location.reload();
+                        }
                     }
-
-                    // Si no se encontró nada, esperar latencia (por si el trigger está corriendo)
-                    await new Promise(res => setTimeout(res, 1500));
-                    const { data: retryProfile } = await supabase.from("profiles").select("organization_id").eq("id", session.user.id).single();
-
-                    if (retryProfile?.organization_id) {
-                        console.log("Guardián: Organización encontrada en segundo intento.");
-                        window.location.reload();
-                        return;
-                    }
-
-                    if (pathname !== "/onboarding") {
-                        router.replace("/onboarding");
-                        return;
-                    }
-                    setIsAuthorized(true);
                     return;
                 }
 
-                // CASO 2: USUARIO EXISTENTE (Con Organización)
+                // CASO B: SI TIENE ORGANIZACIÓN
+                if (pathname === "/onboarding") {
+                    router.replace("/venta");
+                    return;
+                }
+
                 const org = (profile as any).organizations;
                 if (org) {
                     setSubscriptionInfo({
