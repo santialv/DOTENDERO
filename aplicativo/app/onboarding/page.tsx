@@ -595,6 +595,26 @@ function OnboardingContent() {
         </div>
     );
 
+    // --- Load Plans Dynamically ---
+    const [plans, setPlans] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchPlans = async () => {
+            const { data } = await supabase.from('plans').select('*').order('price');
+            if (data) setPlans(data);
+        };
+        fetchPlans();
+    }, []);
+
+    const getPlanPrice = (planId: string) => {
+        const plan = plans.find(p => p.id === planId);
+        return plan ? plan.price : (planId === 'pro' ? 50000 : 90000); // Fallback
+    };
+
+    // --- Render Steps ---
+
+    // ... (Steps 1-5 remain unchanged) ...
+
     const renderStep6 = () => (
         <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-500">
             <div className="text-center">
@@ -602,45 +622,29 @@ function OnboardingContent() {
                     <span className="material-symbols-outlined text-4xl">loyalty</span>
                 </div>
                 <h2 className="text-2xl font-black text-slate-900">Selecciona tu Plan</h2>
-                <p className="text-slate-500 mt-2">Elige el plan que mejor se adapte a tu negocio.</p>
+                <p className="text-slate-500 mt-2">Valores actualizados automáticamente.</p>
             </div>
             <div className="grid grid-cols-1 gap-4">
-                {/* Free Plan */}
-                <button
-                    onClick={() => setData({ ...data, plan: 'free' })}
-                    className={`p-5 rounded-2xl border-2 text-left transition-all ${data.plan === 'free' ? 'border-[#00E054] bg-green-50 shadow-md' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
-                >
-                    <div className="flex justify-between items-start mb-2">
-                        <span className="font-black text-lg text-slate-800">Plan Gratuito</span>
-                        <span className="text-slate-400 font-bold">$0</span>
-                    </div>
-                    <p className="text-xs text-slate-500">Funciones básicas de venta e inventario para tiendas pequeñas.</p>
-                </button>
+                {plans.length > 0 ? plans.map((plan) => (
+                    <button
+                        key={plan.id}
+                        onClick={() => setData({ ...data, plan: plan.id as any })}
+                        className={`p-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden ${data.plan === plan.id ? 'border-[#00E054] bg-green-50 shadow-md' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                    >
+                        {plan.id === 'pro' && <div className="absolute top-0 right-0 bg-[#00E054] text-slate-900 text-[10px] font-black px-3 py-1 rounded-bl-xl">POPULAR</div>}
 
-                {/* Pro Plan */}
-                <button
-                    onClick={() => setData({ ...data, plan: 'pro' })}
-                    className={`p-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden ${data.plan === 'pro' ? 'border-[#00E054] bg-green-50 shadow-md' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
-                >
-                    <div className="absolute top-0 right-0 bg-[#00E054] text-slate-900 text-[10px] font-black px-3 py-1 rounded-bl-xl">POPULAR</div>
-                    <div className="flex justify-between items-start mb-2">
-                        <span className="font-black text-lg text-slate-800">Plan Pro</span>
-                        <span className="text-indigo-600 font-bold">$50,000 / mes</span>
-                    </div>
-                    <p className="text-xs text-slate-500">Incluye IA, reportes avanzados y facturación ilimitada.</p>
-                </button>
-
-                {/* Premium Plan */}
-                <button
-                    onClick={() => setData({ ...data, plan: 'premium' })}
-                    className={`p-5 rounded-2xl border-2 text-left transition-all ${data.plan === 'premium' ? 'border-[#00E054] bg-green-50 shadow-md' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
-                >
-                    <div className="flex justify-between items-start mb-2">
-                        <span className="font-black text-lg text-slate-800">Plan Premium</span>
-                        <span className="text-slate-900 font-bold">$90,000 / mes</span>
-                    </div>
-                    <p className="text-xs text-slate-500">Soporte prioritario, múltiples bodegas y analítica predictiva.</p>
-                </button>
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="font-black text-lg text-slate-800">{plan.name}</span>
+                            <span className="text-slate-900 font-bold">
+                                {plan.price === 0 ? '$0' : `$${plan.price.toLocaleString()}`}
+                                {plan.price > 0 && <span className="text-xs text-slate-500 font-normal"> / mes</span>}
+                            </span>
+                        </div>
+                        <p className="text-xs text-slate-500">{plan.description}</p>
+                    </button>
+                )) : (
+                    <div className="p-4 text-center text-slate-400">Cargando planes...</div>
+                )}
             </div>
 
             {/* Terms and Conditions */}
@@ -750,7 +754,7 @@ function OnboardingContent() {
                             {data.plan !== 'free' && !paymentComplete && (
                                 <div className="flex flex-col items-center">
                                     <WompiButton
-                                        amount={data.plan === 'pro' ? 50000 : 90000}
+                                        amount={getPlanPrice(data.plan)}
                                         className="h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-black rounded-xl transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 hover:-translate-y-1 active:scale-95 flex items-center gap-2"
                                     />
                                     <p className="text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-widest">Activa todas las funciones</p>
