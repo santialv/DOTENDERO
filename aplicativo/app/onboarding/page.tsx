@@ -287,12 +287,16 @@ function OnboardingContent() {
 
             if (upsertError) throw upsertError;
 
-            // 2. Espera de seguridad para la base de datos
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // 2. Limpieza de datos locales
+            localStorage.removeItem("onboarding_data");
+            localStorage.removeItem("onboarding_step");
+
+            // 3. Espera de seguridad para propagación de datos
+            await new Promise(resolve => setTimeout(resolve, 1500));
 
             toast("¡Todo listo! Entrando a tu panel...", "success");
 
-            // 3. Redirección forzada al Dashboard
+            // 4. Redirección forzada
             window.location.href = "/venta";
 
         } catch (e: any) {

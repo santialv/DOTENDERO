@@ -82,15 +82,15 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
                     .maybeSingle();
 
                 if (!profile?.organization_id) {
-                    console.warn("Usuario sin perfil. Posible error de integridad.");
+                    console.warn("Usuario sin tienda vinculada.");
+
                     if (pathname === "/onboarding") {
                         setIsAuthorized(true);
-                    } else {
-                        console.warn("Guardián: Redirigiendo a onboarding.");
-                        router.replace("/onboarding");
+                        setLoading(false);
+                        return; // Detenerse aquí si ya estamos en onboarding
                     }
 
-                    // Intentar auto-vincular de forma silenciosa si existe una tienda
+                    // Solo intentamos auto-vinculación si el usuario intenta entrar a otra página
                     const { data: existingOrgs } = await supabase
                         .from("organizations")
                         .select("id")
@@ -99,6 +99,7 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
 
                     if (existingOrgs && existingOrgs.length > 0) {
                         const autoOrgId = existingOrgs[0].id;
+                        console.log("Guardián: Recuperando tienda para acceso directo...");
                         const { error: linkError } = await supabase
                             .from("profiles")
                             .upsert({
@@ -110,8 +111,12 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
 
                         if (!linkError) {
                             window.location.reload();
+                            return;
                         }
                     }
+
+                    console.warn("Guardián: Redirigiendo a onboarding.");
+                    router.replace("/onboarding");
                     return;
                 }
 
