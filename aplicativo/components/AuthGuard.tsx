@@ -90,11 +90,31 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
                     }
                 }
 
-                // CASO 1: USUARIO NUEVO (Sin Organización) -> A ONBOARDING
+                // CASO 1: USUARIO NUEVO (Sin Organización) -> INTENTAR AUTO-RECUPERACIÓN
                 else if (!profile.organization_id) {
-                    console.warn("Guardián: Verificando organización...");
+                    console.warn("Guardián: Usuario sin organización. Buscando por correo...");
 
-                    // Esperar latencia de Supabase
+                    const { data: existingOrgs } = await supabase
+                        .from("organizations")
+                        .select("id")
+                        .eq("email", session.user.email)
+                        .limit(1);
+
+                    if (existingOrgs && existingOrgs.length > 0) {
+                        const autoOrgId = existingOrgs[0].id;
+                        console.log("Guardián: Tienda huérfana encontrada. Auto-vinculando...");
+
+                        await supabase
+                            .from("profiles")
+                            .update({ organization_id: autoOrgId })
+                            .eq("id", session.user.id);
+
+                        // Recargar para aplicar cambios de RLS y contexto
+                        window.location.reload();
+                        return;
+                    }
+
+                    // Si no se encontró nada, esperar latencia (por si el trigger está corriendo)
                     await new Promise(res => setTimeout(res, 1500));
                     const { data: retryProfile } = await supabase.from("profiles").select("organization_id").eq("id", session.user.id).single();
 
@@ -167,9 +187,14 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
         return null;
     }
 
-    // BLOCKING SCREEN: If sub is not active
-    if (subscriptionInfo && subscriptionInfo.plan !== 'free' && subscriptionInfo.status !== 'active') {
-        const planPrice = subscriptionInfo.plan === 'pro' ? 50000 : 90000;
+    // BLOCKING SCREEN: Only if status is explicitly 'inactive' or 'suspended'
+    // We ALLOW 'pending_payment' so they can at least enter and configure.
+    const isBlocked = subscriptionInfo &&
+        subscriptionInfo.plan !== 'free' &&
+        (subscriptionInfo.status === 'inactive' || subscriptionInfo.status === 'suspended');
+
+    if (isBlocked) {
+        const planPrice = subscriptionInfo?.plan === 'pro' ? 50000 : 90000;
 
         return (
             <div className="h-screen w-full flex items-center justify-center bg-slate-50 p-6">

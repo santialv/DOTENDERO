@@ -70,6 +70,7 @@ export default function RegisterPage() {
                 email,
                 password,
                 options: {
+                    emailRedirectTo: 'https://www.dontendero.com/login',
                     data: {
                         full_name: name
                     }

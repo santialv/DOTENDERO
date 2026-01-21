@@ -33,7 +33,8 @@ function OnboardingContent() {
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false); // New state
     const [userId, setUserId] = useState<string | null>(null);
-    const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [userEmail, setUserEmail] = useState<string>("");
+    const [isHydrated, setIsHydrated] = useState(false); // New state to track hydration
     const [data, setData] = useState<OnboardingData>({
         storeName: "",
         legalName: "",
@@ -49,11 +50,36 @@ function OnboardingContent() {
         acceptedTerms: false
     });
 
-    // Save state on change
+    // 1. Cargar datos al montar el componente
     useEffect(() => {
+        const savedData = localStorage.getItem("onboarding_data");
+        const savedStep = localStorage.getItem("onboarding_step");
+
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                setData(parsed);
+                console.log("Datos recuperados de sesión anterior");
+            } catch (e) {
+                console.error("Error al recuperar datos:", e);
+            }
+        }
+
+        if (savedStep) {
+            const stepNum = parseInt(savedStep);
+            if (stepNum > 0 && stepNum < 8) setStep(stepNum);
+        }
+
+        setIsHydrated(true); // Marcamos que ya terminamos de cargar lo viejo
+    }, []);
+
+    // 2. Guardar datos solo DESPUÉS de haber cargado lo viejo
+    useEffect(() => {
+        if (!isHydrated) return; // No guardar si no hemos terminado de cargar
+
         localStorage.setItem("onboarding_data", JSON.stringify(data));
         localStorage.setItem("onboarding_step", step.toString());
-    }, [data, step]);
+    }, [data, step, isHydrated]);
 
     const handleNext = () => {
         if (step === 1 && !data.storeName) return toast("Por favor escribe el nombre de tu tienda", "error");
@@ -130,6 +156,11 @@ function OnboardingContent() {
             // PASO 3: UPDATE FINAL
             if (orgId) {
                 console.log("[7] Iniciando Update Final...");
+
+                // Verificar estado actual para no sobreescribir si ya está activa
+                const { data: currentOrg } = await supabase.from('organizations').select('subscription_status').eq('id', orgId).single();
+                const isAlreadyActive = currentOrg?.subscription_status === 'active';
+
                 const { error: updateError } = await supabase.from('organizations').update({
                     name: data.storeName,
                     legal_name: data.legalName,
@@ -142,7 +173,7 @@ function OnboardingContent() {
                     email: userEmail,
                     rut_url: data.rutPath,
                     plan: data.plan,
-                    subscription_status: data.plan === 'free' ? 'active' : 'pending_payment'
+                    subscription_status: (isAlreadyActive || data.plan === 'free') ? 'active' : 'pending_payment'
                 }).eq('id', orgId);
 
                 if (updateError) throw updateError;
@@ -219,15 +250,16 @@ function OnboardingContent() {
             if (!session?.user?.email) return;
 
             // Check if email owns an org
-            const { data: existingOrg } = await supabase
+            const { data: existingOrgs } = await supabase
                 .from('organizations')
                 .select('id, name')
                 .eq('email', session.user.email)
-                .single();
+                .order('created_at', { ascending: false })
+                .limit(1);
 
-            if (existingOrg) {
-                console.log("Tienda encontrada:", existingOrg);
-                setFoundStore(existingOrg);
+            if (existingOrgs && existingOrgs.length > 0) {
+                console.log("Tiendas encontradas:", existingOrgs);
+                setFoundStore(existingOrgs[0]);
             }
         };
         checkExistingStore();
@@ -665,16 +697,8 @@ function OnboardingContent() {
                         Nuestra meta es digitalizar el comercio de barrio. Estamos construyendo algo grande, y tú eres parte de ello.
                     </p>
 
-                    <div className="flex flex-col md:flex-row items-center justify-center gap-6">
-                        {data.plan !== 'free' && !paymentComplete ? (
-                            <div className="flex flex-col items-center gap-4">
-                                <p className="text-sm font-bold text-slate-600 italic">Has seleccionado el {data.plan.toUpperCase()}. Para activar todas las funciones, realiza tu primer pago:</p>
-                                <WompiButton
-                                    amount={data.plan === 'pro' ? 50000 : 90000}
-                                    className="h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-black rounded-lg transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 hover:-translate-y-1 active:scale-95 flex items-center gap-2"
-                                />
-                            </div>
-                        ) : (
+                    <div className="flex flex-col items-center justify-center gap-6">
+                        <div className="flex flex-col md:flex-row items-center gap-4 w-full justify-center">
                             <button
                                 onClick={async () => {
                                     // Lógica de Reparación Just-in-Time
@@ -686,14 +710,14 @@ function OnboardingContent() {
                                         const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', userId).maybeSingle();
 
                                         if (!profile?.organization_id) {
-                                            // Crear Org
+                                            // Crear Org si no existe (emergencia)
                                             const { data: newOrg } = await supabase.from('organizations').insert({
                                                 name: data.storeName || "Mi Tienda Nueva",
                                                 created_at: new Date().toISOString(),
                                                 nit: data.nit,
                                                 city: data.city,
-                                                plan: 'free',
-                                                subscription_status: 'active',
+                                                plan: data.plan,
+                                                subscription_status: data.plan === 'free' ? 'active' : 'pending_payment',
                                                 regime: data.regime || 'No Responsable de IVA',
                                             }).select().single();
 
@@ -710,19 +734,29 @@ function OnboardingContent() {
                                             location: "Onboarding:renderManifesto:finalButton",
                                             metadata: { storeName: data.storeName, plan: data.plan }
                                         });
-                                        router.push("/venta");
+                                        window.location.href = "/venta";
                                     }
                                 }}
-                                className="h-14 px-8 bg-[#00E054] hover:bg-[#00c94a] text-slate-900 text-lg font-black rounded-lg transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/40 hover:-translate-y-1 active:scale-95 flex items-center gap-2"
+                                className="h-14 px-10 bg-[#00E054] hover:bg-[#00c94a] text-slate-900 text-lg font-black rounded-xl transition-all shadow-xl shadow-green-500/20 hover:shadow-green-500/40 hover:-translate-y-1 active:scale-95 flex items-center gap-2 group"
                             >
-                                Ir a mi Tienda
-                                <span className="material-symbols-outlined font-bold">arrow_forward</span>
+                                {data.plan === 'free' ? "Entrar a mi Tienda" : "Explorar mi Tienda ahora"}
+                                <span className="material-symbols-outlined font-bold group-hover:translate-x-1 transition-transform">arrow_forward</span>
                             </button>
-                        )}
 
-                        <button className="flex items-center gap-2 text-slate-500 font-bold hover:text-slate-800 transition-colors">
+                            {data.plan !== 'free' && !paymentComplete && (
+                                <div className="flex flex-col items-center">
+                                    <WompiButton
+                                        amount={data.plan === 'pro' ? 50000 : 90000}
+                                        className="h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-black rounded-xl transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 hover:-translate-y-1 active:scale-95 flex items-center gap-2"
+                                    />
+                                    <p className="text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-widest">Activa todas las funciones</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <button className="flex items-center gap-2 text-slate-400 font-bold hover:text-slate-600 transition-colors text-sm">
                             <span className="material-symbols-outlined text-xl">help</span>
-                            Ver Tutorial
+                            ¿Necesitas ayuda con la configuración?
                         </button>
                     </div>
                 </div>
