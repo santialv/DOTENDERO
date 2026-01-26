@@ -72,29 +72,33 @@ export default function LoginPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 1.5 }}
-                        className="absolute inset-0 h-full w-full"
+                        className="absolute inset-0 h-full w-full bg-black"
                     >
-                        <Image
-                            src="/images/login-nb.gif"
-                            alt="Background"
-                            fill
-                            className="object-cover scale-105" // Slight scale to avoid edge artifacts
-                            priority
-                            unoptimized // GIFs often look better in Next.js when unoptimized to preserve frames
-                        />
+                        {/* 1. Video Support (Primary) */}
+                        <video
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="absolute inset-0 h-full w-full object-cover scale-105"
+                        >
+                            <source src="/images/login-video.mp4" type="video/mp4" />
+                            {/* Fallback Image if video fails or is not yet uploaded */}
+                            <Image
+                                src="/images/login-nb.gif"
+                                alt="Background"
+                                fill
+                                className="object-cover"
+                                priority
+                                unoptimized
+                            />
+                        </video>
 
                         {/* Premium Cinematic Overlays */}
-                        {/* 1. The Tint: Darkens the image to hide dithering in shadows */}
                         <div className="absolute inset-0 bg-black/40"></div>
-
-                        {/* 2. The Smoothing: Subtle blur to blend the 'grains' */}
-                        <div className="absolute inset-0 backdrop-blur-[2px]"></div>
-
-                        {/* 3. The Gradient: Professional fade to black for the text area */}
+                        <div className="absolute inset-0 backdrop-blur-[1px]"></div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-
-                        {/* 4. The 'Noise' trick: Hides GIF artifacts with a textured feel */}
-                        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+                        <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
                     </motion.div>
 
                     <div className="relative z-10 flex h-full flex-col justify-end p-12 text-white">
