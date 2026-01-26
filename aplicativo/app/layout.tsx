@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import Providers from "@/lib/react-query";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 import { NetworkStatus } from "@/components/ui/network-status";
 import { Analytics } from "@vercel/analytics/react";
+
+export const metadata: Metadata = {
+  title: "DonTendero",
+  description: "La plataforma para tu tienda de barrio",
+  icons: {
+    icon: "/icon.svg",
+  },
+};
 
 export default function RootLayout({
   children,
