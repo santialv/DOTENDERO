@@ -276,7 +276,7 @@ export function usePOS() {
         setHeldOrders(newHeld);
         localStorage.setItem("heldOrders", JSON.stringify(newHeld));
 
-        toast("Orden recuperada", "default");
+        toast("Orden recuperada", "info");
     }, [heldOrders, toast, updateProductCache]);
 
     const checkout = useCallback(async (
