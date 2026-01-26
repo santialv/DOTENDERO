@@ -183,7 +183,8 @@ export default function DashboardLayout({
                     {/* Header - Mobile Only */}
                     <header className="md:hidden h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-10">
                         <div className="flex items-center gap-3">
-                            <MobileNav />
+                            {/* Logo for Mobile */}
+                            <img src="/logo.png" alt="DonTendero" className="h-8 w-auto object-contain" />
                         </div>
 
                         <div className="flex items-center gap-3">
@@ -194,14 +195,17 @@ export default function DashboardLayout({
                     </header>
 
                     {/* Page Content */}
-                    <main className="flex-1 flex flex-col overflow-y-auto bg-slate-50/50">
+                    <main className="flex-1 flex flex-col overflow-y-auto bg-slate-50/50 pb-24 md:pb-0">
                         <div className="flex-1 w-full h-full relative flex flex-col">
                             {children}
                         </div>
                     </main>
 
+                    {/* Mobile Navigation (Fixed Bottom) */}
+                    <MobileNav />
+
                     {/* Bot de Soporte Global */}
-                    <div className="fixed bottom-6 right-6 z-50">
+                    <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50">
                         <DonTenderoChat />
                     </div>
                 </div>
