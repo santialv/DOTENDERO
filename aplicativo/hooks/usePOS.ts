@@ -253,7 +253,7 @@ export function usePOS() {
         localStorage.setItem("heldOrders", JSON.stringify(newHeld));
 
         clearCart();
-        toast("Orden puesta en espera", "default");
+        toast("Orden puesta en espera", "info");
     }, [cartItems, selectedCustomer, total, saleId, heldOrders, clearCart, toast]);
 
     const resumeOrder = useCallback((order: any) => {
