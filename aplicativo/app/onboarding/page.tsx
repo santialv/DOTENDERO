@@ -596,12 +596,49 @@ function OnboardingContent() {
     );
 
     // --- Load Plans Dynamically ---
-    const [plans, setPlans] = useState<any[]>([]);
+    const [plans, setPlans] = useState<any[]>([
+        {
+            id: 'free',
+            name: 'Plan Gratuito',
+            price: 0,
+            description: 'Ideal para comenzar',
+            features: ["Ventas ilimitadas", "Inventario básico", "Sin costo mensual"]
+        },
+        {
+            id: 'pro',
+            name: 'Plan Pro',
+            price: 50000,
+            description: 'Para negocios en crecimiento',
+            features: ["Todo lo del Free", "Facturación Electrónica", "Reportes Avanzados"]
+        },
+        {
+            id: 'premium',
+            name: 'Plan Premium',
+            price: 90000,
+            description: 'Para grandes volúmenes',
+            features: ["Todo lo del Pro", "Multi-Bodega", "Gerente de Cuenta"]
+        }
+    ]);
 
     useEffect(() => {
         const fetchPlans = async () => {
-            const { data } = await supabase.from('plans').select('*').order('price');
-            if (data) setPlans(data);
+            try {
+                const { data, error } = await supabase.from('plans').select('*').order('price');
+                if (error) {
+                    console.warn("Could not fetch plans from DB, using fallbacks:", error);
+                    return;
+                }
+                if (data && data.length > 0) {
+                    // Normalize features if they come as string or json
+                    const normalized = data.map(p => ({
+                        ...p,
+                        features: typeof p.features === 'string' ? JSON.parse(p.features) : (p.features || [])
+                    }));
+                    setPlans(normalized);
+                }
+            } catch (e) {
+                console.error("Plan fetch failed completely:", e);
+            }
         };
         fetchPlans();
     }, []);
