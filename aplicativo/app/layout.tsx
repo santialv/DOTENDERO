@@ -4,8 +4,10 @@ import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 import { NetworkStatus } from "@/components/ui/network-status";
 import { Analytics } from "@vercel/analytics/react";
+import { InstallPrompt } from "@/components/ui/InstallPrompt";
 
 export const metadata: Metadata = {
+  // ... existing metadata
   title: "DonTendero",
   description: "La plataforma para tu tienda de barrio",
   manifest: "/manifest.json",
@@ -50,6 +52,7 @@ export default function RootLayout({
         <Providers>
           <ToastProvider>
             <NetworkStatus />
+            <InstallPrompt />
             {children}
             <Analytics />
           </ToastProvider>
