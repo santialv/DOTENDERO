@@ -153,9 +153,15 @@ export default function DashboardLayout({
                     <div className="p-3 border-t border-slate-100">
                         {/* User Profile Info (Moved from Header) */}
                         <div className={`flex items-center gap-3 mb-3 px-2 rounded-xl bg-slate-50 py-2 border border-slate-100 ${isCollapsed ? 'justify-center p-0 w-full aspect-square mb-2' : ''}`}>
-                            <div className={`w-8 h-8 rounded-full ${brandColor} flex items-center justify-center text-white font-bold text-xs shrink-0`}>
-                                {(businessInfo?.owner_name || 'A')[0].toUpperCase()}
-                            </div>
+                            {businessInfo?.logoUrl ? (
+                                <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 shrink-0 bg-white">
+                                    <img src={businessInfo.logoUrl} alt={businessInfo.name} className="w-full h-full object-cover" />
+                                </div>
+                            ) : (
+                                <div className={`w-8 h-8 rounded-full ${brandColor} flex items-center justify-center text-white font-bold text-xs shrink-0`}>
+                                    {(businessInfo?.owner_name || 'A')[0].toUpperCase()}
+                                </div>
+                            )}
                             {!isCollapsed && (
                                 <div className="overflow-hidden">
                                     <p className="text-sm font-bold text-slate-700 truncate" title={businessInfo?.name}>
@@ -184,7 +190,14 @@ export default function DashboardLayout({
                     <header className="md:hidden h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-10">
                         <div className="flex items-center gap-3">
                             {/* Logo for Mobile */}
-                            <img src="/logo.png" alt="DonTendero" className="h-8 w-auto object-contain" />
+                            {businessInfo?.logoUrl ? (
+                                <img src={businessInfo.logoUrl} alt={businessInfo.name} className="h-8 w-8 rounded-lg object-cover border border-slate-100" />
+                            ) : (
+                                <img src="/logo.png" alt="DonTendero" className="h-8 w-auto object-contain" />
+                            )}
+                            <span className="font-bold text-slate-800 text-sm truncate max-w-[150px]">
+                                {businessInfo?.name || 'DonTendero'}
+                            </span>
                         </div>
 
                         <div className="flex items-center gap-3">
