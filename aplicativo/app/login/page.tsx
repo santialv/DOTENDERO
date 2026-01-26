@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useToast } from "@/components/ui/toast";
 import { motion } from 'framer-motion';
 import { Store, Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -66,21 +67,22 @@ export default function LoginPage() {
         <div className="font-sans bg-background-light text-text-main h-full antialiased selection:bg-primary selection:text-text-main">
             <div className="flex min-h-screen flex-row">
                 {/* Left Side: Visual/Marketing (Hidden on mobile) */}
-                <div className="relative hidden w-0 flex-1 lg:block bg-background-dark overflow-hidden">
+                <div className="relative hidden w-0 flex-1 lg:block bg-black overflow-hidden">
                     <motion.div
-                        initial={{ opacity: 0, scale: 1.05 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 1 }}
                         className="absolute inset-0 h-full w-full"
                     >
-                        {/* Image background */}
-                        <div
-                            className="h-full w-full bg-cover bg-center opacity-80"
-                            style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDjnnJ_Bojfahx6uj6ZM6G6F8WqQhiG_5T2QAIflcv84V7X8VlPphs8trlDQVewnTc6LkxIQ94kuxjeyklAWxcFnnXg0Drt4h5AbwLBYFYQZzNb3KM_0arNJuDC4WphD-rkFVZSIChbo9MY5KWq936jRrk4PjCKZ1nLIX30AJDEeo9z_WiTtRMyjmBjB2_-oqQ0L9_O6wUC71aS5Tvc_2FVw9hk9Kso5bKqswjR8_BWSo2F525tzf8gUQS0hEIvFuzcgC26LjFdk6c")' }}
-                        >
-                        </div>
-                        {/* Overlay gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-background-dark/90 via-background-dark/40 to-transparent"></div>
+                        <Image
+                            src="/images/login-nb.gif"
+                            alt="Background"
+                            fill
+                            className="object-cover"
+                            priority
+                        />
+                        {/* Overlay gradient with a subtle blur to hide GIF grains */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-background-dark/95 via-background-dark/40 to-transparent backdrop-blur-[1px]"></div>
                     </motion.div>
 
                     <div className="relative z-10 flex h-full flex-col justify-end p-12 text-white">
