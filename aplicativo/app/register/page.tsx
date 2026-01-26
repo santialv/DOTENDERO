@@ -191,12 +191,7 @@ export default function RegisterPage() {
             <div className="flex min-h-screen flex-row">
                 {/* Left Side: Visual / Hero */}
                 <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-background-dark">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 1.05 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="absolute inset-0 h-full w-full"
-                    >
+                    <div className="absolute inset-0 h-full w-full">
                         <Image
                             alt="Tienda de barrio"
                             className="object-cover opacity-60 mix-blend-overlay"
@@ -204,9 +199,11 @@ export default function RegisterPage() {
                             fill
                             priority
                             sizes="50vw"
+                            placeholder="blur"
+                            blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/+F9PQAI8wNPvd7POQAAAABJRU5ErkJggg=="
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-background-dark/90 via-background-dark/40 to-transparent"></div>
-                    </motion.div>
+                    </div>
 
                     <div className="relative z-10 flex flex-col justify-end p-16 h-full">
                         <motion.div
