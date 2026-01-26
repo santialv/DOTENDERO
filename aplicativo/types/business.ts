@@ -38,6 +38,7 @@ export type BusinessInfo = {
     email: string;
     logoUrl?: string; // Added
     rutUrl?: string; // Added
+    owner_name?: string; // Added for UI display
     plan?: string;
     subscription_status?: string;
     organization_id?: string;
@@ -56,5 +57,6 @@ export const DEFAULT_BUSINESS_INFO: BusinessInfo = {
     email: "",
     logoUrl: "",
     rutUrl: "",
+    owner_name: "",
     organization_id: ""
 };

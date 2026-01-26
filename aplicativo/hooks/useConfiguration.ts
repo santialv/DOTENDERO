@@ -28,7 +28,7 @@ export function useConfiguration() {
             // 1. Get Profile to find Org ID
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('organization_id')
+                .select('organization_id, full_name')
                 .eq('id', user.id)
                 .single();
 
@@ -63,6 +63,7 @@ export function useConfiguration() {
                     email: org.email || "",
                     logoUrl: org.logo_url || "",
                     rutUrl: org.rut_url || "",
+                    owner_name: profile.full_name || "", // Added user name mapping
                     plan: org.plan || "free",
                     subscription_status: org.subscription_status || "active",
                     organization_id: org.id
