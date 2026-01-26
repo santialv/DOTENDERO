@@ -111,12 +111,12 @@ export function SalesChart({ organizationId }: SalesChartProps) {
                                     tickFormatter={(value) => `$${value}`}
                                 />
                                 <Tooltip
-                                    formatter={(value: number) =>
+                                    formatter={(value: any) =>
                                         new Intl.NumberFormat("es-CO", {
                                             style: "currency",
                                             currency: "COP",
                                             maximumFractionDigits: 0
-                                        }).format(value)
+                                        }).format(Number(value))
                                     }
                                     labelStyle={{ color: "black" }}
                                 />
