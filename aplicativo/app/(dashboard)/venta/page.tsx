@@ -125,8 +125,17 @@ export default function VentaPage() {
       }
     };
 
+    const handleClearSearch = () => {
+      setSearchQuery("");
+      searchInputRef.current?.focus();
+    };
+
     window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    window.addEventListener('clear-search', handleClearSearch);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+      window.removeEventListener('clear-search', handleClearSearch);
+    };
   }, [isPaymentModalOpen, lastTransaction, isAllCategoriesOpen, isMobileCartOpen, isOpenShiftModalOpen, isCustomerModalOpen, isHeldOrdersModalOpen, isCashCloseModalOpen, currentShift]);
 
   // Handlers

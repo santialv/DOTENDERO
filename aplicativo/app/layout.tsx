@@ -8,8 +8,14 @@ import { Analytics } from "@vercel/analytics/react";
 export const metadata: Metadata = {
   title: "DonTendero",
   description: "La plataforma para tu tienda de barrio",
+  manifest: "/manifest.json",
   icons: {
-    icon: "/icon.svg",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/icon.png",
+    apple: "/icon.png",
   },
 };
 
