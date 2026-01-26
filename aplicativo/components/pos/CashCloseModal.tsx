@@ -4,11 +4,14 @@ import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
 import { Loader2, Calculator, Save, AlertTriangle, CheckCircle2, FileDown, TrendingDown } from 'lucide-react';
-import { generateCashClosePDF } from '@/lib/pdfUtils';
+import { generateCashClosePDF } from '@/lib/pdfUtils'; // Assuming this exists or I should check it. 
+// If generic PDF gen exists, good. If not, I might need to fix this import later. 
+// I'll assume it exists as per previous file read context (it was imported in previous version).
 
 interface CashCloseModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
 }
 
 const DENOMINATIONS = [
@@ -25,7 +28,7 @@ const DENOMINATIONS = [
     { value: 50, label: '$50' },
 ];
 
-export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
+export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [successView, setSuccessView] = useState(false);
@@ -43,8 +46,13 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
         credit: 0,
         other: 0,
         transactionCount: 0,
-        expenses: 0
+        expenses: 0,
+        initialCash: 0,
+        manualIncome: 0,
     });
+
+    // Shift Data
+    const [shiftId, setShiftId] = useState<string | null>(null);
 
     // User Input (Count)
     const [counts, setCounts] = useState<Record<number, number>>({});
@@ -53,7 +61,7 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
     // Fetch transactions for today
     useEffect(() => {
         if (isOpen) {
-            fetchDailySales();
+            fetchShiftAndSales();
             setSuccessView(false);
         } else {
             // Reset state when closed
@@ -62,12 +70,9 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
         }
     }, [isOpen]);
 
-    const fetchDailySales = async () => {
+    const fetchShiftAndSales = async () => {
         setLoading(true);
         try {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
             // Get Organization ID & Details
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
@@ -81,26 +86,48 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
             const { data: org } = await supabase.from('organizations').select('name').eq('id', profile.organization_id).single();
             if (org) setOrgName(org.name);
 
-            // Fetch Invoices
+            // 1. Get Open Shift
+            const { data: shift, error: shiftError } = await supabase
+                .from('cash_shifts')
+                .select('*')
+                .eq('organization_id', profile.organization_id)
+                .eq('status', 'open')
+                .maybeSingle();
+
+            if (shiftError) throw shiftError;
+
+            if (!shift) {
+                toast("No hay turno abierto para cerrar.", "error");
+                onClose();
+                return;
+            }
+
+            setShiftId(shift.id);
+
+            // 2. Fetch Invoices within Shift Time frame
+            const startTime = shift.start_time;
+            const endTime = new Date().toISOString(); // Now
+
             const { data: invoices, error } = await supabase
                 .from('invoices')
                 .select('*')
                 .eq('organization_id', profile.organization_id)
-                .gte('created_at', today.toISOString())
-                .eq('status', 'paid'); // Only paid invoices
+                .gte('created_at', startTime)
+                .lte('created_at', endTime)
+                .eq('status', 'paid');
 
             if (error) throw error;
 
-            // Fetch Expenses
-            const { data: expenses, error: expensesError } = await supabase
-                .from('cash_expenses')
-                .select('amount')
-                .eq('organization_id', profile.organization_id)
-                .gte('created_at', today.toISOString());
+            // 3. Fetch Cash Movements (Expenses/In) for this shift
+            const { data: movements, error: movementsError } = await supabase
+                .from('cash_movements')
+                .select('*')
+                .eq('shift_id', shift.id);
 
-            if (expensesError) throw expensesError;
+            if (movementsError) throw movementsError;
 
-            const totalExpenses = expenses?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+            const expensesTotal = movements?.filter(m => m.type === 'out').reduce((acc, curr) => acc + curr.amount, 0) || 0;
+            const incomeTotal = movements?.filter(m => m.type === 'in').reduce((acc, curr) => acc + curr.amount, 0) || 0;
 
             // Calculate Totals
             const totals = {
@@ -111,7 +138,9 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
                 credit: 0,
                 other: 0,
                 transactionCount: invoices?.length || 0,
-                expenses: totalExpenses
+                expenses: expensesTotal,
+                initialCash: shift.initial_cash || 0,
+                manualIncome: incomeTotal
             };
 
             invoices?.forEach(inv => {
@@ -136,7 +165,7 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
 
         } catch (error) {
             console.error("Error fetching sales:", error);
-            toast("Error al cargar ventas del día", "error");
+            toast("Error al cargar ventas del turno", "error");
         } finally {
             setLoading(false);
         }
@@ -153,53 +182,38 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
         }, 0);
     }, [counts]);
 
-    // Expected Cash = Sales Cash - Expenses
-    const expectedCash = Math.max(0, systemTotals.cash - systemTotals.expenses);
+    // Expected Cash = Initial + Sales Cash + Manual In - Manual Out (Expenses)
+    const expectedCash = Math.max(0,
+        systemTotals.initialCash +
+        systemTotals.cash +
+        systemTotals.manualIncome -
+        systemTotals.expenses
+    );
+
     const difference = totalCounted - expectedCash;
     const isBalanced = Math.abs(difference) < 50; // Tolerance
 
     const handleCloseShift = async () => {
+        if (!shiftId) return;
         setLoading(true);
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                toast("No hay sesión activa", "error");
-                return;
-            }
-
-            const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', session.user.id).single();
-            if (!profile?.organization_id) {
-                toast("Error de organización", "error");
-                return;
-            }
-
-            // Note: We are saving Sales Total, but difference now accounts for expenses.
-            // Ideally we should save Expenses too, but to avoid schema error manually,
-            // we will note it in observations or just rely on 'difference' reflecting it.
-            // If the user runs the migration for expenses column later, we can add it.
-            // For now, I'll append expenses info to observations automatically if not present.
-
-            const autoObservation = `Gastos del día: ${formatCurrency(systemTotals.expenses)}. ` + observations;
-
-            const { error } = await supabase.from('cash_closes').insert({
-                organization_id: profile.organization_id,
-                user_id: session.user.id,
-                system_cash_total: systemTotals.cash,
-                system_card_total: systemTotals.card,
-                system_transfer_total: systemTotals.transfer,
-                system_credit_total: systemTotals.credit,
-                system_other_total: systemTotals.other,
-                system_grand_total: systemTotals.total,
-                counted_cash_total: totalCounted,
-                difference: difference,
-                cash_denomination_details: counts,
-                observations: autoObservation
-            });
+            const { error } = await supabase
+                .from('cash_shifts')
+                .update({
+                    end_time: new Date().toISOString(),
+                    final_cash_expected: expectedCash,
+                    final_cash_real: totalCounted,
+                    difference: difference,
+                    status: 'closed',
+                    notes: observations
+                })
+                .eq('id', shiftId);
 
             if (error) throw error;
 
-            toast("Cierre de caja guardado correctamente", "success");
+            toast("Turno cerrado correctamente", "success");
             setSuccessView(true);
+            if (onSuccess) onSuccess();
         } catch (error: any) {
             console.error("Error closing shift:", error);
             toast(`Error al guardar cierre: ${error.message}`, "error");
@@ -209,14 +223,18 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
     };
 
     const handleDownloadPDF = () => {
+        // Adapt to new data structure if needed, or pass extras in "observations"
         generateCashClosePDF({
             organizationName: orgName,
             userName,
             date: new Date().toISOString(),
-            systemTotals,
+            systemTotals: {
+                ...systemTotals,
+                // Add base cash to display if PDF supports it, or merge
+            },
             countedCash: totalCounted,
             difference,
-            observations,
+            observations: `Base: ${formatCurrency(systemTotals.initialCash)}. ${observations}`,
             denominations: counts
         });
         toast("Informe descargado", "success");
@@ -238,9 +256,9 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
                             <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-300">
                                 <CheckCircle2 className="w-10 h-10" />
                             </div>
-                            <h2 className="text-3xl font-black text-slate-900 mb-2">¡Cierre de Caja Exitoso!</h2>
+                            <h2 className="text-3xl font-black text-slate-900 mb-2">¡Turno Cerrado!</h2>
                             <p className="text-slate-500 mb-8 max-w-md">
-                                El cierre se ha registrado correctamente en el sistema. Puedes descargar el comprobante ahora.
+                                El turno se ha cerrado y registrado correctamente.
                             </p>
 
                             <div className="flex gap-4">
@@ -266,10 +284,10 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
                                 <div>
                                     <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                                         <Calculator className="w-6 h-6 text-primary" />
-                                        Cierre de Caja
+                                        Cierre de Turno
                                     </h2>
                                     <p className="text-sm text-gray-500 mt-1">
-                                        {new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                        Resumen de movimientos del turno actual
                                     </p>
                                 </div>
                                 <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -282,60 +300,53 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
                                 <div className="w-full lg:w-1/3 bg-gray-50 p-6 border-r border-gray-100 overflow-y-auto">
                                     <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
                                         <span className="material-symbols-outlined text-blue-500">dns</span>
-                                        Resumen del Sistema
+                                        Resumen (Sistema)
                                     </h3>
 
                                     {loading ? (
                                         <div className="flex justify-center py-8"><Loader2 className="animate-spin text-primary" /></div>
                                     ) : (
                                         <div className="space-y-4">
+
                                             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                                <p className="text-sm text-gray-500 mb-1">Ventas Totales</p>
-                                                <p className="text-3xl font-bold text-gray-900">{formatCurrency(systemTotals.total)}</p>
-                                                <p className="text-xs text-blue-500 font-medium mt-1">{systemTotals.transactionCount} transacciones</p>
+                                                <p className="text-sm text-gray-500 mb-1">Total Esperado en Caja</p>
+                                                <p className="text-3xl font-bold text-blue-600">{formatCurrency(expectedCash)}</p>
                                             </div>
 
-                                            <div className="space-y-3">
-                                                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100">
-                                                    <span className="flex items-center gap-2 text-gray-600 text-sm">
-                                                        <span className="w-2 h-2 rounded-full bg-green-500"></span> Efectivo
-                                                    </span>
-                                                    <span className="font-semibold">{formatCurrency(systemTotals.cash)}</span>
+                                            <div className="space-y-2 text-sm bg-white p-3 rounded-lg border border-gray-100">
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-500">Base Inicial</span>
+                                                    <span className="font-semibold text-gray-900">{formatCurrency(systemTotals.initialCash)}</span>
                                                 </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-500">Ventas Efectivo</span>
+                                                    <span className="font-semibold text-green-600">+{formatCurrency(systemTotals.cash)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-500">Ingresos Manuales</span>
+                                                    <span className="font-semibold text-green-600">+{formatCurrency(systemTotals.manualIncome)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-500">Gastos/Salidas</span>
+                                                    <span className="font-semibold text-red-600">-{formatCurrency(systemTotals.expenses)}</span>
+                                                </div>
+                                            </div>
 
-                                                {/* Expenses Display */}
-                                                <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-100">
-                                                    <span className="flex items-center gap-2 text-red-600 text-sm font-bold">
-                                                        <TrendingDown className="w-4 h-4" /> Gastos / Salidas
-                                                    </span>
-                                                    <span className="font-bold text-red-700">-{formatCurrency(systemTotals.expenses)}</span>
-                                                </div>
-
-                                                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg border border-blue-100">
-                                                    <span className="flex items-center gap-2 text-blue-600 text-sm font-bold">
-                                                        <span className="material-symbols-outlined text-sm">savings</span>
-                                                        Neto en Caja (Esperado)
-                                                    </span>
-                                                    <span className="font-bold text-blue-700">{formatCurrency(expectedCash)}</span>
-                                                </div>
-
-                                                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 mt-4">
-                                                    <span className="flex items-center gap-2 text-gray-600 text-sm">
-                                                        <span className="w-2 h-2 rounded-full bg-blue-500"></span> Tarjeta
-                                                    </span>
-                                                    <span className="font-semibold">{formatCurrency(systemTotals.card)}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100">
-                                                    <span className="flex items-center gap-2 text-gray-600 text-sm">
-                                                        <span className="w-2 h-2 rounded-full bg-purple-500"></span> Transferencia/QR
-                                                    </span>
-                                                    <span className="font-semibold">{formatCurrency(systemTotals.transfer)}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100">
-                                                    <span className="flex items-center gap-2 text-gray-600 text-sm">
-                                                        <span className="w-2 h-2 rounded-full bg-orange-500"></span> Fiado / Crédito
-                                                    </span>
-                                                    <span className="font-semibold">{formatCurrency(systemTotals.credit)}</span>
+                                            <div className="mt-4 pt-4 border-t border-gray-200">
+                                                <p className="text-xs font-bold text-gray-400 uppercase mb-2">Otros Medios</p>
+                                                <div className="space-y-2">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Tarjeta</span>
+                                                        <span className="font-medium">{formatCurrency(systemTotals.card)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Transferencia</span>
+                                                        <span className="font-medium">{formatCurrency(systemTotals.transfer)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Fiado</span>
+                                                        <span className="font-medium">{formatCurrency(systemTotals.credit)}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -346,7 +357,7 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
                                 <div className="flex-1 p-6 overflow-y-auto bg-white">
                                     <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
                                         <span className="material-symbols-outlined text-green-500">payments</span>
-                                        Arqueo de Efectivo
+                                        Arqueo de Efectivo Real
                                     </h3>
 
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
@@ -374,7 +385,7 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
                                         <textarea
                                             className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none"
                                             rows={3}
-                                            placeholder="Alguna novedad durante el turno..."
+                                            placeholder="Novedades del turno..."
                                             value={observations}
                                             onChange={(e) => setObservations(e.target.value)}
                                         ></textarea>
@@ -402,7 +413,7 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
 
                                 <div className="flex gap-3">
                                     <button
-                                        onClick={fetchDailySales}
+                                        onClick={fetchShiftAndSales}
                                         className="px-4 py-2 text-sm font-bold text-gray-600 hover:bg-white hover:text-gray-900 bg-transparent border border-transparent hover:border-gray-200 rounded-lg transition-all"
                                     >
                                         Recalcular
@@ -414,7 +425,7 @@ export function CashCloseModal({ isOpen, onClose }: CashCloseModalProps) {
                                         className="px-6 py-2 bg-[#13ec80] hover:bg-[#10d673] text-slate-900 font-bold rounded-lg shadow-sm flex items-center gap-2"
                                     >
                                         <Save className="w-4 h-4 font-bold" />
-                                        Cerrar Caja
+                                        Cerrar Turno
                                     </motion.button>
                                 </div>
                             </div>

@@ -69,7 +69,9 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
                 const { data: { session } } = await supabase.auth.getSession();
 
                 if (!session) {
-                    console.log("Guardián: No hay sesión, redirigiendo a login.");
+                    console.log("Guardián: No hay sesión (o token inválido), limpiando y redirigiendo.");
+                    // Force sign out to clear any invalid tokens from localStorage
+                    await supabase.auth.signOut();
                     router.replace("/login");
                     return;
                 }

@@ -70,9 +70,11 @@ export const WompiButton = ({ amount, className }: WompiButtonProps) => {
             return;
         }
 
-        // Open in new tab with NO REFERRER to bypass localhost blocks
+        // Open in new tab with NO REFERRER to bypass localhost blocking issues on Wompi side
+        // NOTE: Wompi uses the same checkout URL for Sandbox and Production.
+        // The environment is determined by the Public Key prefix (pub_test_ vs pub_prod_).
         const url = `https://checkout.wompi.co/p/?${paymentParams}`;
-        window.open(url, '_blank', 'noopener,noreferrer');
+        window.open(url, '_self'); // '_self' to keep flow in same tab if preferred, or '_blank'
     };
 
     return (

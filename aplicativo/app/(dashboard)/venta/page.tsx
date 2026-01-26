@@ -1,21 +1,51 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { ProductGrid } from "@/components/pos/ProductGrid";
 import { CartSidebar } from "@/components/pos/CartSidebar";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import { CashCloseModal } from "@/components/pos/CashCloseModal";
 import { SuccessModal } from "@/components/pos/SuccessModal";
 import { CustomerModal } from "@/components/pos/CustomerModal";
+import { OpenShiftModal } from "@/components/pos/OpenShiftModal";
 import { CategoryButton } from "@/components/pos/CategoryButton";
 import { usePOS } from "@/hooks/usePOS";
+import { useCashShift } from "@/hooks/useCashShift";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
 import { Transaction } from "@/types";
 
 export default function VentaPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper for Haptic Feedback
+  // Cash Shift Management
+  const { currentShift, loading: shiftLoading, refreshShift } = useCashShift();
+  const [isOpenShiftModalOpen, setIsOpenShiftModalOpen] = useState(false);
+
+  // Auto-open modal removed
+
+  // Helper for Audio/Haptic Feedback
+  const triggerSuccessFeedback = () => {
+    // Haptic
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(15);
+    }
+    // Audio (Simple Beep)
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.1);
+    } catch (e) {
+      console.warn("Audio feedback failed", e);
+    }
+  };
+
   const triggerHaptic = () => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(10); // 10ms vibration
@@ -51,6 +81,10 @@ export default function VentaPage() {
 
   // Wrapped addToCart with haptic
   const addToCart = (productId: string | number) => {
+    if (!currentShift) {
+      setIsOpenShiftModalOpen(true);
+      return;
+    }
     triggerHaptic();
     originalAddToCart(productId);
   };
@@ -66,12 +100,45 @@ export default function VentaPage() {
   // Mobile Cart Drawer State
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 
-  // Auto-focus search on mount
+  // Auto-focus search on mount and after modals
   useEffect(() => {
-    if (!isPaymentModalOpen && !lastTransaction && !isAllCategoriesOpen && !isMobileCartOpen) {
+    const isAnyModalOpen = isPaymentModalOpen || lastTransaction || isAllCategoriesOpen || isMobileCartOpen || isOpenShiftModalOpen || isCustomerModalOpen || isHeldOrdersModalOpen || isCashCloseModalOpen;
+
+    if (!isAnyModalOpen && currentShift) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
-  }, [isPaymentModalOpen, lastTransaction, isAllCategoriesOpen, isMobileCartOpen]);
+  }, [isPaymentModalOpen, lastTransaction, isAllCategoriesOpen, isMobileCartOpen, isOpenShiftModalOpen, isCustomerModalOpen, isHeldOrdersModalOpen, isCashCloseModalOpen, currentShift]);
+
+  // Aggressive Auto-focus: Capture keys even if not focused
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const isAnyModalOpen = isPaymentModalOpen || !!lastTransaction || isAllCategoriesOpen || isMobileCartOpen || isOpenShiftModalOpen || isCustomerModalOpen || isHeldOrdersModalOpen || isCashCloseModalOpen;
+
+      if (isAnyModalOpen || !currentShift) return;
+
+      // If user starts typing and not in an input, focus the search
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+      if (!isInput && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isPaymentModalOpen, lastTransaction, isAllCategoriesOpen, isMobileCartOpen, isOpenShiftModalOpen, isCustomerModalOpen, isHeldOrdersModalOpen, isCashCloseModalOpen, currentShift]);
+
+  // Handlers
+  const handleShiftOpened = () => {
+    refreshShift();
+    setIsOpenShiftModalOpen(false);
+  };
+
+  const handleShiftClosed = () => {
+    setIsCashCloseModalOpen(false);
+    refreshShift();
+  };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -82,14 +149,25 @@ export default function VentaPage() {
         return;
       }
 
-      if (filteredProducts.length > 0) {
-        const exactMatch = filteredProducts.find(p => String(p.id) === searchQuery.trim());
+      const q = searchQuery.trim();
+      if (q && filteredProducts.length > 0) {
+        // PRIORIDAD: Coincidencia EXACTA por Barcode o por ID
+        const exactMatch = filteredProducts.find(p =>
+          String(p.barcode) === q || String(p.id) === q
+        );
+
         const product = exactMatch || filteredProducts[0];
+
+        triggerSuccessFeedback();
         addToCart(product.id);
         setSearchQuery("");
       }
     }
   };
+
+  if (shiftLoading) {
+    return <div className="flex h-screen items-center justify-center">Cargando PV...</div>;
+  }
 
   return (
     <>
@@ -102,11 +180,12 @@ export default function VentaPage() {
             <input
               ref={searchInputRef}
               className="block w-full pl-12 pr-12 md:pr-28 py-3 bg-white border-none rounded-2xl text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-primary/50 shadow-sm text-base transition-all h-12 box-border shadow-slate-200/50 border-slate-100 border"
-              placeholder="Buscar..."
+              placeholder={currentShift ? "Buscar..." : "Caja Cerrada - Abrir para Vender"}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchKeyDown}
+              disabled={!currentShift}
             />
             {/* Desktop Scan Button */}
             <div className="hidden md:flex absolute inset-y-0 right-0 pr-2 items-center gap-2">
@@ -143,11 +222,11 @@ export default function VentaPage() {
           </button>
 
           <button
-            onClick={() => setIsCashCloseModalOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors font-semibold text-sm"
+            onClick={() => currentShift ? setIsCashCloseModalOpen(true) : setIsOpenShiftModalOpen(true)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors font-semibold text-sm ${currentShift ? 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' : 'bg-[#13ec80] border-[#13ec80] text-slate-900 hover:bg-[#10d673]'}`}
           >
             <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
-            Cerrar Caja
+            {currentShift ? "Cerrar Caja" : "Abrir Caja"}
           </button>
 
           <button className="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-primary transition-colors shadow-sm relative">
@@ -413,6 +492,7 @@ export default function VentaPage() {
       <CashCloseModal
         isOpen={isCashCloseModalOpen}
         onClose={() => setIsCashCloseModalOpen(false)}
+        onSuccess={handleShiftClosed}
       />
 
       <SuccessModal
@@ -424,6 +504,11 @@ export default function VentaPage() {
         isOpen={isCustomerModalOpen}
         onClose={() => setIsCustomerModalOpen(false)}
         onSelect={(customer) => setSelectedCustomer(customer)}
+      />
+
+      <OpenShiftModal
+        isOpen={isOpenShiftModalOpen}
+        onSuccess={handleShiftOpened}
       />
 
       <style jsx global>{`

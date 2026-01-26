@@ -10,6 +10,7 @@ import AuthGuard from '@/components/AuthGuard';
 import { supabase } from '@/lib/supabase';
 import { useConfiguration } from "@/hooks/useConfiguration";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { DonTenderoChat } from '@/components/chat/DonTenderoChat';
 
 export default function DashboardLayout({
     children,
@@ -79,9 +80,11 @@ export default function DashboardLayout({
         }
     };
 
+    // ... existing logic ...
+
     return (
         <AuthGuard>
-            <div className="flex h-screen bg-slate-50">
+            <div className="flex h-screen bg-slate-50 relative">
                 {/* Sidebar - Hidden on Mobile */}
                 <aside
                     className={`hidden md:flex ${isCollapsed ? 'w-20' : 'w-64'} h-full bg-white border-r border-slate-200 flex-col justify-between shrink-0 z-20 transition-all duration-300 relative`}
@@ -99,105 +102,109 @@ export default function DashboardLayout({
                     <div>
                         <div className={`h-20 flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-6'} border-b border-slate-100 overflow-hidden whitespace-nowrap`}>
                             <div className="flex items-center justify-center w-full">
-                                {/* Collapsed: CSS Icon */}
                                 {isCollapsed ? (
-                                    <div className={`w-10 h-10 ${brandColor} rounded-lg flex items-center justify-center text-slate-900 shadow-sm shrink-0 transition-transform duration-300`}>
-                                        <span className={`material-symbols-outlined text-[24px] ${isFinance ? 'text-white' : 'text-slate-900'}`}>storefront</span>
+                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-slate-900 shadow-sm shrink-0 bg-white border border-slate-200`}>
+                                        <span className={`material-symbols-outlined text-[24px]`}>storefront</span>
                                     </div>
                                 ) : (
-                                    /* Expanded: Full Logo Image */
                                     <div className="flex justify-start w-full transition-opacity duration-300 animate-in fade-in">
                                         <img src="/logo.png" alt="DonTendero" className="h-[42px] w-auto object-contain" />
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <nav className="flex flex-col gap-1 p-2 md:p-4">
+
+                        {/* Ghost Mode Exit in Sidebar */}
+                        {ghostOrgId && (
+                            <div className={`px-3 pt-3 ${isCollapsed ? 'hidden' : 'block'}`}>
+                                <button
+                                    onClick={exitGhostMode}
+                                    className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg text-xs font-bold shadow-sm transition-colors animate-pulse flex items-center justify-center gap-2"
+                                >
+                                    <span className="material-symbols-outlined text-sm">visibility_off</span>
+                                    SALIR MODO FANTASMA
+                                </button>
+                            </div>
+                        )}
+
+                        <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
+                            <NavItem href="/dashboard" icon="dashboard" label="Inicio" collapsed={isCollapsed} />
                             <NavItem href="/venta" icon="point_of_sale" label="Venta" collapsed={isCollapsed} />
                             <NavItem href="/caja" icon="payments" label="Caja" collapsed={isCollapsed} />
                             <NavItem href="/inventario" icon="inventory_2" label="Inventario" collapsed={isCollapsed} />
-                            <NavItem href="/compras" icon="shopping_cart_checkout" label="Compras" collapsed={isCollapsed} />
-                            <NavItem href="/clientes" icon="groups" label="Clientes" collapsed={isCollapsed} />
+                            <NavItem href="/compras" icon="shopping_cart" label="Compras" collapsed={isCollapsed} />
+                            <NavItem href="/clientes" icon="group" label="Clientes" collapsed={isCollapsed} />
                             <NavItem href="/reportes" icon="bar_chart" label="Reportes" collapsed={isCollapsed} />
-                            <div className="my-2 border-t border-slate-100 mx-2"></div>
+
+                            <div className="my-2 border-t border-slate-100 mx-2" />
+
                             <NavItem href="/asesoria" icon="support_agent" label="Asesoría Financiera" collapsed={isCollapsed} />
                             <NavItem href="/configuracion" icon="settings" label="Configuración" collapsed={isCollapsed} />
+
+                            {userRole === 'super_admin' && (
+                                <>
+                                    <div className="my-4 border-t border-slate-100" />
+                                    <NavItem href="/admin/tiendas" icon="admin_panel_settings" label="Admin" collapsed={isCollapsed} />
+                                </>
+                            )}
                         </nav>
                     </div>
-                    <div className={`p-4 border-t border-slate-200 ${isCollapsed ? 'flex flex-col gap-2 justify-center' : ''}`}>
-                        <div className={`flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors ${isCollapsed ? 'justify-center p-0' : ''}`}>
-                            <div className="w-10 h-10 rounded-full bg-[#13ec80] flex items-center justify-center shrink-0 border-2 border-white shadow-sm text-slate-900 font-bold overflow-hidden">
-                                {businessInfo.name ? businessInfo.name.charAt(0).toUpperCase() : <span className="material-symbols-outlined">store</span>}
-                            </div>
-                            <div className={`flex flex-col ${isCollapsed ? 'hidden' : 'block'} whitespace-nowrap overflow-hidden`}>
-                                <span className="text-sm font-bold text-slate-900 truncate max-w-[140px]" title={businessInfo.name}>
-                                    {businessInfo.name || "Cargando..."}
-                                </span>
-                                <span className="text-xs text-slate-500 font-medium">{businessInfo.legalName ? 'Empresa' : 'Propietario'}</span>
-                            </div>
-                        </div>
 
-                        {/* Admin Link (Only for Super Admin) */}
-                        {userRole === 'super_admin' && (
-                            <Link
-                                href="/admin"
-                                className={`flex w-full items-center gap-3 p-2 rounded-xl text-slate-600 hover:text-purple-600 hover:bg-purple-50 transition-colors group ${isCollapsed ? 'justify-center' : ''}`}
-                                title="Panel Administrativo"
-                            >
-                                <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">shield_person</span>
-                                {!isCollapsed && <span className="text-sm font-medium">Panel Admin</span>}
-                            </Link>
-                        )}
+                    <div className="p-3 border-t border-slate-100">
+                        {/* User Profile Info (Moved from Header) */}
+                        <div className={`flex items-center gap-3 mb-3 px-2 rounded-xl bg-slate-50 py-2 border border-slate-100 ${isCollapsed ? 'justify-center p-0 w-full aspect-square mb-2' : ''}`}>
+                            <div className={`w-8 h-8 rounded-full ${brandColor} flex items-center justify-center text-white font-bold text-xs shrink-0`}>
+                                {(businessInfo?.owner_name || 'A')[0].toUpperCase()}
+                            </div>
+                            {!isCollapsed && (
+                                <div className="overflow-hidden">
+                                    <p className="text-sm font-bold text-slate-700 truncate" title={businessInfo?.name}>
+                                        {businessInfo?.name || 'Mi Tienda'}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 font-medium truncate uppercase tracking-wider">
+                                        {businessInfo?.owner_name || 'Admin'}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
 
                         <button
                             onClick={handleLogout}
-                            className={`flex w-full items-center gap-3 p-2 rounded-xl text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors group ${isCollapsed ? 'justify-center' : ''}`}
-                            title="Cerrar Sesión"
+                            className={`flex items-center ${isCollapsed ? 'justify-center' : 'px-3'} w-full py-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all group`}
                         >
-                            <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">logout</span>
-                            {!isCollapsed && <span className="text-sm font-medium">Cerrar Sesión</span>}
+                            <span className="material-symbols-outlined group-hover:scale-110 transition-transform">logout</span>
+                            {!isCollapsed && <span className="ml-3 font-medium">Cerrar Sesión</span>}
                         </button>
-
-                        {!isCollapsed && (
-                            <div className="mt-2 text-center">
-                                <span className="text-[10px] text-slate-300 font-mono">v0.1.2</span>
-                            </div>
-                        )}
                     </div>
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-x-hidden overflow-y-auto relative flex flex-col bg-slate-50/50 pb-20 md:pb-0">
-                    {/* Ghost Mode Banner */}
-                    {ghostOrgId && (
-                        <div className="bg-slate-900 border-b-4 border-red-500 text-white px-6 py-3 shadow-md flex flex-col md:flex-row justify-between items-center gap-4 z-40 sticky top-0">
-                            <div className="flex items-center gap-3">
-                                <span className="p-2 bg-red-500/20 rounded-full animate-pulse">
-                                    <span className="material-symbols-outlined text-red-400">visibility</span>
-                                </span>
-                                <div>
-                                    <p className="font-black text-sm uppercase tracking-wider text-red-400">Modo Fantasma Activo</p>
-                                    <p className="text-xs text-slate-400">Estás visualizando la tienda como administrador. Cualquier cambio será real.</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={exitGhostMode}
-                                className="bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase shadow-lg shadow-red-500/20 transition-all flex items-center gap-2"
-                            >
-                                <span className="material-symbols-outlined text-sm">logout</span>
-                                Salir del Modo Fantasma
-                            </button>
+                <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+                    {/* Header - Mobile Only */}
+                    <header className="md:hidden h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-10">
+                        <div className="flex items-center gap-3">
+                            <MobileNav />
                         </div>
-                    )}
 
-                    <div className="fixed bottom-24 right-4 z-50 md:bottom-8 md:right-8">
-                        <NotificationBell />
+                        <div className="flex items-center gap-3">
+                            <div className="border-l border-slate-200 pl-3 ml-1">
+                                <NotificationBell />
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Page Content */}
+                    <main className="flex-1 flex flex-col overflow-y-auto bg-slate-50/50">
+                        <div className="flex-1 w-full h-full relative flex flex-col">
+                            {children}
+                        </div>
+                    </main>
+
+                    {/* Bot de Soporte Global */}
+                    <div className="fixed bottom-6 right-6 z-50">
+                        <DonTenderoChat />
                     </div>
-                    {children}
-                </main>
-
-                {/* Mobile Navigation */}
-                <MobileNav />
+                </div>
             </div>
         </AuthGuard>
     );

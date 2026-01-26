@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
@@ -30,6 +30,27 @@ interface Product {
 export default function CreateProductPage() {
     const router = useRouter();
     const { toast } = useToast();
+
+    // Refs for focus management
+    const nameInputRef = useRef<HTMLInputElement>(null);
+    const barcodeInputRef = useRef<HTMLInputElement>(null);
+
+    // Audio/Haptic Feedback Helper
+    const triggerSuccessFeedback = () => {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+        try {
+            const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        } catch (e) { }
+    };
 
     // -- Form State --
     const [name, setName] = useState("");
@@ -213,6 +234,7 @@ export default function CreateProductPage() {
                                 <label className="flex flex-col gap-2">
                                     <span className="text-sm text-slate-700">Nombre del Producto <span className="text-red-500">*</span></span>
                                     <input
+                                        ref={nameInputRef}
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 placeholder:text-gray-400"
@@ -277,13 +299,25 @@ export default function CreateProductPage() {
                                                 {skuMode === 'auto' ? 'autorenew' : 'qr_code_scanner'}
                                             </span>
                                             <input
+                                                ref={barcodeInputRef}
                                                 value={barcode}
                                                 onChange={(e) => setBarcode(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault(); // Prevent form submit
+                                                        if (barcode.length > 2) {
+                                                            triggerSuccessFeedback();
+                                                            toast("Código escaneado correctamente", "success");
+                                                            // Auto-jump to Name field
+                                                            setTimeout(() => nameInputRef.current?.focus(), 100);
+                                                        }
+                                                    }
+                                                }}
                                                 disabled={skuMode === 'auto'}
                                                 readOnly={skuMode === 'auto'}
                                                 autoFocus={skuMode === 'manual'}
                                                 className={`w-full rounded-lg border bg-slate-50 focus:ring-2 focus:ring-primary focus:border-primary h-12 pl-10 pr-4 font-mono transition-colors ${skuMode === 'auto' ? 'border-primary/30 text-primary font-bold' : 'border-slate-200 text-slate-900 placeholder:text-slate-400'}`}
-                                                placeholder={skuMode === 'manual' ? "Haz clic aquí y escanea el código..." : "Automático"}
+                                                placeholder={skuMode === 'manual' ? "Escanea el código aquí (Enter para confirmar)" : "Automático"}
                                                 type="text"
                                             />
                                         </div>

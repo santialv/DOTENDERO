@@ -12,6 +12,10 @@ export function usePOS() {
     // Data State
     const [products, setProducts] = useState<Product[]>([]);
     const [cart, setCart] = useState<{ id: string; quantity: number }[]>([]);
+
+    // Cache for products in cart to prevent them disappearing when search changes
+    const [productCache, setProductCache] = useState<Record<string, Product>>({});
+
     const [activeCategory, setActiveCategory] = useState("Todos");
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -19,6 +23,17 @@ export function usePOS() {
     const [saleId, setSaleId] = useState(1024);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer>({ id: "default", name: "Venta General" });
     const [heldOrders, setHeldOrders] = useState<any[]>([]);
+
+    // Helper to update cache
+    const updateProductCache = useCallback((newProducts: Product[]) => {
+        setProductCache(prev => {
+            const next = { ...prev };
+            newProducts.forEach(p => {
+                next[String(p.id)] = p;
+            });
+            return next;
+        });
+    }, []);
 
     // Load Products (Smart Loading Strategy)
     useEffect(() => {
@@ -64,6 +79,7 @@ export function usePOS() {
                         icaRate: p.ica_rate
                     }));
                     setProducts(mapped as any);
+                    updateProductCache(mapped as any); // Cache them
                 }
                 return;
             }
@@ -107,6 +123,7 @@ export function usePOS() {
                             icaRate: p.ica_rate
                         }));
                         setProducts(mapped as any);
+                        updateProductCache(mapped as any);
                     }
                 } else {
                     // Fallback: Load 20 random products if no sales history
@@ -137,6 +154,7 @@ export function usePOS() {
                             icaRate: p.ica_rate
                         }));
                         setProducts(mapped as any);
+                        updateProductCache(mapped as any);
                     }
                 }
             } catch (error) {
@@ -144,7 +162,7 @@ export function usePOS() {
             }
         }
         fetchProducts();
-    }, [searchQuery]); // Re-fetch when search query changes
+    }, [searchQuery, updateProductCache]); // Re-fetch when search query changes
 
     // Load Sale ID & Held Orders
     useEffect(() => {
@@ -169,7 +187,9 @@ export function usePOS() {
     // Cart Logic
     const cartItems = useMemo(() => {
         return cart.map(cartItem => {
-            const product = products.find(p => String(p.id) === String(cartItem.id));
+            // Find in current view products OR in cache
+            const product = products.find(p => String(p.id) === String(cartItem.id)) || productCache[String(cartItem.id)];
+
             if (!product) return null;
             return {
                 ...product,
@@ -177,7 +197,7 @@ export function usePOS() {
                 finalPrice: product.salePrice || product.price || 0,
             } as CartItem;
         }).filter((item): item is CartItem => item !== null);
-    }, [cart, products]);
+    }, [cart, products, productCache]);
 
     const total = cartItems.reduce((acc, item) => acc + (item.finalPrice * item.quantity), 0);
 
@@ -191,6 +211,9 @@ export function usePOS() {
             }
             return [...prev, { id: idStr, quantity: 1 }];
         });
+
+        // Ensure added product is in cache (it should be if we clicked it, but good to be safe)
+        // We rely on products/cache being updated during fetch/render.
     }, []);
 
     const removeFromCart = useCallback((productId: string | number) => {
@@ -205,162 +228,149 @@ export function usePOS() {
     }, []);
 
     const deleteFromCart = useCallback((productId: string | number) => {
-        const idStr = String(productId);
-        setCart(prev => prev.filter(item => String(item.id) !== idStr));
+        setCart(prev => prev.filter(item => String(item.id) !== String(productId)));
     }, []);
 
-    const clearCart = useCallback(() => setCart([]), []);
-
-    const holdOrder = useCallback(() => {
-        if (cart.length === 0) return;
-        const newOrder = {
-            id: crypto.randomUUID(),
-            timestamp: Date.now(),
-            cart,
-            customer: selectedCustomer,
-            total
-        };
-        const updated = [...heldOrders, newOrder];
-        setHeldOrders(updated);
-        localStorage.setItem("heldOrders", JSON.stringify(updated));
+    const clearCart = useCallback(() => {
         setCart([]);
         setSelectedCustomer({ id: "default", name: "Venta General" });
-        toast("Venta puesta en espera", "success");
-    }, [cart, selectedCustomer, total, heldOrders, toast]);
+    }, []);
+
+    const holdOrder = useCallback(async () => {
+        if (cartItems.length === 0) return;
+
+        const order = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            cart: cartItems, // Save full items to avoiding cache issues on resume
+            customer: selectedCustomer,
+            total,
+            saleId
+        };
+
+        const newHeld = [...heldOrders, order];
+        setHeldOrders(newHeld);
+        localStorage.setItem("heldOrders", JSON.stringify(newHeld));
+
+        clearCart();
+        toast("Orden puesta en espera", "default");
+    }, [cartItems, selectedCustomer, total, saleId, heldOrders, clearCart, toast]);
 
     const resumeOrder = useCallback((order: any) => {
-        if (cart.length > 0) {
-            const currentOrder = {
-                id: crypto.randomUUID(),
-                timestamp: Date.now(),
-                cart,
-                customer: selectedCustomer,
-                total
-            };
-            const updatedHeld = [...heldOrders.filter(o => o.id !== order.id), currentOrder];
-            setHeldOrders(updatedHeld);
-            localStorage.setItem("heldOrders", JSON.stringify(updatedHeld));
-            toast("Venta actual guardada. Recuperando...", "info");
-        } else {
-            const remaining = heldOrders.filter(o => o.id !== order.id);
-            setHeldOrders(remaining);
-            localStorage.setItem("heldOrders", JSON.stringify(remaining));
-        }
-        setCart(order.cart);
+        // Update cache with items from held order to ensure they display
+        const restoredProducts: Product[] = order.cart.map((item: CartItem) => {
+            // Strip quantity and pure product fields
+            const { quantity, finalPrice, ...p } = item;
+            return p as Product;
+        });
+
+        updateProductCache(restoredProducts);
+
+        setCart(order.cart.map((item: any) => ({
+            id: String(item.id),
+            quantity: item.quantity
+        })));
         setSelectedCustomer(order.customer);
-        toast("Venta recuperada", "success");
-    }, [cart, selectedCustomer, total, heldOrders, toast]);
 
-    const checkout = useCallback(async (payments: Payment[], amountTendered: number, change: number) => {
-        try {
-            // 1. Get Session
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) throw new Error("No active session");
+        const newHeld = heldOrders.filter(h => h.id !== order.id);
+        setHeldOrders(newHeld);
+        localStorage.setItem("heldOrders", JSON.stringify(newHeld));
 
-            // 2. Preparing Data for RPC
-            const itemsPayload = cartItems.map(item => ({
-                id: item.id,
-                quantity: item.quantity
-            }));
+        toast("Orden recuperada", "default");
+    }, [heldOrders, toast, updateProductCache]);
 
-            const paymentsPayload = payments.map(p => ({
-                method: p.method,
-                amount: p.amount
-            }));
+    const checkout = useCallback(async (
+        paymentMethods: Payment[],
+        amountTendered: number,
+        change: number
+    ) => {
+        if (cartItems.length === 0) return null;
 
-            // 3. Get Organization ID (Reliable fetch)
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('organization_id')
-                .eq('id', session.user.id)
-                .single();
-
-            if (!profile?.organization_id) throw new Error("No organization found for user");
-
-            // 4. Call the Atomic RPC Function (Server-Side Logic)
-            const { data: saleResult, error: saleError } = await supabase
-                .rpc('process_sale', {
-                    p_org_id: profile.organization_id,
-                    p_seller_id: session.user.id,
-                    p_customer_id: selectedCustomer.id !== 'default' ? selectedCustomer.id : null,
-                    p_items: itemsPayload,
-                    p_payments: paymentsPayload,
-                    p_sale_number: null // Server will generate it if null
-                });
-
-            if (saleError) throw saleError;
-
-            // 5. Success Handling
-            // Construct a "Transaction" object just for UI display/receipt printing
-            const newTransaction = {
-                id: saleResult.invoice_id,
-                date: new Date().toISOString(),
-                type: "sale",
-                method: payments.map(p => p.method).join(" + "),
-                amount: saleResult.total, // Trusted total from server
-                amountTendered,
-                change,
-                description: `Venta #${saleResult.sale_number}`,
-                items: cartItems, // Keep local items for receipt detail
-                customerId: selectedCustomer.id !== "default" ? selectedCustomer.id : undefined,
-                customerName: selectedCustomer.name,
-                customerData: selectedCustomer,
-                payments
-            };
-
-            // 6. Update Local State (Optimistic UI)
-            setProducts(prev => prev.map(p => {
-                const updated = cartItems.find(c => String(c.id) === String(p.id));
-                if (updated) {
-                    return { ...p, stock: (p.stock || 0) - updated.quantity };
-                }
-                return p;
-            }));
-
-            // Legacy support (localStorage)
-            const savedTransactions = JSON.parse(localStorage.getItem("transactions") || "[]");
-            localStorage.setItem("transactions", JSON.stringify([...savedTransactions, newTransaction]));
-
-            // Update Sale ID Counter based on server response (keep local in sync)
-            const numPart = parseInt(saleResult.sale_number.split('-')[1] || "0");
-            if (numPart) {
-                setSaleId(numPart + 1);
-                localStorage.setItem("lastSaleId", (numPart + 1).toString());
-            }
-
-            setCart([]);
-            setSelectedCustomer({ id: "default", name: "Venta General" });
-            toast(`Venta ${saleResult.sale_number} registrada con éxito`, "success");
-
-            return newTransaction;
-
-        } catch (error: any) {
-            console.error("Checkout Error:", error);
-            const msg = error.message || error.details || 'Error desconocido';
-            toast(`Error en venta: ${msg}`, "error");
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            toast("No session found", "error");
             return null;
         }
-    }, [saleId, cartItems, selectedCustomer, toast]);
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('organization_id')
+            .eq('id', session.user.id)
+            .single();
+
+        if (!profile?.organization_id) {
+            toast("No organization linked", "error");
+            return null;
+        }
+
+        // Process Sale via RPC
+        const saleData = {
+            p_org_id: profile.organization_id,
+            p_user_id: session.user.id, // Vendedor
+            p_invoice_number: saleId,
+            p_customer_id: selectedCustomer.id === 'default' ? null : selectedCustomer.id,
+            p_total: total,
+            p_payment_method: paymentMethods.map(p => p.method).join(','), // Simple comma list for now or first method
+            p_items: cartItems.map(item => ({
+                product_id: item.id,
+                quantity: item.quantity,
+                unit_price: item.finalPrice,
+                subtotal: item.finalPrice * item.quantity
+            }))
+        };
+
+        try {
+            // Using a Supabase RPC to handle transaction atomically
+            const { data, error } = await supabase.rpc('process_sale', saleData);
+
+            if (error) {
+                console.error("Sale Error:", error);
+                toast(`Error al procesar venta: ${error.message}`, "error");
+                return null;
+            }
+
+            // Success
+            const confirmedSale = {
+                id: data || saleId,
+                total,
+                items: cartItems,
+                date: new Date().toISOString(),
+                paymentMethod: paymentMethods[0].method, // Simplify
+                customer: selectedCustomer
+            };
+
+            // Update local ID
+            setSaleId(prev => {
+                const next = prev + 1;
+                localStorage.setItem("lastSaleId", next.toString());
+                return next;
+            });
+
+            clearCart();
+            toast("Venta registrada con éxito", "success");
+
+            return confirmedSale;
+
+        } catch (err) {
+            console.error(err);
+            toast("Error inesperado", "error");
+            return null;
+        }
+    }, [cartItems, saleId, selectedCustomer, total, toast, clearCart]);
 
     return {
-        // State
         products,
-        filteredProducts,
+        filteredProducts, // Actually just 'products' filtered by category locally
         activeCategory,
         searchQuery,
-        cart,
         cartItems,
         total,
         saleId,
         selectedCustomer,
         heldOrders,
-
-        // Setters
         setActiveCategory,
         setSearchQuery,
         setSelectedCustomer,
-
-        // Actions
         addToCart,
         removeFromCart,
         deleteFromCart,

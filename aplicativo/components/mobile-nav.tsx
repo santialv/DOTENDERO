@@ -16,6 +16,7 @@ export function MobileNav() {
     return (
         <div className="fixed bottom-0 inset-x-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 flex items-center justify-around px-2 md:hidden shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] pb-safe-area">
             {/* Left Side */}
+            <NavItem href="/dashboard" icon="dashboard" label="Inicio" active={isActive('/dashboard')} />
             <NavItem href="/caja" icon="payments" label="Caja" active={isActive('/caja')} />
             <NavItem href="/reportes" icon="bar_chart" label="Informes" active={isActive('/reportes')} />
 
