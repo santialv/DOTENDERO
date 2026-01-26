@@ -79,15 +79,15 @@ export function CartSidebar({
             <div className="p-6 bg-slate-50 border-t border-slate-200 shrink-0">
                 <div className="flex justify-between items-center mb-2">
                     <span className="text-slate-500 font-medium">Subtotal</span>
-                    <span className="text-slate-900 font-semibold">${(total - cartItems.reduce((acc, item) => acc + (item.bagTax || 0) * item.quantity, 0)).toLocaleString()}</span>
+                    <span className="text-slate-900 font-semibold">${Math.round(total - cartItems.reduce((acc, item) => acc + (item.bagTax || 0) * item.quantity, 0)).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
                     <span className="text-slate-500 font-medium">Impuesto Bolsa</span>
-                    <span className="text-slate-900 font-semibold">${cartItems.reduce((acc, item) => acc + (item.bagTax || 0) * item.quantity, 0).toLocaleString()}</span>
+                    <span className="text-slate-900 font-semibold">${Math.round(cartItems.reduce((acc, item) => acc + (item.bagTax || 0) * item.quantity, 0)).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center mb-6 pt-4 border-t border-dashed border-slate-300">
                     <span className="text-lg font-bold text-slate-900">Total a Pagar</span>
-                    <span className="text-2xl font-bold text-slate-900">${total.toLocaleString()}</span>
+                    <span className="text-2xl font-bold text-slate-900">${Math.round(total).toLocaleString()}</span>
                 </div>
                 <button
                     onClick={onCheckout}

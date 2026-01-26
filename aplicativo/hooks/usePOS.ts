@@ -199,7 +199,7 @@ export function usePOS() {
         }).filter((item): item is CartItem => item !== null);
     }, [cart, products, productCache]);
 
-    const total = cartItems.reduce((acc, item) => acc + (item.finalPrice * item.quantity), 0);
+    const total = Math.round(cartItems.reduce((acc, item) => acc + (item.finalPrice * item.quantity), 0));
 
     // Actions
     const addToCart = useCallback((productId: string | number) => {
