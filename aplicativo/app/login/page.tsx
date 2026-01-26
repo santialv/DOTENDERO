@@ -74,7 +74,17 @@ export default function LoginPage() {
                         transition={{ duration: 1.5 }}
                         className="absolute inset-0 h-full w-full bg-black"
                     >
-                        {/* 1. Video Support (Primary) */}
+                        {/* 1. Fallback Image Layer (Shows while video loads) */}
+                        <Image
+                            src="/images/login-nb.gif"
+                            alt="Background Fallback"
+                            fill
+                            className="object-cover"
+                            priority
+                            unoptimized
+                        />
+
+                        {/* 2. Video Layer (Overlays the GIF when ready) */}
                         <video
                             autoPlay
                             loop
@@ -83,15 +93,6 @@ export default function LoginPage() {
                             className="absolute inset-0 h-full w-full object-cover scale-105"
                         >
                             <source src="/images/login-video.mp4" type="video/mp4" />
-                            {/* Fallback Image if video fails or is not yet uploaded */}
-                            <Image
-                                src="/images/login-nb.gif"
-                                alt="Background"
-                                fill
-                                className="object-cover"
-                                priority
-                                unoptimized
-                            />
                         </video>
 
                         {/* Premium Cinematic Overlays */}
