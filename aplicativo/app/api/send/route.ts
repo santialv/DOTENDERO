@@ -7,7 +7,7 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { to, subject, html, text } = body;
+        const { to, subject, html, text, fromName } = body;
 
         if (!to || !subject) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -19,8 +19,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: true, message: "Simulated (Missing Key)" });
         }
 
+        const senderName = fromName || 'DonTendero';
         const data = await resend.emails.send({
-            from: 'DonTendero <noreply@dontendero.com>',
+            from: `${senderName} <noreply@dontendero.com>`,
             to: Array.isArray(to) ? to : [to],
             subject: subject,
             html: html,

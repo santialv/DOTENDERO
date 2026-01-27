@@ -47,7 +47,7 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning={true}
-        className="bg-white font-display text-slate-900 h-screen overflow-hidden flex flex-col antialiased"
+        className="bg-white font-display text-slate-900 min-h-[100dvh] flex flex-col antialiased overflow-x-hidden"
       >
         <Providers>
           <ToastProvider>

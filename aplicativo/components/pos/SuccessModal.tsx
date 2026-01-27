@@ -29,7 +29,8 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
                 additionalEmail: manualEmail,
                 amount: transaction.amount,
                 date: transaction.date,
-                items: transaction.items || []
+                items: transaction.items || [],
+                businessInfo: businessInfo // Pass businessInfo here
             });
 
             setIsSending(false);
