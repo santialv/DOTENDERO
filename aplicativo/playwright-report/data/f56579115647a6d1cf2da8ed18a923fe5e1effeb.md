@@ -1,0 +1,104 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - img "DonTendero" [ref=e6]
+        - generic [ref=e7]: DonTendero
+      - button "notifications 1" [ref=e11]:
+        - generic [ref=e12]: notifications
+        - generic [ref=e13]: "1"
+    - main [ref=e14]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - heading "Gestión de Clientes" [level=1] [ref=e19]
+            - paragraph [ref=e20]: Administra tu base de clientes y sus cuentas por cobrar.
+          - button "person_add Nuevo Cliente" [active] [ref=e21]:
+            - generic [ref=e22]: person_add
+            - text: Nuevo Cliente
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - generic [ref=e25]:
+              - generic [ref=e26]: search
+              - textbox "Buscar por nombre o documento..." [ref=e27]
+            - button "money_off Ver Deudores" [ref=e28]:
+              - generic [ref=e29]: money_off
+              - text: Ver Deudores
+          - generic [ref=e30]:
+            - table [ref=e32]:
+              - rowgroup [ref=e33]:
+                - row "Cliente Documento Contacto Deuda Actual Acciones" [ref=e34]:
+                  - columnheader "Cliente" [ref=e35]
+                  - columnheader "Documento" [ref=e36]
+                  - columnheader "Contacto" [ref=e37]
+                  - columnheader "Deuda Actual" [ref=e38]
+                  - columnheader "Acciones" [ref=e39]
+              - rowgroup [ref=e40]:
+                - row "No se encontraron clientes." [ref=e41]:
+                  - cell "No se encontraron clientes." [ref=e42]
+            - generic [ref=e43]:
+              - generic [ref=e44]:
+                - text: Mostrando
+                - generic [ref=e45]: 0 - 0
+                - text: de 0 clientes
+              - generic [ref=e46]:
+                - button "Anterior" [disabled] [ref=e47]
+                - button "Siguiente" [disabled] [ref=e48]
+        - generic [ref=e50]:
+          - heading "Nuevo Cliente" [level=2] [ref=e51]
+          - generic [ref=e52]:
+            - generic [ref=e53]:
+              - text: Nombre Completo
+              - textbox [ref=e54]
+            - generic [ref=e55]:
+              - generic [ref=e56]:
+                - text: Documento
+                - textbox [ref=e57]
+              - generic [ref=e58]:
+                - text: Teléfono
+                - textbox [ref=e59]
+            - generic [ref=e60]:
+              - text: Dirección
+              - textbox [ref=e61]
+          - generic [ref=e62]:
+            - button "Cancelar" [ref=e63]
+            - button "Guardar" [ref=e64]
+    - generic [ref=e65]:
+      - link "dashboard Inicio" [ref=e66] [cursor=pointer]:
+        - /url: /dashboard
+        - generic [ref=e68]: dashboard
+        - generic [ref=e69]: Inicio
+      - link "payments Caja" [ref=e70] [cursor=pointer]:
+        - /url: /caja
+        - generic [ref=e72]: payments
+        - generic [ref=e73]: Caja
+      - link "bar_chart Informes" [ref=e74] [cursor=pointer]:
+        - /url: /reportes
+        - generic [ref=e76]: bar_chart
+        - generic [ref=e77]: Informes
+      - link "point_of_sale Vender" [ref=e78] [cursor=pointer]:
+        - /url: /venta
+        - generic [ref=e80]: point_of_sale
+        - generic [ref=e81]: Vender
+      - link "inventory_2 Stock" [ref=e82] [cursor=pointer]:
+        - /url: /inventario
+        - generic [ref=e84]: inventory_2
+        - generic [ref=e85]: Stock
+      - link "settings Config" [ref=e86] [cursor=pointer]:
+        - /url: /configuracion
+        - generic [ref=e88]: settings
+        - generic [ref=e89]: Config
+    - button [ref=e91]:
+      - img [ref=e93]
+  - region "Notifications alt+T"
+  - generic [ref=e96]:
+    - img [ref=e98]
+    - button "Open Tanstack query devtools" [ref=e146] [cursor=pointer]:
+      - img [ref=e147]
+  - button "Open Next.js Dev Tools" [ref=e200] [cursor=pointer]:
+    - img [ref=e201]
+  - alert [ref=e204]
+```

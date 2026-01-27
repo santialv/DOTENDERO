@@ -1,0 +1,124 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "chevron_left" [ref=e4]:
+        - generic [ref=e5]: chevron_left
+      - generic [ref=e6]:
+        - img "DonTendero" [ref=e10]
+        - navigation [ref=e11]:
+          - link "dashboard Inicio" [ref=e12] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e13]: dashboard
+            - generic [ref=e14]: Inicio
+          - link "point_of_sale Venta" [ref=e15] [cursor=pointer]:
+            - /url: /venta
+            - generic [ref=e16]: point_of_sale
+            - generic [ref=e17]: Venta
+          - link "payments Caja" [ref=e18] [cursor=pointer]:
+            - /url: /caja
+            - generic [ref=e19]: payments
+            - generic [ref=e20]: Caja
+          - link "inventory_2 Inventario" [ref=e21] [cursor=pointer]:
+            - /url: /inventario
+            - generic [ref=e22]: inventory_2
+            - generic [ref=e23]: Inventario
+          - link "shopping_cart Compras" [ref=e24] [cursor=pointer]:
+            - /url: /compras
+            - generic [ref=e25]: shopping_cart
+            - generic [ref=e26]: Compras
+          - link "group Clientes" [ref=e27] [cursor=pointer]:
+            - /url: /clientes
+            - generic [ref=e29]: group
+            - generic [ref=e30]: Clientes
+          - link "bar_chart Reportes" [ref=e31] [cursor=pointer]:
+            - /url: /reportes
+            - generic [ref=e32]: bar_chart
+            - generic [ref=e33]: Reportes
+          - link "support_agent Asesoría Financiera" [ref=e35] [cursor=pointer]:
+            - /url: /asesoria
+            - generic [ref=e36]: support_agent
+            - generic [ref=e37]: Asesoría Financiera
+          - link "settings Configuración" [ref=e38] [cursor=pointer]:
+            - /url: /configuracion
+            - generic [ref=e39]: settings
+            - generic [ref=e40]: Configuración
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e43]: A
+          - generic [ref=e44]:
+            - paragraph [ref=e45]: Mi Tienda
+            - paragraph [ref=e46]: Admin
+        - button "logout Cerrar Sesión" [ref=e47]:
+          - generic [ref=e48]: logout
+          - generic [ref=e49]: Cerrar Sesión
+    - generic [ref=e50]:
+      - main [ref=e51]:
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - generic [ref=e55]:
+              - heading "Gestión de Clientes" [level=1] [ref=e56]
+              - paragraph [ref=e57]: Administra tu base de clientes y sus cuentas por cobrar.
+            - button "person_add Nuevo Cliente" [active] [ref=e58]:
+              - generic [ref=e59]: person_add
+              - text: Nuevo Cliente
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - generic [ref=e62]:
+                - generic [ref=e63]: search
+                - textbox "Buscar por nombre o documento..." [ref=e64]
+              - button "money_off Ver Deudores" [ref=e65]:
+                - generic [ref=e66]: money_off
+                - text: Ver Deudores
+            - generic [ref=e67]:
+              - table [ref=e69]:
+                - rowgroup [ref=e70]:
+                  - row "Cliente Documento Contacto Deuda Actual Acciones" [ref=e71]:
+                    - columnheader "Cliente" [ref=e72]
+                    - columnheader "Documento" [ref=e73]
+                    - columnheader "Contacto" [ref=e74]
+                    - columnheader "Deuda Actual" [ref=e75]
+                    - columnheader "Acciones" [ref=e76]
+                - rowgroup [ref=e77]:
+                  - row "No se encontraron clientes." [ref=e78]:
+                    - cell "No se encontraron clientes." [ref=e79]
+              - generic [ref=e80]:
+                - generic [ref=e81]:
+                  - text: Mostrando
+                  - generic [ref=e82]: 0 - 0
+                  - text: de 0 clientes
+                - generic [ref=e83]:
+                  - button "Anterior" [disabled] [ref=e84]
+                  - button "Siguiente" [disabled] [ref=e85]
+          - generic [ref=e87]:
+            - heading "Nuevo Cliente" [level=2] [ref=e88]
+            - generic [ref=e89]:
+              - generic [ref=e90]:
+                - text: Nombre Completo
+                - textbox [ref=e91]
+              - generic [ref=e92]:
+                - generic [ref=e93]:
+                  - text: Documento
+                  - textbox [ref=e94]
+                - generic [ref=e95]:
+                  - text: Teléfono
+                  - textbox [ref=e96]
+              - generic [ref=e97]:
+                - text: Dirección
+                - textbox [ref=e98]
+            - generic [ref=e99]:
+              - button "Cancelar" [ref=e100]
+              - button "Guardar" [ref=e101]
+      - button [ref=e103]:
+        - img [ref=e105]
+  - region "Notifications alt+T"
+  - generic [ref=e108]:
+    - img [ref=e110]
+    - button "Open Tanstack query devtools" [ref=e159] [cursor=pointer]:
+      - img [ref=e160]
+  - button "Open Next.js Dev Tools" [ref=e214] [cursor=pointer]:
+    - img [ref=e215]
+  - alert [ref=e219]
+```

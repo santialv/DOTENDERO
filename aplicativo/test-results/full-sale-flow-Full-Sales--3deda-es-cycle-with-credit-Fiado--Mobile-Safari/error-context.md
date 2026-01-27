@@ -1,0 +1,62 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - img "Logo" [ref=e6]
+      - generic [ref=e7]:
+        - heading "Instalar DonTendero" [level=3] [ref=e8]
+        - paragraph [ref=e9]: Agrégalo a tu pantalla de inicio para una mejor experiencia.
+      - button "close" [ref=e10]:
+        - generic [ref=e11]: close
+    - generic [ref=e13]:
+      - text: Toca
+      - generic [ref=e14]: ios_share
+      - text: y luego
+      - generic [ref=e15]: "\"Agregar a inicio\""
+  - generic [ref=e19]:
+    - generic [ref=e20]:
+      - img "DonTendero POS" [ref=e22]
+      - generic [ref=e23]:
+        - heading "Bienvenido de nuevo" [level=1] [ref=e24]
+        - paragraph [ref=e25]: Ingresa tus credenciales para acceder a tu panel.
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]: Correo electrónico o Usuario
+          - generic [ref=e30]:
+            - generic:
+              - img
+            - textbox "Correo electrónico o Usuario" [ref=e31]:
+              - /placeholder: ejemplo@correo.com
+        - generic [ref=e32]:
+          - generic [ref=e33]: Contraseña
+          - generic [ref=e34]:
+            - generic:
+              - img
+            - textbox "Contraseña" [active] [ref=e35]:
+              - /placeholder: ••••••••
+              - text: "123456"
+            - button [ref=e36] [cursor=pointer]:
+              - img [ref=e37]
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - checkbox "Recordarme" [ref=e42] [cursor=pointer]
+            - generic [ref=e43] [cursor=pointer]: Recordarme
+          - link "¿Olvidaste tu contraseña?" [ref=e45]:
+            - /url: /login/recuperar
+        - button "Iniciar Sesión" [ref=e47]
+      - generic [ref=e52]: ¿Nuevo en DonTendero?
+      - link "Crear una cuenta" [ref=e54]:
+        - /url: /register
+        - button "Crear una cuenta" [ref=e55]
+  - region "Notifications alt+T"
+  - generic [ref=e56]:
+    - img [ref=e58]
+    - button "Open Tanstack query devtools" [ref=e126] [cursor=pointer]:
+      - img [ref=e127]
+  - button "Open Next.js Dev Tools" [ref=e200] [cursor=pointer]:
+    - img [ref=e201]
+  - alert [ref=e206]
+```

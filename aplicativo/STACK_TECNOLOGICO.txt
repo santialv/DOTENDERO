@@ -1,0 +1,34 @@
+# STACK TECNOLÓGICO Y SERVICIOS EXTERNOS - DONTENDERO
+
+Este archivo contiene la lista de herramientas, programas y servicios externos utilizados en el proyecto. Se debe actualizar cada vez que se integre un nuevo servicio.
+
+## Core Framework & Lenguajes
+- **Next.js (v16+)**: Framework principal para el frontend y backend (Server Components y API Routes).
+- **TypeScript**: Lenguaje de programación para tipado estático y seguridad de código.
+- **React (v19)**: Biblioteca base para la interfaz de usuario.
+
+## Backend & Infraestructura
+- **Supabase**: Backend como servicio (BaaS). Maneja la base de datos PostgreSQL, Autenticación de usuarios, Almacenamiento (Storage) y capas de seguridad (RLS).
+- **GitHub**: Control de versiones, repositorio central y automatización de despliegues (GitHub Actions).
+- **Vercel**: Plataforma de hosting y despliegue continuo (CI/CD).
+
+## Servicios de Comunicación
+- **Resend**: Servicio externo para el envío de correos electrónicos transaccionales (facturas, recuperación de cuenta).
+
+## Inteligencia Artificial
+- **Google Gemini API**: Utilizado para el bot de soporte inteligente "DonTendero Chat".
+
+## Monitoreo & Calidad
+- **Sentry**: Monitoreo de errores en tiempo real y rastreo de rendimiento (performance tracking).
+- **Playwright**: Herramienta de pruebas automáticas (E2E) para simular usuarios reales y asegurar la calidad. (Añadido: 26/01/2026)
+
+## Diseño & UX
+- **Tailwind CSS**: Framework de estilos para un diseño rápido y responsivo.
+- **Framer Motion**: Librería para animaciones fluidas y micro-interacciones.
+- **Lucide React**: Set de iconos modernos y consistentes.
+- **Google Fonts (Inter / Outfit)**: Tipografías del sistema.
+
+## Utilidades de Datos
+- **React Query (TanStack)**: Gestión de estado asíncrono y caché de datos de la API.
+- **jsPDF / jspdf-autotable**: Generación de reportes y facturas en formato PDF.
+- **PapaParse**: Procesamiento de archivos CSV.
