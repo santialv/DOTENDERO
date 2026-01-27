@@ -25,7 +25,7 @@ BEGIN
     ),
     daily_profit AS (
         SELECT 
-            COALESCE(SUM( (ii.unit_price - ii.unit_cost) * ii.quantity ), 0) as profit
+            COALESCE(SUM( (ii.unit_price - COALESCE(ii.unit_cost, 0)) * ii.quantity ), 0) as profit
         FROM invoice_items ii
         JOIN invoices i ON i.id = ii.invoice_id
         WHERE i.organization_id = p_org_id
@@ -42,10 +42,14 @@ BEGIN
     top_prod AS (
         SELECT jsonb_agg(t) as products
         FROM (
-            SELECT p.name, SUM(ii.quantity) as qty, SUM(ii.subtotal) as total
+            SELECT 
+                COALESCE(p.name, 'Producto desconocido') as name, 
+                SUM(ii.quantity) as qty, 
+                SUM(ii.subtotal) as total
             FROM invoice_items ii
-            JOIN products p ON p.id = ii.product_id
             JOIN invoices i ON i.id = ii.invoice_id
+            -- Usamos LEFT JOIN para que si el producto fue borrado, no desaparezca la venta del reporte
+            LEFT JOIN products p ON p.id = ii.product_id
             WHERE i.organization_id = p_org_id
             GROUP BY p.name
             ORDER BY qty DESC

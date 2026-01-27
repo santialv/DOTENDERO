@@ -73,9 +73,10 @@ export default function EditProductPage() {
                 setCategory(product.category);
                 setBarcode(product.barcode);
                 setSkuMode(product.barcode && product.barcode.startsWith("SKU-") ? 'auto' : 'manual');
-                setCostPrice(String(product.cost_price));
-                setSalePrice(String(product.sale_price));
-                setTax(String(product.tax));
+                // Fix: map correct DB columns (cost, price) to state
+                setCostPrice(String(product.cost || product.cost_price || 0));
+                setSalePrice(String(product.price || product.sale_price || 0));
+                setTax(String(product.tax_rate || product.tax || 0));
                 setStock(String(product.stock));
                 setMinStock(String(product.min_stock));
                 setUnit(product.unit);
