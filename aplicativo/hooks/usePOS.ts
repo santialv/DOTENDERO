@@ -330,16 +330,22 @@ export function usePOS() {
             }
 
             // Success
+            // 'data' from RPC is the new Invoice UUID.
+            // If it's valid, use it. If not (shouldn't happen if no error), fallback to local ID.
+            const finalInvoiceId = data || saleId;
+
             const confirmedSale = {
-                id: data || saleId,
+                id: finalInvoiceId,
                 total,
                 items: cartItems,
                 date: new Date().toISOString(),
                 paymentMethod: paymentMethods[0].method, // Simplify
-                customer: selectedCustomer
+                customer: selectedCustomer,
+                change: change
             };
 
-            // Update local ID
+            // Update local ID counter only if we are using numeric IDs locally (legacy)
+            // But since we moved to UUIDs on backend, this counter is less relevant but kept for UX
             setSaleId(prev => {
                 const next = prev + 1;
                 localStorage.setItem("lastSaleId", next.toString());
@@ -347,13 +353,14 @@ export function usePOS() {
             });
 
             clearCart();
-            toast("Venta registrada con éxito", "success");
+            // Don't show toast here if we are showing the Success Modal immediately after
+            // toast("Venta registrada con éxito", "success"); 
 
             return confirmedSale;
 
-        } catch (err) {
-            console.error(err);
-            toast("Error inesperado", "error");
+        } catch (err: any) {
+            console.error("Critical Checkout Error:", err);
+            toast(`Error inesperado: ${err.message || err}`, "error");
             return null;
         }
     }, [cartItems, saleId, selectedCustomer, total, toast, clearCart]);
