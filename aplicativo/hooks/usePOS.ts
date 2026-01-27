@@ -340,6 +340,7 @@ export function usePOS() {
                 items: cartItems,
                 date: new Date().toISOString(),
                 paymentMethod: paymentMethods[0].method, // Simplify
+                payments: paymentMethods, // FIX: Pass full array so SuccessModal can map over it
                 customer: selectedCustomer,
                 change: change
             };
