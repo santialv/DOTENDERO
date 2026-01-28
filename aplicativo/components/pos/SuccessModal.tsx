@@ -57,7 +57,7 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
                             {transaction.change !== undefined && transaction.change > 0 && (
                                 <div className="bg-green-50 p-4 rounded-xl border border-green-100 mb-6">
                                     <p className="text-sm font-bold text-green-700 uppercase mb-1">Entregar de Cambio</p>
-                                    <p className="text-3xl font-black text-green-600">${transaction.change.toLocaleString()}</p>
+                                    <p className="text-3xl font-black text-green-600">${(transaction.change || 0).toLocaleString()}</p>
                                 </div>
                             )}
                             <div className="flex gap-2 mt-4">
@@ -310,7 +310,7 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
 
                     <div className="flex justify-between font-black text-sm border-t border-black border-dashed pt-2">
                         <span>TOTAL A PAGAR:</span>
-                        <span>${transaction.amount.toLocaleString()}</span>
+                        <span>${(transaction.amount || 0).toLocaleString()}</span>
                     </div>
                 </div>
 
@@ -321,7 +321,7 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
                         transaction.payments.map((p, idx) => (
                             <div key={idx} className="flex justify-between text-[10px]">
                                 <span className="uppercase">Pago {p.method}:</span>
-                                <span>${p.amount.toLocaleString()}</span>
+                                <span>${(p.amount || 0).toLocaleString()}</span>
                             </div>
                         ))
                     ) : (
@@ -334,7 +334,7 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
                     {transaction.change !== undefined && transaction.change > 0 && (
                         <div className="flex justify-between font-bold mt-1">
                             <span>CAMBIO:</span>
-                            <span>${transaction.change.toLocaleString()}</span>
+                            <span>${(transaction.change || 0).toLocaleString()}</span>
                         </div>
                     )}
                 </div>

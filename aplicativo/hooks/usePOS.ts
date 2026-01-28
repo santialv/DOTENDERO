@@ -332,16 +332,19 @@ export function usePOS() {
             // Success
             // 'data' from RPC is the new Invoice UUID.
             // If it's valid, use it. If not (shouldn't happen if no error), fallback to local ID.
-            const finalInvoiceId = data || saleId;
+            const finalInvoiceId = (data || saleId).toString();
 
             const confirmedSale = {
                 id: finalInvoiceId,
-                total,
+                amount: total, // Match Transaction type 'amount'
                 items: cartItems,
                 date: new Date().toISOString(),
-                paymentMethod: paymentMethods[0].method, // Simplify
-                payments: paymentMethods, // FIX: Pass full array so SuccessModal can map over it
-                customer: selectedCustomer,
+                type: 'sale' as const,
+                description: `Venta POS #${finalInvoiceId}`,
+                method: paymentMethods.map(p => p.method).join(', '),
+                payments: paymentMethods,
+                customerName: selectedCustomer.id === 'default' ? 'Publico General' : selectedCustomer.name,
+                customerData: selectedCustomer.id === 'default' ? undefined : selectedCustomer,
                 change: change
             };
 
