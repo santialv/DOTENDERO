@@ -225,8 +225,8 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
                                         {item.tax > 0 && <span className="text-[8px] ml-1 font-bold">(I:{item.tax}%)</span>}
                                     </td>
                                     <td className="text-center align-top py-1">{qty}</td>
-                                    <td className="text-right align-top py-1">${finalPrice.toLocaleString()}</td>
-                                    <td className="text-right align-top font-bold py-1">${total.toLocaleString()}</td>
+                                    <td className="text-right align-top py-1">${(finalPrice || 0).toLocaleString()}</td>
+                                    <td className="text-right align-top font-bold py-1">${(total || 0).toLocaleString()}</td>
                                 </tr>
                             );
                         })}
@@ -327,7 +327,7 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
                     ) : (
                         <div className="flex justify-between text-[10px]">
                             <span>Efectivo:</span>
-                            <span>${transaction.amount.toLocaleString()}</span>
+                            <span>${(transaction.amount || 0).toLocaleString()}</span>
                         </div>
                     )}
 
