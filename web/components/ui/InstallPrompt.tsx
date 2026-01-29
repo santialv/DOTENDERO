@@ -8,6 +8,11 @@ export function InstallPrompt() {
     const [isIOS, setIsIOS] = useState(false);
 
     useEffect(() => {
+        // Register Service Worker for PWA support
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(console.error);
+        }
+
         // Check if already installed
         if (window.matchMedia('(display-mode: standalone)').matches) {
             return;
@@ -20,19 +25,43 @@ export function InstallPrompt() {
         const handleBeforeInstallPrompt = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
+            // Auto-show only on mobile or if desired, but we can respect user choice
+            // keeping original behavior of show-on-event
             setIsVisible(true);
         };
 
+        const handleManualTrigger = () => {
+            if (deferredPrompt) {
+                setIsVisible(true);
+            } else if (isIosDevice) {
+                setIsVisible(true); // Always show instructions for iOS
+            } else {
+                // Determine if we should warn or just ignore
+                // For now, let's open the modal if possible, or maybe show a toast
+                // But strictly, if no deferredPrompt, we can't 'install'.
+                // Giving visual feedback is better.
+                alert('Tu dispositivo ya tiene la app instalada o no es compatible con la instalación directa. Revisa el menú de tu navegador.');
+            }
+        };
+
         window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+        window.addEventListener("trigger-install-prompt", handleManualTrigger);
 
         // For iOS, we show the prompt after a short delay since there's no event
         if (isIosDevice) {
             const timer = setTimeout(() => setIsVisible(true), 3000);
-            return () => clearTimeout(timer);
+            return () => {
+                clearTimeout(timer);
+                window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+                window.removeEventListener("trigger-install-prompt", handleManualTrigger);
+            };
         }
 
-        return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    }, []);
+        return () => {
+            window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+            window.removeEventListener("trigger-install-prompt", handleManualTrigger);
+        };
+    }, [deferredPrompt]); // Added deferredPrompt dependency to ensure handler has latest state
 
     const handleInstallClick = async () => {
         if (!deferredPrompt) return;

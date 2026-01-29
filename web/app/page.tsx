@@ -88,14 +88,14 @@ export default function Home() {
                 onClick={() => {
                   // This will work if the browser hasn't shown the prompt automatically yet
                   // but mostly it's here to fulfill the user's request of having the option visible.
-                  window.dispatchEvent(new Event('beforeinstallprompt'));
+                  window.dispatchEvent(new Event('trigger-install-prompt'));
                 }}
               >
                 <span className="material-symbols-outlined text-lg mr-2">download</span>
                 <span className="truncate">Descargar App</span>
               </button>
               <a
-                href={process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/login` : "http://localhost:3000/login"}
+                href="https://www.dontendero.com/login"
                 className="flex items-center justify-center overflow-hidden rounded-full h-10 px-4 sm:px-6 bg-[#234836] text-white text-xs sm:text-sm font-bold border border-[#234836] hover:bg-[#1e3d2f] transition-colors"
               >
                 <span className="truncate">Ingresar</span>
@@ -125,7 +125,7 @@ export default function Home() {
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-[#234836] rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-500"></div>
               <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
                 <a
-                  href={process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/register` : "http://localhost:3000/register"}
+                  href="https://www.dontendero.com/register"
                   className="flex items-center justify-center rounded-lg h-14 px-8 bg-primary hover:bg-[#0fd672] text-[#11221a] text-lg font-bold transition-all transform active:scale-95 shadow-[0_0_20px_rgba(19,236,128,0.3)] hover:shadow-[0_0_30px_rgba(19,236,128,0.5)] whitespace-nowrap w-full sm:w-auto"
                 >
                   <span>Comenzar Gratis</span>
@@ -633,93 +633,97 @@ export default function Home() {
         </footer>
       </div>
       {/* Investor Modal */}
-      {isInvestorModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-sm bg-[#102219] border border-[#234836] rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setIsInvestorModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
+      {
+        isInvestorModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="relative w-full max-w-sm bg-[#102219] border border-[#234836] rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+              <button
+                onClick={() => setIsInvestorModalOpen(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
 
-            <div className="flex flex-col items-center text-center">
-              <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <span className="material-symbols-outlined text-primary text-2xl">rocket_launch</span>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">¡Únete como Inversor!</h3>
-              <p className="text-gray-400 text-sm mb-6">
-                Estamos construyendo el futuro del comercio local en Colombia. Hablemos de negocios.
-              </p>
+              <div className="flex flex-col items-center text-center">
+                <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined text-primary text-2xl">rocket_launch</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">¡Únete como Inversor!</h3>
+                <p className="text-gray-400 text-sm mb-6">
+                  Estamos construyendo el futuro del comercio local en Colombia. Hablemos de negocios.
+                </p>
 
-              <div className="w-full space-y-3">
-                <a
-                  href="https://wa.me/573107146415"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold transition-all hover:scale-[1.02]"
-                >
-                  <svg className="size-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg>
-                  <span>WhatsApp (+57 310 714 6415)</span>
-                </a>
+                <div className="w-full space-y-3">
+                  <a
+                    href="https://wa.me/573107146415"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold transition-all hover:scale-[1.02]"
+                  >
+                    <svg className="size-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg>
+                    <span>WhatsApp (+57 310 714 6415)</span>
+                  </a>
 
-                <a
-                  href="mailto:santyalvpez@gmail.com"
-                  className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-[#234836] hover:bg-[#32674d] text-white font-medium transition-all hover:scale-[1.02] border border-[#32674d]"
-                >
-                  <span className="material-symbols-outlined text-lg">mail</span>
-                  <span>santyalvpez@gmail.com</span>
-                </a>
+                  <a
+                    href="mailto:santyalvpez@gmail.com"
+                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-[#234836] hover:bg-[#32674d] text-white font-medium transition-all hover:scale-[1.02] border border-[#32674d]"
+                  >
+                    <span className="material-symbols-outlined text-lg">mail</span>
+                    <span>santyalvpez@gmail.com</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
       {/* Celebration Modal */}
-      {showCelebration && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#102219]/95 backdrop-blur-md animate-in fade-in duration-500">
-          {/* Confetti-like particles (CSS) */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {[...Array(30)].map((_, i) => (
-              <div
-                key={i}
-                className="firework-particle"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  // @ts-ignore
-                  "--x": `${(Math.random() - 0.5) * 50}px`,
-                  "--initialY": "0",
-                  "--initialSize": `${Math.random() * 0.5 + 0.5}rem`,
-                  "--finalSize": "0rem",
-                  animationDuration: `${1 + Math.random() * 2}s`,
-                  animationDelay: `${Math.random() * 1}s`
-                }}
-              ></div>
-            ))}
-          </div>
-
-          <div className="relative z-10 flex flex-col items-center text-center p-8 max-w-md animate-in zoom-in-90 duration-500">
-            <div className="size-24 rounded-full bg-primary/20 flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(19,236,128,0.4)]">
-              <span className="material-symbols-outlined text-primary text-6xl animate-pulse">check_circle</span>
+      {
+        showCelebration && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#102219]/95 backdrop-blur-md animate-in fade-in duration-500">
+            {/* Confetti-like particles (CSS) */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {[...Array(30)].map((_, i) => (
+                <div
+                  key={i}
+                  className="firework-particle"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    // @ts-ignore
+                    "--x": `${(Math.random() - 0.5) * 50}px`,
+                    "--initialY": "0",
+                    "--initialSize": `${Math.random() * 0.5 + 0.5}rem`,
+                    "--finalSize": "0rem",
+                    animationDuration: `${1 + Math.random() * 2}s`,
+                    animationDelay: `${Math.random() * 1}s`
+                  }}
+                ></div>
+              ))}
             </div>
-            <h2 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
-              ¡Has cobrado tu primer venta!
-            </h2>
-            <p className="text-[#92c9ad] text-lg md:text-xl font-light mb-8">
-              Únete a nosotros y construyamos país juntos.
-              <span className="block mt-2 text-2xl">🇨🇴</span>
-            </p>
-            <button
-              onClick={() => setShowCelebration(false)}
-              className="px-8 py-3 rounded-full bg-primary hover:bg-[#0fd672] text-[#11221a] font-bold text-lg shadow-lg hover:shadow-[0_0_30px_rgba(19,236,128,0.6)] transition-all transform hover:scale-105"
-            >
-              Continuar
-            </button>
+
+            <div className="relative z-10 flex flex-col items-center text-center p-8 max-w-md animate-in zoom-in-90 duration-500">
+              <div className="size-24 rounded-full bg-primary/20 flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(19,236,128,0.4)]">
+                <span className="material-symbols-outlined text-primary text-6xl animate-pulse">check_circle</span>
+              </div>
+              <h2 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
+                ¡Has cobrado tu primer venta!
+              </h2>
+              <p className="text-[#92c9ad] text-lg md:text-xl font-light mb-8">
+                Únete a nosotros y construyamos país juntos.
+                <span className="block mt-2 text-2xl">🇨🇴</span>
+              </p>
+              <button
+                onClick={() => setShowCelebration(false)}
+                className="px-8 py-3 rounded-full bg-primary hover:bg-[#0fd672] text-[#11221a] font-bold text-lg shadow-lg hover:shadow-[0_0_30px_rgba(19,236,128,0.6)] transition-all transform hover:scale-105"
+              >
+                Continuar
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
       <InstallPrompt />
-    </div>
+    </div >
   );
 }
