@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { InstallPrompt } from "@/components/ui/InstallPrompt";
 
 const PRODUCTS = [
   {
@@ -81,6 +82,17 @@ export default function Home() {
                 type="button"
               >
                 <span className="truncate">Quiero ser inversor</span>
+              </button>
+              <button
+                className="hidden md:flex items-center justify-center rounded-full h-10 px-4 sm:px-6 bg-white/10 text-white text-xs sm:text-sm font-bold border border-white/20 hover:bg-white/20 transition-colors"
+                onClick={() => {
+                  // This will work if the browser hasn't shown the prompt automatically yet
+                  // but mostly it's here to fulfill the user's request of having the option visible.
+                  window.dispatchEvent(new Event('beforeinstallprompt'));
+                }}
+              >
+                <span className="material-symbols-outlined text-lg mr-2">download</span>
+                <span className="truncate">Descargar App</span>
               </button>
               <a
                 href={process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/login` : "http://localhost:3000/login"}
@@ -707,6 +719,7 @@ export default function Home() {
           </div>
         </div>
       )}
+      <InstallPrompt />
     </div>
   );
 }

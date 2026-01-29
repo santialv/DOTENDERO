@@ -79,12 +79,20 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
                 // 1. Obtener Perfil y Organización
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('organization_id, organizations(plan, subscription_status)')
+                    .select('organization_id, role, organizations(plan, subscription_status)')
                     .eq('id', session.user.id)
                     .maybeSingle();
 
                 if (!profile?.organization_id) {
                     console.warn("Usuario sin tienda vinculada.");
+
+                    // CRITICAL FIX: Super Admins (and future admin roles) don't need a store.
+                    if (profile?.role === 'super_admin' || profile?.role === 'admin_collaborator') {
+                        console.log("Guardián: Rol administrativo detectado. Redirigiendo a /admin.");
+                        setIsAuthorized(true); // Technically authorized, but we redirect.
+                        router.replace("/admin");
+                        return;
+                    }
 
                     if (pathname === "/onboarding") {
                         setIsAuthorized(true);
