@@ -9,6 +9,7 @@ import { SuccessModal } from "@/components/pos/SuccessModal";
 import { CustomerModal } from "@/components/pos/CustomerModal";
 import { OpenShiftModal } from "@/components/pos/OpenShiftModal";
 import { CategoryButton } from "@/components/pos/CategoryButton";
+import { CashMovementModal } from "@/components/pos/CashMovementModal";
 import { usePOS } from "@/hooks/usePOS";
 import { useCashShift } from "@/hooks/useCashShift";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
@@ -95,6 +96,7 @@ export default function VentaPage() {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isHeldOrdersModalOpen, setIsHeldOrdersModalOpen] = useState(false);
   const [isCashCloseModalOpen, setIsCashCloseModalOpen] = useState(false);
+  const [movementType, setMovementType] = useState<'in' | 'out' | null>(null);
   const [lastTransaction, setLastTransaction] = useState<Transaction | null>(null);
 
   // Mobile Cart Drawer State
@@ -213,7 +215,27 @@ export default function VentaPage() {
         </div>
 
         {/* Desktop Customer & Actions */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2">
+          {currentShift && (
+            <>
+              <button
+                onClick={() => setMovementType('in')}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 transition-colors tooltip-trigger"
+                title="Ingreso manual"
+              >
+                <span className="material-symbols-outlined">add_circle</span>
+              </button>
+              <button
+                onClick={() => setMovementType('out')}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors tooltip-trigger"
+                title="Registrar Gasto"
+              >
+                <span className="material-symbols-outlined">remove_circle</span>
+              </button>
+              <div className="w-px h-8 bg-slate-200 mx-1"></div>
+            </>
+          )}
+
           <button
             onClick={() => setIsCustomerModalOpen(true)}
             className="flex items-center gap-3 px-1 py-1 pr-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all group"
@@ -234,7 +256,7 @@ export default function VentaPage() {
             onClick={() => currentShift ? setIsCashCloseModalOpen(true) : setIsOpenShiftModalOpen(true)}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors font-semibold text-sm ${currentShift ? 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' : 'bg-[#13ec80] border-[#13ec80] text-slate-900 hover:bg-[#10d673]'}`}
           >
-            <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
+            <span className="material-symbols-outlined text-[20px]">{currentShift ? 'lock' : 'point_of_sale'}</span>
             {currentShift ? "Cerrar Caja" : "Abrir Caja"}
           </button>
 
@@ -519,6 +541,14 @@ export default function VentaPage() {
         isOpen={isOpenShiftModalOpen}
         onSuccess={handleShiftOpened}
       />
+
+      {movementType && (
+        <CashMovementModal
+          isOpen={true}
+          onClose={() => setMovementType(null)}
+          type={movementType}
+        />
+      )}
 
       <style jsx global>{`
         @media print {

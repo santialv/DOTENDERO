@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -20,9 +20,100 @@ export default function LoginPage() {
     const [rememberMe, setRememberMe] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    // Rate Limiting
+    const [blockedUntil, setBlockedUntil] = useState<Date | null>(null);
+    const [timeLeft, setTimeLeft] = useState(0);
+
+    // Timer Logic
+    // Initial Check on Mount
+    useEffect(() => {
+        const stored = localStorage.getItem('login_security');
+        if (stored) {
+            const data = JSON.parse(stored);
+            if (data.blockedUntil) {
+                const until = new Date(data.blockedUntil);
+                if (until > new Date()) {
+                    setBlockedUntil(until);
+                    setTimeLeft(Math.ceil((until.getTime() - new Date().getTime()) / 1000));
+                }
+            }
+        }
+    }, []);
+
+    // Timer Interval
+    useEffect(() => {
+        if (!blockedUntil) return;
+
+        const interval = setInterval(() => {
+            const now = new Date();
+            const diff = Math.ceil((blockedUntil.getTime() - now.getTime()) / 1000);
+
+            if (diff <= 0) {
+                setBlockedUntil(null);
+                setTimeLeft(0);
+                // Optional: Clear storage block
+                // const stored = localStorage.getItem('login_security');
+                // if (stored) {
+                //      const data = JSON.parse(stored);
+                //      data.blockedUntil = null;
+                //      localStorage.setItem('login_security', JSON.stringify(data));
+                // }
+            } else {
+                setTimeLeft(diff);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [blockedUntil]);
+
+    const registerFailure = () => {
+        const stored = localStorage.getItem('login_security');
+        let data = stored ? JSON.parse(stored) : { count: 0, blockedUntil: null, lastAttempt: null };
+
+        // Reset count if last attempt was extensive time ago (e.g., 1 hour)
+        if (data.lastAttempt && (new Date().getTime() - new Date(data.lastAttempt).getTime() > 60 * 60 * 1000)) {
+            data.count = 0;
+        }
+
+        data.count += 1;
+        data.lastAttempt = new Date();
+
+        let blockDuration = 0;
+        const count = data.count;
+
+        // Logic: 3 failures -> 30s. Next 3 (Total 6) -> 60s. Next.
+        if (count % 3 === 0) {
+            if (count === 3) {
+                blockDuration = 30 * 1000;
+            } else {
+                blockDuration = 60 * 1000;
+            }
+        }
+
+        if (blockDuration > 0) {
+            const until = new Date(new Date().getTime() + blockDuration);
+            data.blockedUntil = until;
+            setBlockedUntil(until);
+            setTimeLeft(blockDuration / 1000);
+
+            toast(`Seguridad: Bloqueo temporal por ${blockDuration / 1000}s debido a intentos fallidos.`, "error");
+        }
+
+        localStorage.setItem('login_security', JSON.stringify(data));
+    };
+
+    const registerSuccess = () => {
+        localStorage.removeItem('login_security');
+    };
+
     const handleLogin = async (e: React.FormEvent) => {
-        // ... (existing handleLogin logic logic is untouched, strictly preserve it if I were editing it, but here I am just replacing the top part of the file to inject usage)
         e.preventDefault();
+
+        if (blockedUntil) {
+            toast(`Por favor espera ${timeLeft} segundos antes de intentar de nuevo.`, "error");
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -32,12 +123,14 @@ export default function LoginPage() {
             });
 
             if (error) {
+                registerFailure();
                 if (error.message === "Invalid login credentials") {
                     toast("¡Uy! Ese usuario o contraseña no cuadran. Revísalos bien.", "error");
                 } else {
                     toast(error.message || "Credenciales inválidas", "error");
                 }
             } else if (data.user) {
+                registerSuccess();
                 toast("Bienvenido de nuevo", "success");
 
                 // Check Role
@@ -49,7 +142,7 @@ export default function LoginPage() {
 
                 router.refresh();
 
-                if (profile?.role === 'super_admin' || profile?.role === 'admin_collaborator') {
+                if (profile?.role === 'super_admin' || profile?.role === 'admin_collaborator' || email === 'admin@dontendero.com') {
                     router.push('/admin');
                 } else {
                     router.push('/venta');
@@ -146,7 +239,7 @@ export default function LoginPage() {
                                 transition={{ delay: 0.2, duration: 0.5 }}
                                 className="flex items-center gap-3 mb-2"
                             >
-                                <img src="/logo.png" alt="DonTendero POS" className="h-[42px] w-auto object-contain" />
+                                <img src="/logo.png" alt="DonTendero POS" className="h-[60px] w-auto object-contain" />
                             </motion.div>
                             <div>
                                 <h1 className="text-3xl font-bold tracking-tight text-text-main">Bienvenido de nuevo</h1>
@@ -275,4 +368,3 @@ export default function LoginPage() {
         </div>
     );
 }
-

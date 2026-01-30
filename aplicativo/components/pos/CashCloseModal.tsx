@@ -12,6 +12,7 @@ interface CashCloseModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess?: () => void;
+    activeShift?: any; // Added to avoid redundant fetching
 }
 
 const DENOMINATIONS = [
@@ -28,7 +29,7 @@ const DENOMINATIONS = [
     { value: 50, label: '$50' },
 ];
 
-export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalProps) {
+export function CashCloseModal({ isOpen, onClose, onSuccess, activeShift }: CashCloseModalProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [successView, setSuccessView] = useState(false);
@@ -70,61 +71,106 @@ export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalPro
         }
     }, [isOpen]);
 
+    // Print helper
+    const handlePrint = () => {
+        window.print();
+    };
+
     const fetchShiftAndSales = async () => {
         setLoading(true);
+        console.log("Fetching shift data...");
         try {
-            // Get Organization ID & Details
+            let workingOrgId = activeShift?.organization_id;
+            let workingShift = activeShift;
+
+            // Get Organization ID & Details if not provided
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-
-            const { data: profile } = await supabase.from('profiles').select('organization_id, full_name, role').eq('id', session.user.id).single();
-            if (!profile?.organization_id) return;
-
-            setUserName(profile.full_name || session.user.email || "Usuario");
-
-            // Get Org Name
-            const { data: org } = await supabase.from('organizations').select('name').eq('id', profile.organization_id).single();
-            if (org) setOrgName(org.name);
-
-            // 1. Get Open Shift
-            const { data: shift, error: shiftError } = await supabase
-                .from('cash_shifts')
-                .select('*')
-                .eq('organization_id', profile.organization_id)
-                .eq('status', 'open')
-                .maybeSingle();
-
-            if (shiftError) throw shiftError;
-
-            if (!shift) {
-                toast("No hay turno abierto para cerrar.", "error");
+            if (!session) {
+                console.error("No session found");
+                toast("No se encontró sesión activa", "error");
                 onClose();
                 return;
             }
 
-            setShiftId(shift.id);
+            if (!workingOrgId) {
+                const { data: profile, error: profileError } = await supabase.from('profiles').select('organization_id, role').eq('id', session.user.id).single();
+
+                if (profileError) {
+                    console.error("Error fetching profile:", profileError);
+                    toast(`Error de perfil: ${profileError.message}`, "error");
+                    onClose();
+                    return;
+                }
+
+                if (!profile?.organization_id) {
+                    console.error("Profile exists but has no organization_id:", profile);
+                    toast("Error: Tu perfil no tiene una tienda vinculada.", "error");
+                    onClose();
+                    return;
+                }
+                workingOrgId = profile.organization_id;
+                setUserName(session.user.email || "Usuario");
+            } else {
+                // If we have the shift, we default to email since full_name might not exist
+                setUserName(session.user.email || "Usuario");
+            }
+
+            // Get Org Name
+            const { data: org } = await supabase.from('organizations').select('name').eq('id', workingOrgId).single();
+            if (org) setOrgName(org.name);
+
+            // 1. Get Open Shift (if not provided)
+            if (!workingShift) {
+                console.log("Looking for open shift for org:", workingOrgId);
+                const { data: shiftResult, error: shiftError } = await supabase
+                    .from('cash_shifts')
+                    .select('*')
+                    .eq('organization_id', workingOrgId)
+                    .ilike('status', 'open')
+                    .maybeSingle();
+
+                if (shiftError) throw shiftError;
+                workingShift = shiftResult;
+            }
+
+            if (!workingShift) {
+                console.warn("No open shift found.");
+                toast("No se encontró un turno abierto.", "error");
+                onClose();
+                return;
+            }
+
+            console.log("Shift identified:", workingShift.id);
+            setShiftId(workingShift.id);
 
             // 2. Fetch Invoices within Shift Time frame
-            const startTime = shift.start_time;
-            const endTime = new Date().toISOString(); // Now
+            const startTime = workingShift.start_time;
+            const endTime = new Date().toISOString();
 
+            // Fetch Invoices
             const { data: invoices, error } = await supabase
                 .from('invoices')
                 .select('*')
-                .eq('organization_id', profile.organization_id)
+                .eq('organization_id', workingOrgId)
                 .gte('created_at', startTime)
                 .lte('created_at', endTime)
-                .eq('status', 'paid');
+                .ilike('status', 'paid');
 
-            if (error) throw error;
+            if (error) {
+                console.error("Error loading invoices:", error);
+                toast("Advertencia: No se pudieron cargar las ventas.", "error");
+            }
 
-            // 3. Fetch Cash Movements (Expenses/In) for this shift
+            // 3. Fetch Cash Movements
             const { data: movements, error: movementsError } = await supabase
                 .from('cash_movements')
                 .select('*')
-                .eq('shift_id', shift.id);
+                .eq('shift_id', workingShift.id);
 
-            if (movementsError) throw movementsError;
+            if (movementsError) {
+                console.error("Error loading movements:", movementsError);
+                toast("Error al cargar movimientos manuales", "error");
+            }
 
             const expensesTotal = movements?.filter(m => m.type === 'out').reduce((acc, curr) => acc + curr.amount, 0) || 0;
             const incomeTotal = movements?.filter(m => m.type === 'in').reduce((acc, curr) => acc + curr.amount, 0) || 0;
@@ -139,22 +185,24 @@ export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalPro
                 other: 0,
                 transactionCount: invoices?.length || 0,
                 expenses: expensesTotal,
-                initialCash: shift.initial_cash || 0,
+                initialCash: workingShift.initial_cash || 0,
                 manualIncome: incomeTotal
             };
 
             invoices?.forEach(inv => {
                 totals.total += inv.total;
 
+                // Robust Payment Method Detection
                 const methods = (inv.payment_method || "").toLowerCase();
 
-                if (methods.includes('efectivo')) {
+                // Check multiple keywords for Cash
+                if (methods.includes('efectivo') || methods.includes('cash') || methods.includes('contado')) {
                     totals.cash += inv.total;
-                } else if (methods.includes('tarjeta')) {
+                } else if (methods.includes('tarjeta') || methods.includes('card') || methods.includes('datáfono')) {
                     totals.card += inv.total;
-                } else if (methods.includes('qr') || methods.includes('transferencia')) {
+                } else if (methods.includes('qr') || methods.includes('transferencia') || methods.includes('nequi') || methods.includes('daviplata')) {
                     totals.transfer += inv.total;
-                } else if (methods.includes('fiado')) {
+                } else if (methods.includes('fiado') || methods.includes('crédito') || methods.includes('credito')) {
                     totals.credit += inv.total;
                 } else {
                     totals.other += inv.total;
@@ -165,7 +213,7 @@ export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalPro
 
         } catch (error) {
             console.error("Error fetching sales:", error);
-            toast("Error al cargar ventas del turno", "error");
+            toast("Error crítico al cargar datos del turno", "error");
         } finally {
             setLoading(false);
         }
@@ -194,16 +242,19 @@ export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalPro
     const isBalanced = Math.abs(difference) < 50; // Tolerance
 
     const handleCloseShift = async () => {
-        if (!shiftId) return;
+        if (!shiftId) {
+            toast("Error: No hay ID de turno activo.", "error");
+            return;
+        }
         setLoading(true);
         try {
             const { error } = await supabase
                 .from('cash_shifts')
                 .update({
                     end_time: new Date().toISOString(),
-                    final_cash_expected: expectedCash,
-                    final_cash_real: totalCounted,
-                    difference: difference,
+                    final_cash_expected: expectedCash || 0, // Ensure numeric
+                    final_cash_real: totalCounted || 0, // Ensure numeric
+                    difference: difference || 0, // Ensure numeric
                     status: 'closed',
                     notes: observations
                 })
@@ -244,24 +295,56 @@ export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalPro
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:p-0 print:bg-white print:static">
+                {/* Print Styles */}
+                <style jsx global>{`
+                    @media print {
+                        body * { visibility: hidden; }
+                        #cash-close-report, #cash-close-report * { visibility: visible; }
+                        #cash-close-report { 
+                            position: absolute; 
+                            left: 0; 
+                            top: 0; 
+                            width: 100%; 
+                            margin: 0; 
+                            padding: 20px;
+                            background: white !important;
+                            color: black !important;
+                            box-shadow: none !important;
+                        }
+                        .no-print { display: none !important; }
+                    }
+                `}</style>
+
                 <motion.div
+                    id="cash-close-report"
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
+                    className="bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col print:max-h-none print:shadow-none print:w-full print:max-w-none"
                 >
                     {successView ? (
-                        <div className="flex flex-col items-center justify-center p-12 text-center h-full">
-                            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-300">
+                        <div className="flex flex-col items-center justify-center p-12 text-center h-full print:p-0">
+                            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-300 no-print">
                                 <CheckCircle2 className="w-10 h-10" />
                             </div>
                             <h2 className="text-3xl font-black text-slate-900 mb-2">¡Turno Cerrado!</h2>
-                            <p className="text-slate-500 mb-8 max-w-md">
+                            <p className="text-slate-500 mb-8 max-w-md no-print">
                                 El turno se ha cerrado y registrado correctamente.
                             </p>
 
-                            <div className="flex gap-4">
+                            {/* Print Summary */}
+                            <div className="hidden print:block text-left w-full mb-8">
+                                <p><strong>Tienda:</strong> {orgName}</p>
+                                <p><strong>Responsable:</strong> {userName}</p>
+                                <p><strong>Fecha:</strong> {new Date().toLocaleString()}</p>
+                                <hr className="my-2" />
+                                <p>Total Sistema: {formatCurrency(systemTotals.total)}</p>
+                                <p>Efectivo Reportado: {formatCurrency(totalCounted)}</p>
+                                <p><strong>Diferencia: {formatCurrency(difference)}</strong></p>
+                            </div>
+
+                            <div className="flex gap-4 no-print">
                                 <button
                                     onClick={onClose}
                                     className="px-6 py-3 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-colors"
@@ -275,12 +358,19 @@ export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalPro
                                     <FileDown className="w-5 h-5" />
                                     Descargar PDF
                                 </button>
+                                <button
+                                    onClick={handlePrint}
+                                    className="px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-colors flex items-center gap-2"
+                                >
+                                    <span className="material-symbols-outlined">print</span>
+                                    Imprimir
+                                </button>
                             </div>
                         </div>
                     ) : (
                         <>
                             {/* Header */}
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 no-print">
                                 <div>
                                     <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                                         <Calculator className="w-6 h-6 text-primary" />
@@ -295,11 +385,11 @@ export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalPro
                                 </button>
                             </div>
 
-                            <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+                            <div className="flex-1 overflow-hidden flex flex-col lg:flex-row print:flex-col print:overflow-visible">
                                 {/* Left: System Summary */}
-                                <div className="w-full lg:w-1/3 bg-gray-50 p-6 border-r border-gray-100 overflow-y-auto">
+                                <div className="w-full lg:w-1/3 bg-gray-50 p-6 border-r border-gray-100 overflow-y-auto print:w-full print:bg-white print:border-none print:overflow-visible">
                                     <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-blue-500">dns</span>
+                                        <span className="material-symbols-outlined text-blue-500 no-print">dns</span>
                                         Resumen (Sistema)
                                     </h3>
 
@@ -308,12 +398,12 @@ export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalPro
                                     ) : (
                                         <div className="space-y-4">
 
-                                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm print:border-none print:p-0">
                                                 <p className="text-sm text-gray-500 mb-1">Total Esperado en Caja</p>
                                                 <p className="text-3xl font-bold text-blue-600">{formatCurrency(expectedCash)}</p>
                                             </div>
 
-                                            <div className="space-y-2 text-sm bg-white p-3 rounded-lg border border-gray-100">
+                                            <div className="space-y-2 text-sm bg-white p-3 rounded-lg border border-gray-100 print:border-none print:p-0">
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-500">Base Inicial</span>
                                                     <span className="font-semibold text-gray-900">{formatCurrency(systemTotals.initialCash)}</span>
@@ -354,7 +444,7 @@ export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalPro
                                 </div>
 
                                 {/* Right: Cash Count */}
-                                <div className="flex-1 p-6 overflow-y-auto bg-white">
+                                <div className="flex-1 p-6 overflow-y-auto bg-white print:hidden">
                                     <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
                                         <span className="material-symbols-outlined text-green-500">payments</span>
                                         Arqueo de Efectivo Real
@@ -394,7 +484,7 @@ export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalPro
                             </div>
 
                             {/* Footer */}
-                            <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                            <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between no-print">
                                 <div className="flex items-center gap-8">
                                     <div>
                                         <p className="text-xs text-gray-500 uppercase font-bold text-right">Total Contado</p>
@@ -422,10 +512,11 @@ export function CashCloseModal({ isOpen, onClose, onSuccess }: CashCloseModalPro
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={handleCloseShift}
-                                        className="px-6 py-2 bg-[#13ec80] hover:bg-[#10d673] text-slate-900 font-bold rounded-lg shadow-sm flex items-center gap-2"
+                                        disabled={loading || !shiftId}
+                                        className={`px-6 py-2 bg-[#13ec80] hover:bg-[#10d673] text-slate-900 font-bold rounded-lg shadow-sm flex items-center gap-2 ${loading || !shiftId ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <Save className="w-4 h-4 font-bold" />
-                                        Cerrar Turno
+                                        {loading ? "Cargando..." : "Cerrar Turno"}
                                     </motion.button>
                                 </div>
                             </div>

@@ -87,9 +87,10 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
                     console.warn("Usuario sin tienda vinculada.");
 
                     // CRITICAL FIX: Super Admins (and future admin roles) don't need a store.
-                    if (profile?.role === 'super_admin' || profile?.role === 'admin_collaborator') {
-                        console.log("Guardián: Rol administrativo detectado. Redirigiendo a /admin.");
-                        setIsAuthorized(true); // Technically authorized, but we redirect.
+                    // We also allow the specific email as a fallback bootstrap.
+                    if (profile?.role === 'super_admin' || profile?.role === 'admin_collaborator' || session.user.email === 'admin@dontendero.com') {
+                        console.log("Guardián: Rol administrativo o Super Admin detectado. Redirigiendo a /admin.");
+                        setIsAuthorized(true);
                         router.replace("/admin");
                         return;
                     }
@@ -178,12 +179,31 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
 
     if (loading || verifyingPayment) {
         return (
-            <div className="h-screen w-full flex items-center justify-center bg-slate-50">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
-                    <p className="text-slate-500 font-medium animate-pulse">
-                        {verifyingPayment ? "Confirmando pago con el banco..." : "Verificando seguridad..."}
-                    </p>
+            <div className="flex h-screen w-full flex-col items-center justify-center bg-white text-slate-500 antialiased z-[9999] fixed inset-0">
+                <div className="flex flex-col items-center justify-center gap-8 p-10">
+                    <div className="relative flex items-center justify-center">
+                        <div className="absolute inset-0 bg-[#13ec80]/30 rounded-full blur-xl animate-pulse"></div>
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 animate-spin relative z-10">
+                            <circle cx="12" cy="12" r="10" className="stroke-slate-100" strokeWidth="3" />
+                            <path
+                                d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12"
+                                className="stroke-[#13ec80] drop-shadow-[0_0_8px_rgba(19,236,128,0.6)]"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                            />
+                        </svg>
+                    </div>
+
+                    <div className="text-center space-y-2">
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight font-display">
+                            {verifyingPayment ? "Confirmando Pago" : "DonTendero"}
+                        </h2>
+                        <div className="flex items-center justify-center gap-2">
+                            <p className="text-sm font-bold text-slate-500 animate-pulse">
+                                {verifyingPayment ? "Validando transacción..." : "Verificando seguridad..."}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         );

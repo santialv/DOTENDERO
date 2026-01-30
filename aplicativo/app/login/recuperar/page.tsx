@@ -17,7 +17,7 @@ export default function ForgotPasswordPage() {
 
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `https://www.dontendero.com/login/restablecer`,
+                redirectTo: `${window.location.origin}/login/restablecer`,
             });
 
             if (error) {

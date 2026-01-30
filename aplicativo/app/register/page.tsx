@@ -18,13 +18,14 @@ export default function RegisterPage() {
     const [configLoading, setConfigLoading] = useState(true);
 
     // Form State
-    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [confirmEmail, setConfirmEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [agreed, setAgreed] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
     // Load Configuration
     useEffect(() => {
@@ -41,8 +42,6 @@ export default function RegisterPage() {
                 }
             } catch (e) {
                 console.error("Config check failed", e);
-                // Default to true if check fails, or false for security? 
-                // Let's stick to true (allow) unless explicitly closed to avoid blocking users on error.
             } finally {
                 setConfigLoading(false);
             }
@@ -52,6 +51,11 @@ export default function RegisterPage() {
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (email !== confirmEmail) {
+            toast("Los correos electrónicos no coinciden", "error");
+            return;
+        }
 
         if (password !== confirmPassword) {
             toast("Las contraseñas no coinciden", "error");
@@ -70,9 +74,9 @@ export default function RegisterPage() {
                 email,
                 password,
                 options: {
-                    emailRedirectTo: 'https://www.dontendero.com/login',
+                    emailRedirectTo: `${window.location.origin}/login`,
                     data: {
-                        full_name: name
+                        full_name: email.split('@')[0]
                     }
                 }
             });
@@ -80,8 +84,7 @@ export default function RegisterPage() {
             if (error) {
                 toast(error.message, "error");
             } else {
-                toast("Cuenta creada con éxito. Revisa tu correo.", "success");
-                router.push('/login');
+                setIsSuccess(true);
             }
         } catch (error) {
             toast("Error inesperado", "error");
@@ -95,6 +98,111 @@ export default function RegisterPage() {
         return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-400">Cargando...</div>;
     }
 
+    if (isSuccess) {
+        return (
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="fixed inset-0 z-50 bg-[#13ec80] flex flex-col items-center justify-center text-[#0d1b14] p-8 text-center overflow-hidden"
+            >
+                {/* Background Animated Elements */}
+                {[...Array(6)].map((_, i) => (
+                    <motion.div
+                        key={i}
+                        className="absolute text-white/10 pointer-events-none"
+                        initial={{
+                            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
+                            y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
+                            scale: 0.5,
+                            rotate: 0
+                        }}
+                        animate={{
+                            y: [null, Math.random() * -100],
+                            rotate: 360,
+                        }}
+                        transition={{
+                            duration: 10 + Math.random() * 10,
+                            repeat: Infinity,
+                            ease: "linear"
+                        }}
+                    >
+                        {i % 3 === 0 ? <Store size={60 + Math.random() * 40} /> :
+                            i % 3 === 1 ? <Mail size={40 + Math.random() * 40} /> :
+                                <span className="material-symbols-outlined text-[60px]">check_circle</span>}
+                    </motion.div>
+                ))}
+
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", bounce: 0.5 }}
+                    className="relative z-10"
+                >
+                    <div className="mb-8 flex justify-center">
+                        <motion.div
+                            animate={{ y: [0, -10, 0] }}
+                            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                            className="bg-white p-8 rounded-full shadow-2xl relative"
+                        >
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.2, type: "spring" }}
+                            >
+                                <span className="material-symbols-outlined text-7xl text-[#13ec80]">mark_email_unread</span>
+                            </motion.div>
+
+                            {/* Mini confetti particles decoration */}
+                            <motion.div
+                                className="absolute -top-2 -right-2 bg-yellow-400 w-6 h-6 rounded-full"
+                                animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
+                                transition={{ repeat: Infinity, duration: 1.5 }}
+                            />
+                            <motion.div
+                                className="absolute -bottom-1 -left-2 bg-blue-500 w-4 h-4 rounded-full"
+                                animate={{ scale: [1, 1.3, 1] }}
+                                transition={{ repeat: Infinity, duration: 2 }}
+                            />
+                        </motion.div>
+                    </div>
+
+                    <motion.h1
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="text-4xl md:text-6xl font-black mb-6 tracking-tight drop-shadow-sm"
+                    >
+                        ¡Ya casi estamos listos!
+                    </motion.h1>
+
+                    <motion.p
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.4 }}
+                        className="text-xl md:text-2xl font-medium mb-12 max-w-2xl mx-auto opacity-90"
+                    >
+                        Enviamos un enlace a tu correo. <br />
+                        <span className="font-bold underline decoration-2 underline-offset-4">Ábrelo para activar tu cuenta</span> y empezar a crecer.
+                    </motion.p>
+
+                    <Link href="/login">
+                        <motion.button
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.5 }}
+                            whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
+                            whileTap={{ scale: 0.95 }}
+                            className="bg-white text-[#0d1b14] px-10 py-4 rounded-xl font-bold text-xl shadow-xl transition-all flex items-center gap-3 mx-auto"
+                        >
+                            <span>Ir a Iniciar Sesión</span>
+                            <ArrowRight className="w-6 h-6" />
+                        </motion.button>
+                    </Link>
+                </motion.div>
+            </motion.div>
+        );
+    }
+
     // BLOCKED SCREEN (Exact Design)
     if (!registrationsAllowed) {
         return (
@@ -104,8 +212,8 @@ export default function RegisterPage() {
                     <section className="relative lg:w-1/2 w-full min-h-[50vh] lg:min-h-screen overflow-hidden">
                         <Image
                             alt="Tienda de barrio colombiana colorida y tradicional"
-                            className="object-cover"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSbBngjIIPk_mihUUaZBCWi8SY7QdO3mZM-SSzVSsAZSPD0A3kMVwgCEZXhXYVIUoBbDi4svyF-CyxzMx3cmIGWMc-XkifH3xZUhoCduT4gqllB5_eES-glo3G7mAK5A0tZb0vVRrKm4WOC95a0YH2JR_R_-b_-i9O43nO-BSfiUz0WliHAy7ETDWPYBYi6AQCVcNKbPnSFs8czSbMD05os-JTXLHkBacHmJlccw6oDUPWbeJV5f6fhZgw92pDXEsQWhuiJ6FVEy4"
+                            className="object-cover opacity-80"
+                            src="/register-hero.png" // Ensured path
                             fill
                             priority
                             sizes="(max-width: 1024px) 100vw, 50vw"
@@ -190,19 +298,17 @@ export default function RegisterPage() {
         <div className="bg-background-light font-sans text-text-main antialiased transition-colors duration-200">
             <div className="flex min-h-screen flex-row">
                 {/* Left Side: Visual / Hero */}
-                <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-background-dark">
+                <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-slate-900">
                     <div className="absolute inset-0 h-full w-full">
                         <Image
                             alt="Tienda de barrio"
-                            className="object-cover opacity-60 mix-blend-overlay"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEOdEkdUjBG-tgn0hpYWw7k7t01mA6H2fn09LYT9ntJLCXJTNxQSPmZxm91x04cbnaAn0E16aIhBLQlM-h_3A838kcizKPdvbmXpFRZLR9RLl5fAoMJUOYemzh4aSn4_ZdTK1m2shjn8Wseh5w0NNzxIq9YT5eWpO9tG6sXbXDXxqJ9OAAfXg9YTHs-KrJwJyk4B_rSpe1w3iGF4DoMG_nHHMIPB5skRSCDkNANz6C4QOw-wETm2qcGzELGGc5BamfEb5s2ASsAh8"
+                            className="object-cover opacity-80"
+                            src="/register-hero.png"
                             fill
                             priority
                             sizes="50vw"
-                            placeholder="blur"
-                            blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/+F9PQAI8wNPvd7POQAAAABJRU5ErkJggg=="
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background-dark/90 via-background-dark/40 to-transparent"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
                     </div>
 
                     <div className="relative z-10 flex flex-col justify-end p-16 h-full">
@@ -211,19 +317,19 @@ export default function RegisterPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3, duration: 0.6 }}
                         >
-                            <div className="mb-6 h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-background-dark">
+                            <div className="mb-6 h-12 w-12 rounded-lg bg-[#13ec80] flex items-center justify-center text-slate-950">
                                 <Store className="w-8 h-8" />
                             </div>
                             <blockquote className="text-white">
                                 <p className="text-3xl font-bold leading-tight mb-4">"Desde que uso DonTendero, el inventario de mi miscelánea está siempre al día y mis clientes están más felices."</p>
-                                <footer className="text-primary font-medium text-lg">Carlos Rodríguez, Tendero en Bogotá</footer>
+                                <footer className="text-[#13ec80] font-medium text-lg">Carlos Rodríguez, Tendero en Bogotá</footer>
                             </blockquote>
                         </motion.div>
                     </div>
                 </div>
 
                 {/* Right Side: Form */}
-                <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24 w-full lg:w-1/2 bg-background-light">
+                <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24 w-full lg:w-1/2 bg-white">
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -236,54 +342,32 @@ export default function RegisterPage() {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.2, duration: 0.5 }}
-                                className="flex items-center gap-3 text-text-main mb-2"
+                                className="flex items-center gap-3 text-slate-900 mb-2"
                             >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-background-dark">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#13ec80] text-slate-950">
                                     <Store className="w-6 h-6" />
                                 </div>
                                 <span className="text-xl font-bold tracking-tight">DonTendero</span>
                             </motion.div>
-                            <h2 className="text-3xl font-black leading-tight tracking-tight text-text-main">Crear tu cuenta</h2>
-                            <p className="text-text-secondary text-sm">
+                            <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900">Crear tu cuenta</h2>
+                            <p className="text-slate-500 text-sm">
                                 Empieza a gestionar tu tienda de manera fácil y rápida.
                             </p>
                         </div>
 
                         {/* Form */}
-                        <form onSubmit={handleRegister} className="space-y-5">
-                            {/* Name Field */}
-                            <div>
-                                <label className="block text-sm font-medium leading-6 text-text-main mb-1.5" htmlFor="name">
-                                    Nombre completo o de la tienda
-                                </label>
-                                <div className="relative rounded-lg shadow-sm">
-                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <User className="w-5 h-5 text-text-secondary" />
-                                    </div>
-                                    <input
-                                        className="block w-full rounded-lg border-0 py-3 pl-10 ring-1 ring-inset ring-input-border placeholder:text-text-secondary/70 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-white text-text-main outline-none transition-shadow"
-                                        id="name"
-                                        name="name"
-                                        placeholder="Ej. Tienda La Esperanza o Juan Pérez"
-                                        type="text"
-                                        required
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
+                        <form onSubmit={handleRegister} className="space-y-4">
                             {/* Email Field */}
                             <div>
-                                <label className="block text-sm font-medium leading-6 text-text-main mb-1.5" htmlFor="email">
+                                <label className="block text-sm font-medium leading-6 text-slate-700 mb-1.5" htmlFor="email">
                                     Correo electrónico
                                 </label>
                                 <div className="relative rounded-lg shadow-sm">
                                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <Mail className="w-5 h-5 text-text-secondary" />
+                                        <Mail className="w-5 h-5 text-slate-400" />
                                     </div>
                                     <input
-                                        className="block w-full rounded-lg border-0 py-3 pl-10 ring-1 ring-inset ring-input-border placeholder:text-text-secondary/70 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-white text-text-main outline-none transition-shadow"
+                                        className="block w-full rounded-lg border-0 py-3 pl-10 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-inset focus:ring-[#13ec80] sm:text-sm sm:leading-6 bg-slate-50 text-slate-900 outline-none transition-all"
                                         id="email"
                                         name="email"
                                         placeholder="tucorreo@ejemplo.com"
@@ -295,56 +379,76 @@ export default function RegisterPage() {
                                 </div>
                             </div>
 
-                            {/* Password Fields Group */}
-                            <div className="grid grid-cols-1 gap-5">
-                                {/* Password */}
-                                <div>
-                                    <label className="block text-sm font-medium leading-6 text-text-main mb-1.5" htmlFor="password">
-                                        Contraseña
-                                    </label>
-                                    <div className="relative rounded-lg shadow-sm">
-                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                            <Lock className="w-5 h-5 text-text-secondary" />
-                                        </div>
-                                        <input
-                                            className="block w-full rounded-lg border-0 py-3 pl-10 pr-10 ring-1 ring-inset ring-input-border placeholder:text-text-secondary/70 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-white text-text-main outline-none transition-shadow"
-                                            id="password"
-                                            name="password"
-                                            placeholder="Mínimo 8 caracteres"
-                                            type={showPassword ? "text" : "password"}
-                                            required
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer text-text-secondary hover:text-primary transition-colors outline-none"
-                                        >
-                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                        </button>
+                            {/* Confirm Email Field */}
+                            <div>
+                                <label className="block text-sm font-medium leading-6 text-slate-700 mb-1.5" htmlFor="confirm-email">
+                                    Confirmar correo electrónico
+                                </label>
+                                <div className="relative rounded-lg shadow-sm">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <Mail className="w-5 h-5 text-slate-400" />
                                     </div>
+                                    <input
+                                        className="block w-full rounded-lg border-0 py-3 pl-10 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-inset focus:ring-[#13ec80] sm:text-sm sm:leading-6 bg-slate-50 text-slate-900 outline-none transition-all"
+                                        id="confirm-email"
+                                        name="confirm-email"
+                                        placeholder="Repite tu correo"
+                                        type="email"
+                                        required
+                                        value={confirmEmail}
+                                        onChange={(e) => setConfirmEmail(e.target.value)}
+                                    />
                                 </div>
-                                {/* Confirm Password */}
-                                <div>
-                                    <label className="block text-sm font-medium leading-6 text-text-main mb-1.5" htmlFor="confirm-password">
-                                        Confirmar contraseña
-                                    </label>
-                                    <div className="relative rounded-lg shadow-sm">
-                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                            <Lock className="w-5 h-5 text-text-secondary" />
-                                        </div>
-                                        <input
-                                            className="block w-full rounded-lg border-0 py-3 pl-10 ring-1 ring-inset ring-input-border placeholder:text-text-secondary/70 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-white text-text-main outline-none transition-shadow"
-                                            id="confirm-password"
-                                            name="confirm-password"
-                                            placeholder="Repite tu contraseña"
-                                            type={showPassword ? "text" : "password"}
-                                            required
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                        />
+                            </div>
+
+                            {/* Password Field */}
+                            <div>
+                                <label className="block text-sm font-medium leading-6 text-slate-700 mb-1.5" htmlFor="password">
+                                    Contraseña
+                                </label>
+                                <div className="relative rounded-lg shadow-sm">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <Lock className="w-5 h-5 text-slate-400" />
                                     </div>
+                                    <input
+                                        className="block w-full rounded-lg border-0 py-3 pl-10 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-inset focus:ring-[#13ec80] sm:text-sm sm:leading-6 bg-slate-50 text-slate-900 outline-none transition-all"
+                                        id="password"
+                                        name="password"
+                                        placeholder="Mínimo 8 caracteres"
+                                        type={showPassword ? "text" : "password"}
+                                        required
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer text-slate-400 hover:text-[#13ec80] transition-colors outline-none"
+                                    >
+                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Confirm Password Field */}
+                            <div>
+                                <label className="block text-sm font-medium leading-6 text-slate-700 mb-1.5" htmlFor="confirm-password">
+                                    Confirmar contraseña
+                                </label>
+                                <div className="relative rounded-lg shadow-sm">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <Lock className="w-5 h-5 text-slate-400" />
+                                    </div>
+                                    <input
+                                        className="block w-full rounded-lg border-0 py-3 pl-10 ring-1 ring-inset ring-slate-200 placeholder:text-slate-300 focus:ring-2 focus:ring-inset focus:ring-[#13ec80] sm:text-sm sm:leading-6 bg-slate-50 text-slate-900 outline-none transition-all"
+                                        id="confirm-password"
+                                        name="confirm-password"
+                                        placeholder="Repite tu contraseña"
+                                        type={showPassword ? "text" : "password"}
+                                        required
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                    />
                                 </div>
                             </div>
 
@@ -372,7 +476,7 @@ export default function RegisterPage() {
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
-                                    className="flex w-full justify-center items-center gap-2 rounded-lg bg-primary px-3 py-3.5 text-sm font-bold leading-6 text-text-main shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                                    className="flex w-full justify-center items-center gap-2 rounded-lg bg-[#13ec80] px-3 py-3.5 text-sm font-bold leading-6 text-[#0d1b14] shadow-sm hover:bg-[#0fd673] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#13ec80] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
                                     type="submit"
                                     disabled={loading}
                                 >

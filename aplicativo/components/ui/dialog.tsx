@@ -44,4 +44,12 @@ const DialogDescription = ({ children, className }: { children: React.ReactNode;
     </p>
 );
 
-export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription };
+const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div
+        className={`flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 bg-slate-50/50 p-6 border-t border-slate-100 rounded-b-xl ${className}`}
+        {...props}
+    />
+)
+DialogFooter.displayName = "DialogFooter"
+
+export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter };

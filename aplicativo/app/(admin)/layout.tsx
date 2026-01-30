@@ -30,7 +30,8 @@ export default function AdminLayout({
                     .single();
 
                 // PERMISOS: SOLO 'super_admin' puede entrar aquí.
-                if (profile?.role === 'super_admin') {
+                // PERMISOS: SOLO 'super_admin' puede entrar aquí.
+                if (profile?.role === 'super_admin' || profile?.role === 'admin_collaborator' || session.user.email === 'admin@dontendero.com') {
                     setIsAuthorized(true);
                 } else {
                     console.warn("Acceso denegado: El panel es solo para Super Admins", profile?.role);

@@ -21,25 +21,42 @@ export const CustomerModal = ({ isOpen, onClose, onSelect }: CustomerModalProps)
 
     const fetchCustomers = async () => {
         setLoading(true);
-        const { data } = await supabase
-            .from('customers')
-            .select('*')
-            .order('full_name');
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
 
-        if (data) {
-            // Map Supabase response to Customer type
-            const mapped: Customer[] = data.map((c: any) => ({
-                id: c.id,
-                name: c.full_name || "Sin Nombre",
-                full_name: c.full_name,
-                document_number: c.document_number,
-                phone: c.phone,
-                email: c.email,
-                current_debt: c.current_debt || 0
-            }));
-            setCustomers(mapped);
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('organization_id')
+                .eq('id', session.user.id)
+                .single();
+
+            if (!profile?.organization_id) return;
+
+            const { data } = await supabase
+                .from('customers')
+                .select('*')
+                .eq('organization_id', profile.organization_id)
+                .order('full_name');
+
+            if (data) {
+                // Map Supabase response to Customer type
+                const mapped: Customer[] = data.map((c: any) => ({
+                    id: c.id,
+                    name: c.full_name || "Sin Nombre",
+                    full_name: c.full_name,
+                    document_number: c.document_number,
+                    phone: c.phone,
+                    email: c.email,
+                    current_debt: c.current_debt || 0
+                }));
+                setCustomers(mapped);
+            }
+        } catch (error) {
+            console.error("Error fetching customers:", error);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const filtered = customers.filter(c =>

@@ -1,41 +1,59 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
-import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/toast";
-
-// Define Product interface locally or import if available centrally (using local conformity for now)
-interface Product {
-    id: string;
-    name: string;
-    description: string;
-    category: string;
-    barcode: string;
-    costPrice: number;
-    salePrice: number;
-    tax: number;
-    stock: number;
-    minStock: number;
-    unit: string;
-    status: 'Activo' | 'Inactivo';
-    image?: string;
-    icaRate?: number;
-    bagTax?: number;
-    taxType?: 'IVA' | 'ICO';
-}
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { productSchema, ProductFormValues } from "@/lib/schemas/product";
+import { createProduct } from "@/app/actions/products";
 
 export default function CreateProductPage() {
     const router = useRouter();
     const { toast } = useToast();
-
-    // Refs for focus management
+    const [isPending, startTransition] = useTransition();
     const nameInputRef = useRef<HTMLInputElement>(null);
-    const barcodeInputRef = useRef<HTMLInputElement>(null);
 
-    // Audio/Haptic Feedback Helper
+    // Determines if we redirect or reset after save
+    const [saveAndCreateAnother, setSaveAndCreateAnother] = useState(false);
+
+    const form = useForm({
+        resolver: zodResolver(productSchema),
+        defaultValues: {
+            name: "",
+            description: "",
+            category: "",
+            skuMode: "manual",
+            barcode: "",
+            costPrice: 0,
+            salePrice: 0,
+            stock: 0,
+            minStock: 5,
+            unit: "und",
+            status: "Activo",
+
+            // New DIAN Defaults
+            priceIncludesTax: false,
+            isService: false,
+            fiscalClassification: "gravado",
+            taxes: [{ code: '01', name: 'IVA 19%', rate: 19, type: 'percentage' }], // Default IVA 19
+        },
+    });
+
+    const { register, handleSubmit, watch, setValue, setError, setFocus, trigger, getValues, formState: { errors } } = form;
+
+    // Watch values for dynamic UI
+    const skuMode = watch("skuMode") as "manual" | "auto";
+    const barcode = watch("barcode") as string;
+    const salePrice = watch("salePrice") as number;
+    const costPrice = watch("costPrice") as number;
+    const priceIncludesTax = watch("priceIncludesTax");
+    const fiscalClassification = watch("fiscalClassification");
+    const status = watch("status") as "Activo" | "Inactivo";
+
+    // Audio/Haptic Feedback Helper (Client-side effect)
     const triggerSuccessFeedback = () => {
         if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
         try {
@@ -52,484 +70,547 @@ export default function CreateProductPage() {
         } catch (e) { }
     };
 
-    // -- Form State --
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [category, setCategory] = useState("");
-    const [barcode, setBarcode] = useState("");
-    const [skuMode, setSkuMode] = useState<'manual' | 'auto'>('manual');
+    const onSubmit = (data: ProductFormValues) => {
+        startTransition(async () => {
+            // Server Action Call
+            const result = await createProduct(data);
 
-    const [costPrice, setCostPrice] = useState("");
-    const [salePrice, setSalePrice] = useState("");
-    const [tax, setTax] = useState("0");
-    const [taxType, setTaxType] = useState<"IVA" | "ICO">("IVA");
-    const [stock, setStock] = useState("");
-    const [minStock, setMinStock] = useState("5"); // Default min stock
+            if (result.success) {
+                toast(result.message || "Producto creado", "success");
+                triggerSuccessFeedback();
 
-    const [unit, setUnit] = useState("und");
-    const [status, setStatus] = useState<'Activo' | 'Inactivo'>('Activo');
-
-    // Additional Taxes
-    const [icaRate, setIcaRate] = useState("");
-    const [hasBagTax, setHasBagTax] = useState(false);
-    const [bagTaxValue, setBagTaxValue] = useState("60"); // Default 2024/2025 value approx
-
-    const handleSave = async (shouldRedirect = true) => {
-        if (!name) {
-            toast("El nombre del producto es obligatorio.", "error");
-            return;
-        }
-
-        if (!salePrice) {
-            toast("El precio de venta es obligatorio.", "error");
-            return;
-        }
-
-        try {
-            // Get Organization Securely
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                toast("No hay sesión activa.", "error");
-                return;
-            }
-
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("organization_id")
-                .eq("id", session.user.id)
-                .single();
-
-            const orgId = profile?.organization_id;
-
-            if (!orgId) {
-                toast("No se encontró una organización válida vinculada a su cuenta.", "error");
-                return;
-            }
-
-            let finalBarcode = barcode;
-
-            // If still in auto mode but no barcode generated yet (fallback), generate one now
-            if (skuMode === 'auto' && (!finalBarcode || finalBarcode === "SIN-CODIGO")) {
-                const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-                finalBarcode = `SKU-${randomSuffix}`;
-            } else if (!finalBarcode) {
-                if (!confirm("El código de barras está vacío. ¿Desea guardar sin código?")) return;
-                finalBarcode = "SIN-CODIGO";
-            }
-
-            // Check duplicate barcode
-            if (finalBarcode !== "SIN-CODIGO") {
-                const { data: duplicate } = await supabase
-                    .from("products")
-                    .select("id")
-                    .eq("barcode", finalBarcode)
-                    .eq("organization_id", orgId) // Check duplicate in same org only!
-                    .single();
-
-                if (duplicate) {
-                    toast(`El código de barras "${finalBarcode}" ya está registrado.`, "error");
-                    return;
+                if (saveAndCreateAnother) {
+                    // Reset, keep checking 'skuMode' choice usually? Or full reset.
+                    // Full reset is safer to avoid accidental duplication.
+                    form.reset({
+                        skuMode: "manual",
+                        barcode: "",
+                        name: "",
+                        description: "",
+                        category: "",
+                        costPrice: 0,
+                        salePrice: 0,
+                        stock: 0,
+                        priceIncludesTax: false,
+                        fiscalClassification: "gravado",
+                        taxes: [{ code: '01', name: 'IVA 19%', rate: 19, type: 'percentage' }],
+                    });
+                    // Re-focus name
+                    setTimeout(() => setFocus("name"), 100);
+                } else {
+                    router.push("/inventario");
+                }
+            } else {
+                toast(result.message || "Error al guardar", "error");
+                // Check for field specific errors
+                if (result.errors) {
+                    Object.entries(result.errors).forEach(([field, messages]) => {
+                        setError(field as keyof ProductFormValues, {
+                            type: "server",
+                            message: messages[0]
+                        });
+                    });
                 }
             }
+        });
+    };
 
-            // Insert to Supabase
-            const { error } = await supabase.from("products").insert({
-                organization_id: orgId,
-                name,
-                description,
-                category: category || "General",
-                barcode: finalBarcode,
-                price: parseFloat(salePrice) || 0,
-                cost: parseFloat(costPrice) || 0,
-                tax_rate: parseFloat(tax) || 0,
-                tax_type: taxType,
-                stock: parseFloat(stock) || 0,
-                min_stock: parseFloat(minStock) || 0,
-                unit,
-                status: status === 'Activo' ? 'active' : 'inactive',
-                image_url: "",
-                ica_rate: parseFloat(icaRate) || 0,
-                bag_tax: hasBagTax ? (parseFloat(bagTaxValue) || 0) : 0
-            });
-
-            if (error) throw error;
-
-            toast("Producto creado exitosamente.", "success");
-
-            if (shouldRedirect) {
-                router.push("/inventario");
-            } else {
-                // Reset form
-                setName("");
-                setDescription("");
-                setBarcode("");
-                setCostPrice("");
-                setSalePrice("");
-                setStock("");
-                setIcaRate("");
-                setBagTaxValue("60");
-                setHasBagTax(false);
-                setStatus("Activo");
-            }
-        } catch (error) {
-            console.error("Error creating product:", error);
-            toast("Error al guardar el producto.", "error");
-        }
+    // Auto-Generate SKU Logic
+    const handleAutoSku = () => {
+        setValue("skuMode", "auto");
+        const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+        setValue("barcode", `SKU-${randomSuffix}`);
+        trigger("barcode");
     };
 
     // Calculate Margin for display
-    const cost = parseFloat(costPrice) || 0;
-    const price = parseFloat(salePrice) || 0;
-    const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+    const taxes = watch("taxes") || [];
+    const mainIva = taxes.find(t => t.code === '01');
+    const ivaRate = mainIva ? mainIva.rate : 0;
+
+    // Net Price Calculation (Price used for margin)
+    const netPrice = priceIncludesTax
+        ? (salePrice / (1 + (ivaRate / 100)))
+        : salePrice;
+
+    // Margin = (Net Income - Cost) / Net Income (Commercial Margin)
+    const margin = netPrice > 0 ? ((netPrice - costPrice) / netPrice) * 100 : 0;
 
     return (
-        <div className="flex flex-col h-full bg-slate-50 font-display overflow-hidden">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-screen bg-slate-50/50 font-display overflow-hidden">
             {/* Header */}
-            <header className="h-16 flex items-center justify-between px-8 py-4 bg-slate-50 border-b border-transparent z-10 shrink-0">
+            <header className="h-16 flex items-center justify-between px-6 lg:px-10 py-4 bg-white/80 backdrop-blur-md border-b border-slate-200 z-20 shrink-0 sticky top-0">
                 <div className="flex flex-col">
                     <div className="flex items-center text-xs text-slate-500 gap-2 mb-1">
-                        <Link href="/inventario" className="hover:underline">Productos</Link>
-                        <span className="material-symbols-outlined text-[12px]">chevron_right</span>
-                        <span className="font-medium text-primary">Crear Nuevo</span>
+                        <Link href="/inventario" className="hover:text-slate-900 transition-colors">Productos</Link>
+                        <span className="material-symbols-outlined text-[12px] text-slate-400">chevron_right</span>
+                        <span className="font-bold text-[#13ec80]">Nuevo</span>
                     </div>
-                    <h1 className="text-2xl text-slate-900 tracking-tight leading-none">Crear Nuevo Producto</h1>
+                    <h1 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight leading-none flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[#13ec80]">add_circle</span>
+                        Crear Producto
+                    </h1>
                 </div>
-                <div className="flex gap-3">
-                    <Link href="/inventario" className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-white transition-colors text-sm flex items-center">
+                <div className="flex items-center gap-3">
+                    <Link href="/inventario" className="hidden md:flex px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors text-sm">
                         Cancelar
                     </Link>
                     <button
-                        onClick={() => handleSave(false)}
-                        className="px-4 py-2 rounded-lg border-2 border-[#13ec80] text-[#0f3d2a] hover:bg-[#13ec80]/10 font-bold transition-all text-sm hidden md:block"
+                        type="submit"
+                        disabled={isPending}
+                        onClick={() => setSaveAndCreateAnother(true)}
+                        className="hidden md:flex px-5 py-2.5 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors text-sm"
                     >
-                        Guardar y Crear Otro
+                        {isPending && saveAndCreateAnother ? "Guardando..." : "Guardar y Otro"}
                     </button>
                     <button
-                        onClick={() => handleSave(true)}
-                        className="px-6 py-2 rounded-lg bg-[#13ec80] hover:bg-[#10d673] text-slate-900 font-black shadow-sm shadow-green-500/30 transition-all transform active:scale-95 text-sm flex items-center gap-2"
+                        type="submit"
+                        disabled={isPending}
+                        onClick={() => setSaveAndCreateAnother(false)}
+                        className="px-6 py-2.5 rounded-xl bg-[#13ec80] hover:bg-[#10d673] text-slate-900 font-black shadow-lg shadow-green-500/20 hover:shadow-green-500/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                     >
-                        <span className="material-symbols-outlined text-lg font-bold">save</span>
-                        Guardar Producto
+                        {isPending && !saveAndCreateAnother ? (
+                            <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+                        ) : (
+                            <span className="material-symbols-outlined text-[20px]">save</span>
+                        )}
+                        <span>{isPending && !saveAndCreateAnother ? "Guardando..." : "Guardar Producto"}</span>
                     </button>
                 </div>
             </header>
 
             {/* Scrollable Form Area */}
-            <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
-                <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 pb-20">
-                    {/* Left Column: Image & Basic Info */}
-                    <div className="flex flex-col gap-6 lg:w-2/3">
-                        {/* Basic Information Card */}
-                        <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                                <div className="p-2 bg-slate-100 rounded-lg">
-                                    <span className="material-symbols-outlined text-primary">edit_document</span>
-                                </div>
-                                <div>
-                                    <h2 className="text-lg text-slate-900">Detalles Generales</h2>
-                                    <p className="text-sm text-slate-400">Información básica del producto para identificación.</p>
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-5">
-                                <label className="flex flex-col gap-2">
-                                    <span className="text-sm text-slate-700">Nombre del Producto <span className="text-red-500">*</span></span>
-                                    <input
-                                        ref={nameInputRef}
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 placeholder:text-gray-400"
-                                        placeholder="Ej. Coca-Cola 1.5L Original"
-                                        type="text"
-                                    />
-                                </label>
-                                <label className="flex flex-col gap-2">
-                                    <span className="text-sm text-slate-700">Descripción</span>
-                                    <textarea
-                                        value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                        className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary min-h-[100px] p-4 placeholder:text-gray-400"
-                                        placeholder="Añade detalles sobre el producto, ingredientes, o notas internas..."
-                                    ></textarea>
-                                </label>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <label className="flex flex-col gap-2 relative">
-                                        <span className="text-sm text-slate-700">Categoría</span>
-                                        <select
-                                            value={category}
-                                            onChange={(e) => setCategory(e.target.value)}
-                                            className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 appearance-none"
-                                        >
-                                            <option disabled value="">Seleccionar categoría</option>
-                                            {PRODUCT_CATEGORIES.map(cat => (
-                                                <option key={cat.id} value={cat.id}>{cat.id}</option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-4 top-[38px] pointer-events-none text-gray-400">
-                                            <span className="material-symbols-outlined">expand_more</span>
-                                        </div>
-                                    </label>
-                                    <div className="flex flex-col gap-2">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm text-slate-700">Código de Barras</span>
-                                            <div className="flex bg-slate-100 p-0.5 rounded-lg">
-                                                <button
-                                                    onClick={() => {
-                                                        setSkuMode('manual');
-                                                        setBarcode(""); // Clear on manual switch if desired, or keep it. Let's clear to avoid confusion if they switch back and forth.
-                                                    }}
-                                                    className={`px-2 py-0.5 text-xs font-medium rounded-md transition-all ${skuMode === 'manual' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                                >
-                                                    Manual
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        setSkuMode('auto');
-                                                        // Generate immediately
-                                                        const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-                                                        setBarcode(`SKU-${randomSuffix}`);
-                                                    }}
-                                                    className={`px-2 py-0.5 text-xs font-medium rounded-md transition-all ${skuMode === 'auto' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                                >
-                                                    Auto
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="relative flex items-center">
-                                            <span className={`absolute left-3 material-symbols-outlined text-[20px] ${skuMode === 'auto' ? 'text-primary' : 'text-gray-400'}`}>
-                                                {skuMode === 'auto' ? 'autorenew' : 'qr_code_scanner'}
-                                            </span>
-                                            <input
-                                                ref={barcodeInputRef}
-                                                value={barcode}
-                                                onChange={(e) => setBarcode(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault(); // Prevent form submit
-                                                        if (barcode.length > 2) {
-                                                            triggerSuccessFeedback();
-                                                            toast("Código escaneado correctamente", "success");
-                                                            // Auto-jump to Name field
-                                                            setTimeout(() => nameInputRef.current?.focus(), 100);
-                                                        }
-                                                    }
-                                                }}
-                                                disabled={skuMode === 'auto'}
-                                                readOnly={skuMode === 'auto'}
-                                                autoFocus={skuMode === 'manual'}
-                                                className={`w-full rounded-lg border bg-slate-50 focus:ring-2 focus:ring-primary focus:border-primary h-12 pl-10 pr-4 font-mono transition-colors ${skuMode === 'auto' ? 'border-primary/30 text-primary font-bold' : 'border-slate-200 text-slate-900 placeholder:text-slate-400'}`}
-                                                placeholder={skuMode === 'manual' ? "Escanea el código aquí (Enter para confirmar)" : "Automático"}
-                                                type="text"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {/* Pricing & Inventory Card */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                            <div className="p-2 bg-slate-100 rounded-lg">
-                                <span className="material-symbols-outlined text-primary">payments</span>
-                            </div>
-                            <div>
-                                <h2 className="text-lg text-slate-900">Precios e Inventario</h2>
-                                <p className="text-sm text-slate-400">Define los costos y el stock inicial.</p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                            <label className="flex flex-col gap-2">
-                                <span className="text-sm text-slate-700">Precio de Costo ($)</span>
-                                <input
-                                    value={costPrice}
-                                    onChange={(e) => setCostPrice(e.target.value)}
-                                    className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 font-medium"
-                                    placeholder="0.00"
-                                    step="0.01"
-                                    type="number"
-                                />
-                            </label>
-                            <label className="flex flex-col gap-2">
-                                <span className="text-sm text-slate-700">Precio de Venta ($)</span>
-                                <div className="relative">
-                                    <input
-                                        value={salePrice}
-                                        onChange={(e) => setSalePrice(e.target.value)}
-                                        className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 text-lg"
-                                        placeholder="0.00"
-                                        step="0.01"
-                                        type="number"
-                                    />
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded hidden md:block">
-                                        Margen: {margin.toFixed(1)}%
-                                    </div>
-                                </div>
-                            </label>
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50">
+                <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-24">
 
-                        </div>
-                        <div className="mt-5 border-t border-slate-100 pt-5">
-                            <h3 className="text-sm text-slate-900 mb-3 block">Otros Impuestos</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <label className="flex flex-col gap-2">
-                                    <div className="flex justify-between">
-                                        <span className="text-sm text-slate-700">ICA (Industria y Comercio)</span>
-                                        <span className="text-xs text-slate-400">Por mil (‰)</span>
+                        {/* LEFT COLUMN (Identity & Inventory) */}
+                        <div className="lg:col-span-7 flex flex-col gap-8">
+
+                            {/* Card 1: Identity */}
+                            <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="p-6 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+                                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                                        <span className="material-symbols-outlined">fingerprint</span>
                                     </div>
-                                    <div className="relative">
-                                        <input
-                                            value={icaRate}
-                                            onChange={(e) => setIcaRate(e.target.value)}
-                                            className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4"
-                                            placeholder="Ej. 11.04"
-                                            type="number"
-                                            step="0.01"
-                                        />
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">‰</div>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-slate-900">Identificación</h2>
+                                        <p className="text-sm text-slate-500">Datos básicos del producto</p>
                                     </div>
-                                </label>
-                                <div className="flex flex-col gap-2">
-                                    <span className="text-sm text-slate-700">Impuesto a la Bolsa</span>
-                                    <div className={`p-3 rounded-lg border transition-colors ${hasBagTax ? 'bg-primary/5 border-primary/30' : 'bg-slate-50 border-slate-200'}`}>
-                                        <label className="flex items-center gap-3 cursor-pointer mb-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={hasBagTax}
-                                                onChange={(e) => setHasBagTax(e.target.checked)}
-                                                className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
-                                            />
-                                            <span className="text-slate-800">Aplica Impuesto Nacional</span>
+                                </div>
+                                <div className="p-6 space-y-6">
+                                    {/* Name */}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-700 flex justify-between">
+                                            Nombre del Producto <span className="text-red-500">*</span>
                                         </label>
-                                        {hasBagTax && (
-                                            <div className="pl-8">
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                                                    <input
-                                                        value={bagTaxValue}
-                                                        onChange={(e) => setBagTaxValue(e.target.value)}
-                                                        className="w-full rounded-md border-slate-300 text-sm h-9 pl-6"
-                                                        placeholder="Valor"
-                                                        type="number"
-                                                    />
-                                                </div>
-                                                <p className="text-[10px] text-slate-500 mt-1">Valor por unidad (Ej. $60)</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="mt-5 border-t border-slate-100 pt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <label className="flex flex-col gap-2">
-                                <span className="text-sm text-slate-700">Tipo de Impuesto</span>
-                                <div className="flex gap-2">
-                                    <select
-                                        value={taxType}
-                                        onChange={(e) => setTaxType(e.target.value as "IVA" | "ICO")}
-                                        className="w-1/3 rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 appearance-none"
-                                    >
-                                        <option value="IVA">IVA</option>
-                                        <option value="ICO">Impoconsumo</option>
-                                    </select>
-                                    <select
-                                        value={tax}
-                                        onChange={(e) => setTax(e.target.value)}
-                                        className="w-2/3 rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 appearance-none"
-                                    >
-                                        {taxType === 'IVA' ? (
-                                            <>
-                                                <option value="19">19% (General)</option>
-                                                <option value="5">5% (Reducido)</option>
-                                                <option value="0">0% (Exento)</option>
-                                                <option value="-1">Excluido</option>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <option value="8">8% (General)</option>
-                                                <option value="4">4% (Telefonía)</option>
-                                                <option value="0">0% (Exento)</option>
-                                            </>
-                                        )}
-                                    </select>
-                                </div>
-                            </label>
-                            <label className="flex flex-col gap-2">
-                                <span className="text-sm text-slate-700">Cantidad Inicial</span>
-                                <input
-                                    value={stock}
-                                    onChange={(e) => setStock(e.target.value)}
-                                    className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4"
-                                    placeholder="0"
-                                    type="number"
-                                />
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                {/* Right Column: Image Upload & Config */}
-                <div className="flex flex-col gap-6 lg:w-1/3">
-                    {/* Status Card (New) */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                        <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
-                            <span className="material-symbols-outlined text-primary">toggle_on</span>
-                            <h2 className="text-base text-slate-900">Estado</h2>
-                        </div>
-                        <div className="flex flex-col gap-4">
-                            <label className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${status === 'Activo' ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-white'}`}>
-                                <span className="text-slate-700">Activo</span>
-                                <input type="radio" checked={status === 'Activo'} onChange={() => setStatus('Activo')} name="status" className="w-5 h-5 text-green-600 focus:ring-green-500" />
-                            </label>
-                            <label className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${status === 'Inactivo' ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'}`}>
-                                <span className="text-slate-700">Inactivo</span>
-                                <input type="radio" checked={status === 'Inactivo'} onChange={() => setStatus('Inactivo')} name="status" className="w-5 h-5 text-red-600 focus:ring-red-500" />
-                            </label>
-                        </div>
-                    </div>
-
-                    {/* Configuration Card */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                        <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
-                            <span className="material-symbols-outlined text-primary">tune</span>
-                            <h2 className="text-base text-slate-900">Configuración</h2>
-                        </div>
-                        <div className="flex flex-col gap-5">
-                            <label className="flex flex-col gap-2">
-                                <span className="text-sm text-slate-700">Unidad de Medida</span>
-                                <select
-                                    value={unit}
-                                    onChange={(e) => setUnit(e.target.value)}
-                                    className="w-full rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-11 px-3 text-sm appearance-none"
-                                >
-                                    <option value="und">Unidad (und)</option>
-                                    <option value="kg">Kilogramo (kg)</option>
-                                    <option value="lb">Libra (lb)</option>
-                                    <option value="lt">Litro (lt)</option>
-                                    <option value="mt">Metro (mt)</option>
-                                </select>
-                            </label>
-
-                            <div className="p-4 rounded-lg border border-slate-200 bg-slate-50">
-                                <label className="flex flex-col gap-2">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="material-symbols-outlined text-amber-500 text-[20px]">notification_important</span>
-                                        <span className="text-sm text-slate-900">Alerta de Stock Bajo</span>
-                                    </div>
-                                    <p className="text-xs text-slate-500 mb-2">Notificar cuando el inventario sea menor a:</p>
-                                    <div className="flex items-center gap-2">
                                         <input
-                                            value={minStock}
-                                            onChange={(e) => setMinStock(e.target.value)}
-                                            className="w-full rounded-lg border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-10 px-3 text-center"
-                                            type="number"
-                                            min="0"
+                                            {...register("name")}
+                                            className={`w-full h-12 px-4 rounded-xl border bg-slate-50/50 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-bold text-base placeholder:font-normal placeholder:text-slate-400 ${errors.name ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
+                                            placeholder="Ej. Arroz Diana 500g"
                                         />
-                                        <span className="text-sm text-slate-500">{unit}</span>
+                                        {errors.name && <p className="text-xs text-red-500 font-bold mt-1">{errors.name.message}</p>}
                                     </div>
-                                </label>
-                            </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Category */}
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-slate-700">Categoría <span className="text-red-500">*</span></label>
+                                            <div className="relative">
+                                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                                    <span className="material-symbols-outlined text-[20px]">category</span>
+                                                </div>
+                                                <select
+                                                    {...register("category")}
+                                                    className={`w-full h-12 pl-10 pr-10 rounded-xl border bg-slate-50/50 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none transition-all ${errors.category ? 'border-red-500' : 'border-slate-200'}`}
+                                                >
+                                                    <option value="">Seleccionar...</option>
+                                                    {PRODUCT_CATEGORIES.map(cat => (
+                                                        <option key={cat.id} value={cat.id}>{cat.id}</option>
+                                                    ))}
+                                                </select>
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                                    <span className="material-symbols-outlined text-[20px]">expand_more</span>
+                                                </div>
+                                            </div>
+                                            {errors.category && <p className="text-xs text-red-500 font-medium">{errors.category.message}</p>}
+                                        </div>
+
+                                        {/* Barcode */}
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-slate-700 flex justify-between items-center">
+                                                Código de Barras
+                                                <div className="flex bg-slate-100 rounded-lg p-0.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setValue("skuMode", "manual"); setValue("barcode", ""); setTimeout(() => setFocus("barcode"), 50); }}
+                                                        className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${skuMode === 'manual' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400'}`}
+                                                    >Manual</button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleAutoSku}
+                                                        className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${skuMode === 'auto' ? 'bg-[#13ec80] shadow-sm text-slate-900' : 'text-slate-400'}`}
+                                                    >Auto</button>
+                                                </div>
+                                            </label>
+                                            <div className="relative">
+                                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                                    <span className="material-symbols-outlined text-[20px]">{skuMode === 'auto' ? 'qr_code_2' : 'barcode_scanner'}</span>
+                                                </div>
+                                                <input
+                                                    {...register("barcode")}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            if (barcode && barcode.length > 2) {
+                                                                triggerSuccessFeedback();
+                                                                toast("Código escaneado", "success");
+                                                                setTimeout(() => setFocus("name"), 100);
+                                                            }
+                                                        }
+                                                    }}
+                                                    readOnly={skuMode === 'auto'}
+                                                    className={`w-full h-12 pl-10 pr-4 rounded-xl border bg-slate-50/50 focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono transition-all ${skuMode === 'auto' ? 'text-slate-500 bg-slate-100 italic' : 'text-slate-900'}`}
+                                                    placeholder="Escanea el código..."
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Description */}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-700">Descripción (Opcional)</label>
+                                        <textarea
+                                            {...register("description")}
+                                            className="w-full h-24 p-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none placeholder:text-slate-400"
+                                            placeholder="Detalles adicionales..."
+                                        ></textarea>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Card 2: Inventory */}
+                            <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="p-6 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+                                    <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 shadow-sm border border-amber-100">
+                                        <span className="material-symbols-outlined">inventory_2</span>
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-slate-900">Inventario</h2>
+                                        <p className="text-sm text-slate-500">Control de existencias</p>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-slate-700">Stock Inicial</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    {...register("stock")}
+                                                    className="w-full h-12 pl-4 pr-12 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
+                                                    placeholder="0"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-slate-700">Stock Mínimo</label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined text-[18px]">notification_important</span>
+                                                <input
+                                                    type="number"
+                                                    {...register("minStock")}
+                                                    className="w-full h-12 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                                    placeholder="5"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-slate-700">Unidad</label>
+                                            <select
+                                                {...register("unit")}
+                                                className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none"
+                                            >
+                                                <option value="und">Unidad</option>
+                                                <option value="kg">Kilogramo</option>
+                                                <option value="lb">Libra</option>
+                                                <option value="lt">Litro</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
+
+                        {/* RIGHT COLUMN (Pricing & Config) */}
+                        <div className="lg:col-span-5 flex flex-col gap-8">
+
+                            {/* Card 3: Configuración Fiscal (DIAN) */}
+                            <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="p-6 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+                                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                                        <span className="material-symbols-outlined">account_balance</span>
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-slate-900">Impuestos (DIAN)</h2>
+                                        <p className="text-sm text-slate-500">Clasificación tributaria obligatoria</p>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 space-y-6">
+                                    {/* 1. Fiscal Classification */}
+                                    <div className="space-y-3">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                            Clasificación del Producto <span className="text-red-500">*</span>
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {[
+                                                { value: "gravado", label: "Gravado (IVA)" },
+                                                { value: "exento", label: "Exento (0%)" },
+                                                { value: "excluido", label: "Excluido" },
+                                                { value: "no_gravado", label: "No Gravado" }
+                                            ].map((option) => (
+                                                <label key={option.value} className={`relative flex items-center justify-center p-3 rounded-xl border cursor-pointer transition-all ${form.watch("fiscalClassification") === option.value
+                                                    ? "bg-blue-50 border-blue-200 text-blue-700 font-bold shadow-sm"
+                                                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                    }`}>
+                                                    <input
+                                                        type="radio"
+                                                        value={option.value}
+                                                        {...register("fiscalClassification")}
+                                                        className="hidden"
+                                                    />
+                                                    <span className="text-xs text-center">{option.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 2. IVA Selection */}
+                                    {(form.watch("fiscalClassification") === 'gravado') && (
+                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                            <p className="text-xs font-bold text-slate-500 uppercase mb-3 text-center">Selecciona la Tarifa de IVA</p>
+                                            <div className="flex justify-center gap-4">
+                                                {[
+                                                    { rate: 19, label: "19% (General)" },
+                                                    { rate: 5, label: "5% (Reducido)" }
+                                                ].map((tax) => (
+                                                    <label key={tax.rate} className="flex items-center gap-2 cursor-pointer bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm hover:border-blue-300 transition-all">
+                                                        <input type="radio" value={tax.rate} name="iva_selector"
+                                                            defaultChecked={tax.rate === 19}
+                                                            onChange={() => setValue("taxes", [{ code: '01', name: `IVA ${tax.rate}%`, rate: tax.rate, type: 'percentage' }])}
+                                                            className="w-4 h-4 text-primary"
+                                                        />
+                                                        <span className="text-sm font-bold text-slate-700">{tax.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 3. Additional Taxes */}
+                                    <div className="space-y-3 pt-2">
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Impuestos Especiales</p>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                                                <input type="checkbox" className="w-5 h-5 rounded text-orange-500 focus:ring-orange-500"
+                                                    onChange={(e) => {
+                                                        const current = form.getValues("taxes") || [];
+                                                        if (e.target.checked) setValue("taxes", [...current, { code: '04', name: 'INC 8%', rate: 8, type: 'percentage' }]);
+                                                        else setValue("taxes", current.filter(t => t.code !== '04'));
+                                                    }}
+                                                />
+                                                <div>
+                                                    <span className="text-sm font-bold text-slate-700 block">Impuesto al Consumo (INC)</span>
+                                                    <span className="text-xs text-slate-400">Para restaurantes y bares (8%)</span>
+                                                </div>
+                                            </label>
+
+                                            <label className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                                                <input type="checkbox" className="w-5 h-5 rounded text-purple-500 focus:ring-purple-500"
+                                                    onChange={(e) => {
+                                                        const current = form.getValues("taxes") || [];
+                                                        if (e.target.checked) setValue("taxes", [...current, { code: '22', name: 'ICUI 10%', rate: 10, type: 'percentage' }]);
+                                                        else setValue("taxes", current.filter(t => t.code !== '22'));
+                                                    }}
+                                                />
+                                                <div>
+                                                    <span className="text-sm font-bold text-slate-700 block">Impuesto Saludable (ICUI)</span>
+                                                    <span className="text-xs text-slate-400">Ultraprocesados (Snacks, Embutidos)</span>
+                                                </div>
+                                            </label>
+                                            <label className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                                                <input type="checkbox" className="w-5 h-5 rounded text-pink-500 focus:ring-pink-500"
+                                                    onChange={(e) => {
+                                                        const current = form.getValues("taxes") || [];
+                                                        if (e.target.checked) setValue("taxes", [...current, { code: '23', name: 'IBUA', rate: 0, type: 'fixed' }]);
+                                                        else setValue("taxes", current.filter(t => t.code !== '23'));
+                                                    }}
+                                                />
+                                                <div>
+                                                    <span className="text-sm font-bold text-slate-700 block">Bebidas Azucaradas (IBUA)</span>
+                                                    <span className="text-xs text-slate-400">Refrescos y gaseosas</span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Card 4: Calculadora de Precios (Separated) */}
+                            <section className="bg-gradient-to-br from-[#13ec80]/10 to-transparent rounded-2xl shadow-lg shadow-green-500/10 border border-[#13ec80]/30 overflow-hidden relative">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-[#13ec80]/10 rounded-bl-full pointer-events-none blur-2xl"></div>
+
+                                <div className="p-6 border-b border-[#13ec80]/20 flex items-center gap-3 bg-white/50 backdrop-blur-sm">
+                                    <div className="w-10 h-10 rounded-full bg-[#13ec80]/20 flex items-center justify-center text-green-700 shadow-sm border border-[#13ec80]/30">
+                                        <span className="material-symbols-outlined">calculate</span>
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-black text-slate-900">Calculadora de Precio</h2>
+                                        <p className="text-sm text-slate-600 font-medium">Define tu rentabilidad fácilmente</p>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 space-y-6">
+
+                                    {/* Helper Text */}
+                                    <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded-lg border border-blue-100 flex items-start gap-2">
+                                        <span className="material-symbols-outlined text-[16px] mt-0.5">info</span>
+                                        <p>
+                                            El margen se calcula sobre el precio <strong>antes de impuestos</strong>.
+                                            Si el precio incluye IVA, el sistema lo descuenta primero para mostrarte tu ganancia real.
+                                        </p>
+                                    </div>
+
+                                    {/* Cost Input */}
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">1. Costo de Compra (Base)</label>
+                                        <div className="relative group">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                {...register("costPrice")}
+                                                className="w-full h-12 pl-7 pr-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-primary/20 font-bold text-lg"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Profit Margin Control */}
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">2. Margen de Ganancia Deseado</label>
+                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${margin < 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                                                Real: {margin.toFixed(1)}%
+                                            </span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {[15, 20, 30, 40, 50].map(pct => (
+                                                <button
+                                                    key={pct}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const cost = Number(form.getValues("costPrice")) || 0;
+                                                        if (cost > 0) {
+                                                            // Target Net Price = Cost / (1 - Margin)
+                                                            const targetNetPrice = cost / (1 - (pct / 100));
+
+                                                            // If price includes Tax, add Tax to Net Price to get Sale Price
+                                                            // Otherwise, Sale Price is Net Price
+                                                            const isIncTax = form.getValues("priceIncludesTax");
+                                                            const currentIva = (form.getValues("taxes")?.find((t: any) => t.code === '01')?.rate) || 0;
+
+                                                            const finalPrice = isIncTax
+                                                                ? targetNetPrice * (1 + (currentIva / 100))
+                                                                : targetNetPrice;
+
+                                                            setValue("salePrice", Math.round(finalPrice / 50) * 50); // Round to nearest 50 for prettier prices
+                                                        }
+                                                    }}
+                                                    className="flex-1 py-2 text-xs font-bold bg-white border border-slate-200 rounded-lg hover:border-[#13ec80] hover:text-[#13ec80] hover:bg-green-50 transition-all text-slate-500"
+                                                >
+                                                    {pct}%
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="relative flex items-center gap-4">
+                                        <div className="h-px bg-slate-200 flex-1"></div>
+                                        <span className="text-xs font-bold text-slate-400 uppercase">Resultado</span>
+                                        <div className="h-px bg-slate-200 flex-1"></div>
+                                    </div>
+
+                                    {/* Price Input (Result) */}
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">3. Precio de Venta (Público)</label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input type="checkbox" {...register("priceIncludesTax")} className="w-3 h-3 rounded text-[#13ec80] focus:ring-[#13ec80]" />
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase">¿Incluye Impuestos?</span>
+                                            </label>
+                                        </div>
+
+                                        <div className="relative group shadow-lg shadow-green-500/20 rounded-xl">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-green-600 font-bold text-xl">$</span>
+                                            <input
+                                                type="number"
+                                                step="50"
+                                                {...register("salePrice")}
+                                                className="w-full h-16 pl-10 pr-4 rounded-xl border-2 border-[#13ec80] bg-white text-slate-900 focus:ring-4 focus:ring-[#13ec80]/20 focus:border-[#13ec80] font-black text-3xl text-right transition-all"
+                                                placeholder="0"
+                                            />
+                                            <div className="absolute right-4 bottom-2 text-[10px] text-slate-400 font-bold pointer-events-none">COP</div>
+                                        </div>
+
+                                        {/* Tax Breakdown Preview */}
+                                        <div className="flex justify-between items-center mt-2 px-1">
+                                            {priceIncludesTax && ivaRate > 0 ? (
+                                                <>
+                                                    <div className="text-xs text-slate-500 font-medium">
+                                                        Precio Base: <span className="font-bold text-slate-700">{netPrice.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span>
+                                                    </div>
+                                                    <div className="text-xs text-slate-400 font-mono">
+                                                        + IVA ({ivaRate}%): {((salePrice - netPrice)).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="text-xs text-slate-400 italic w-full text-right">
+                                                    {fiscalClassification === 'exento' ? 'Producto Exento de IVA' : 'Precio antes de aplicar impuestos'}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </section>
+
+                            {/* Card 4: Status */}
+                            <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+                                    <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Estado del Producto</h2>
+                                </div>
+                                <div className="p-4">
+                                    <div className="flex bg-slate-100 p-1 rounded-xl">
+                                        <label className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg cursor-pointer transition-all ${status === 'Activo' ? 'bg-white shadow-sm text-green-600 font-bold' : 'text-slate-500 hover:text-slate-700'}`}>
+                                            <input type="radio" value="Activo" {...register("status")} className="hidden" />
+                                            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                                            Activo
+                                        </label>
+                                        <label className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg cursor-pointer transition-all ${status === 'Inactivo' ? 'bg-white shadow-sm text-slate-900 font-bold' : 'text-slate-500 hover:text-slate-700'}`}>
+                                            <input type="radio" value="Inactivo" {...register("status")} className="hidden" />
+                                            <span className="material-symbols-outlined text-[18px]">cancel</span>
+                                            Inactivo
+                                        </label>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
                     </div>
                 </div>
             </div>
-        </div>
+        </form>
     );
 }

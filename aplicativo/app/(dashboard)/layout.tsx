@@ -11,6 +11,8 @@ import { supabase } from '@/lib/supabase';
 import { useConfiguration } from "@/hooks/useConfiguration";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { DonTenderoChat } from '@/components/chat/DonTenderoChat';
+import { OnboardingTour } from "@/components/layout/OnboardingTour";
+import { ChangelogModal } from "@/components/layout/ChangelogModal";
 
 export default function DashboardLayout({
     children,
@@ -84,6 +86,8 @@ export default function DashboardLayout({
 
     return (
         <AuthGuard>
+            <ChangelogModal />
+            <OnboardingTour />
             <div className="flex h-screen bg-slate-50 relative">
                 {/* Sidebar - Hidden on Mobile */}
                 <aside
@@ -100,11 +104,11 @@ export default function DashboardLayout({
                     </button>
 
                     <div>
-                        <div className={`h-20 flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-6'} border-b border-slate-100 overflow-hidden whitespace-nowrap`}>
+                        <div id="logo-container" className={`h-20 flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-6'} border-b border-slate-100 overflow-hidden whitespace-nowrap`}>
                             <div className="flex items-center justify-center w-full">
                                 {isCollapsed ? (
-                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-slate-900 shadow-sm shrink-0 bg-white border border-slate-200`}>
-                                        <span className={`material-symbols-outlined text-[24px]`}>storefront</span>
+                                    <div className="flex items-center justify-center transition-opacity duration-300">
+                                        <img src="/icon.png" alt="Icon" className="w-[42px] h-[42px] object-contain rounded-lg shadow-sm" />
                                     </div>
                                 ) : (
                                     <div className="flex justify-start w-full transition-opacity duration-300 animate-in fade-in">
@@ -128,7 +132,7 @@ export default function DashboardLayout({
                         )}
 
                         <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
-                            <NavItem href="/dashboard" icon="dashboard" label="Inicio" collapsed={isCollapsed} />
+                            {/* Inicio eliminado por solicitud del usuario */}
                             <NavItem href="/venta" icon="point_of_sale" label="Venta" collapsed={isCollapsed} />
                             <NavItem href="/caja" icon="payments" label="Caja" collapsed={isCollapsed} />
                             <NavItem href="/inventario" icon="inventory_2" label="Inventario" collapsed={isCollapsed} />
@@ -150,7 +154,7 @@ export default function DashboardLayout({
                         </nav>
                     </div>
 
-                    <div className="p-3 border-t border-slate-100">
+                    <div id="profile-section" className="p-3 border-t border-slate-100">
                         {/* User Profile Info (Moved from Header) */}
                         <div className={`flex items-center gap-3 mb-3 px-2 rounded-xl bg-slate-50 py-2 border border-slate-100 ${isCollapsed ? 'justify-center p-0 w-full aspect-square mb-2' : ''}`}>
                             {businessInfo?.logoUrl ? (
@@ -193,7 +197,7 @@ export default function DashboardLayout({
                             {businessInfo?.logoUrl ? (
                                 <img src={businessInfo.logoUrl} alt={businessInfo.name} className="h-8 w-8 rounded-lg object-cover border border-slate-100" />
                             ) : (
-                                <img src="/logo.png" alt="DonTendero" className="h-8 w-auto object-contain" />
+                                <img src="/icon.png" alt="DonTendero" className="h-8 w-8 object-contain rounded-md" />
                             )}
                             <span className="font-bold text-slate-800 text-sm truncate max-w-[150px]">
                                 {businessInfo?.name || 'DonTendero'}

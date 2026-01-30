@@ -62,6 +62,27 @@ export default function StoresManagementPage() {
         }
     };
 
+    const handleDeleteStore = async (orgId: string, orgName: string) => {
+        if (!confirm(`¿Estás SEGURO de que quieres eliminar la tienda "${orgName}"?\n\nESTA ACCIÓN ES IRREVERSIBLE. SE BORRARÁN VENTAS, PRODUCTOS Y CONFIGURACIÓN.`)) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.rpc('delete_organization_cascade', { p_org_id: orgId });
+
+            if (error) throw error;
+
+            alert("Tienda eliminada correctamente.");
+            loadClients(); // Reload list
+        } catch (error: any) {
+            console.error("Error deleting store:", error);
+            setErrorMsg(`Error al eliminar: ${error.message}`); // Show localized error if any
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Filter logic
     const filteredClients = clients.filter(client =>
         client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -164,12 +185,19 @@ export default function StoresManagementPage() {
                                         <td className="px-6 py-4 text-slate-600">
                                             {client.last_activity ? format(new Date(client.last_activity), 'dd MMM yyyy HH:mm') : 'N/A'}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
+                                        <td className="px-6 py-4 text-right flex justify-end gap-2">
                                             <Link href={`/admin/tiendas/${client.id}`}>
                                                 <button className="text-slate-400 hover:text-slate-900 font-bold text-xs border border-slate-200 rounded px-2 py-1 hover:bg-white transition-colors">
                                                     Gestionar
                                                 </button>
                                             </Link>
+                                            <button
+                                                onClick={() => handleDeleteStore(client.id, client.name)}
+                                                className="text-red-400 hover:text-white hover:bg-red-500 font-bold text-xs border border-red-200 hover:border-red-500 rounded px-2 py-1 transition-colors flex items-center gap-1"
+                                                title="Eliminar tienda y todos sus datos"
+                                            >
+                                                <span className="material-symbols-outlined text-[14px]">delete</span>
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -181,3 +209,6 @@ export default function StoresManagementPage() {
         </div>
     );
 }
+
+// Helper function needs to be inside the component context or imported (but simplest here is to add it inside the component)
+// Re-inserting the component body structure properly.

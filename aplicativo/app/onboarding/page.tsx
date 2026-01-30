@@ -653,48 +653,97 @@ function OnboardingContent() {
     // ... (Steps 1-5 remain unchanged) ...
 
     const renderStep6 = () => (
-        <div className="flex flex-col gap-6 animate-in slide-in-from-right duration-500">
+        <div className="flex flex-col gap-8 animate-in slide-in-from-right duration-500 max-w-4xl mx-auto w-full">
             <div className="text-center">
                 <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-green-600">
-                    <span className="material-symbols-outlined text-4xl">loyalty</span>
+                    <span className="material-symbols-outlined text-4xl">savings</span>
                 </div>
-                <h2 className="text-2xl font-black text-slate-900">Selecciona tu Plan</h2>
-                <p className="text-slate-500 mt-2">Valores actualizados automáticamente.</p>
+                <h2 className="text-3xl font-black text-slate-900 mb-2">Elige cómo quieres crecer</h2>
+                <p className="text-slate-500 max-w-md mx-auto">Seleccionamos las mejores herramientas para cada etapa de tu negocio.</p>
             </div>
-            <div className="grid grid-cols-1 gap-4">
-                {plans.length > 0 ? plans.map((plan) => (
-                    <button
-                        key={plan.id}
-                        onClick={() => setData({ ...data, plan: plan.id as any })}
-                        className={`p-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden ${data.plan === plan.id ? 'border-[#00E054] bg-green-50 shadow-md' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
-                    >
-                        {plan.id === 'pro' && <div className="absolute top-0 right-0 bg-[#00E054] text-slate-900 text-[10px] font-black px-3 py-1 rounded-bl-xl">POPULAR</div>}
 
-                        <div className="flex justify-between items-start mb-2">
-                            <span className="font-black text-lg text-slate-800">{plan.name}</span>
-                            <span className="text-slate-900 font-bold">
-                                {plan.price === 0 ? '$0' : `$${plan.price.toLocaleString()}`}
-                                {plan.price > 0 && <span className="text-xs text-slate-500 font-normal"> / mes</span>}
-                            </span>
-                        </div>
-                        <p className="text-xs text-slate-500">{plan.description}</p>
-                    </button>
-                )) : (
-                    <div className="p-4 text-center text-slate-400">Cargando planes...</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+                {plans.length > 0 ? plans.map((plan) => {
+                    const isPro = plan.id === 'pro';
+                    const isFree = plan.id === 'free';
+
+                    return (
+                        <button
+                            key={plan.id}
+                            onClick={() => setData({ ...data, plan: plan.id as any })}
+                            className={`flex flex-col text-left p-6 rounded-3xl border-2 transition-all relative overflow-hidden group h-full
+                                ${data.plan === plan.id
+                                    ? (isPro ? 'border-[#13ec80] bg-green-50/50 ring-4 ring-[#13ec80]/10' : 'border-slate-300 bg-slate-50')
+                                    : 'border-slate-100 bg-white hover:border-slate-300 hover:shadow-lg hover:-translate-y-1'
+                                }
+                            `}
+                        >
+                            {isPro && (
+                                <div className="absolute top-0 inset-x-0 h-1.5 bg-[#13ec80]"></div>
+                            )}
+                            {isPro && (
+                                <div className="absolute top-4 right-4 bg-[#13ec80] text-[#0d1b14] text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider">
+                                    Recomendado
+                                </div>
+                            )}
+
+                            <div className="mb-4">
+                                <h3 className={`text-lg font-black ${isPro ? 'text-[#0d1b14]' : 'text-slate-700'}`}>
+                                    {isFree ? 'Inicial' : plan.name}
+                                </h3>
+                                <div className="flex items-baseline gap-1 mt-1">
+                                    <span className="text-3xl font-black text-slate-900">
+                                        {plan.price === 0 ? 'Gratis' : `$${(plan.price / 1000)}k`}
+                                    </span>
+                                    {plan.price > 0 && <span className="text-xs text-slate-500 font-bold uppercase">/ mes</span>}
+                                </div>
+                                <p className="text-xs text-slate-500 mt-2 font-medium leading-relaxed min-h-[40px]">
+                                    {plan.description}
+                                </p>
+                            </div>
+
+                            <div className="space-y-3 mb-6 flex-1">
+                                {plan.features && plan.features.slice(0, 4).map((feature: string, i: number) => (
+                                    <div key={i} className="flex items-start gap-2.5">
+                                        <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 
+                                            ${data.plan === plan.id || isPro ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+                                            <span className="material-symbols-outlined text-[10px] font-bold">check</span>
+                                        </div>
+                                        <span className={`text-xs ${data.plan === plan.id ? 'text-slate-700 font-medium' : 'text-slate-500'}`}>
+                                            {feature}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className={`w-full py-3 px-4 rounded-xl text-sm font-bold text-center transition-colors
+                                ${data.plan === plan.id
+                                    ? (isPro ? 'bg-[#13ec80] text-[#0d1b14]' : 'bg-slate-900 text-white')
+                                    : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
+                                }`
+                            }>
+                                {data.plan === plan.id ? 'Seleccionado' : 'Elegir Plan'}
+                            </div>
+                        </button>
+                    );
+                }) : (
+                    <div className="col-span-3 p-8 text-center text-slate-400 bg-slate-50 rounded-2xl animate-pulse">
+                        Cargando opciones de crecimiento...
+                    </div>
                 )}
             </div>
 
             {/* Terms and Conditions */}
-            <div className="flex items-center gap-3 pt-4 border-t border-slate-100 mt-2">
+            <div className="flex items-center gap-3 pt-6 border-t border-slate-100 justify-center">
                 <input
                     type="checkbox"
                     id="terms"
                     checked={data.acceptedTerms}
                     onChange={(e) => setData({ ...data, acceptedTerms: e.target.checked })}
-                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                    className="w-5 h-5 rounded-md border-slate-300 text-[#13ec80] focus:ring-[#13ec80] cursor-pointer"
                 />
-                <label htmlFor="terms" className="text-xs text-slate-600 cursor-pointer select-none">
-                    He leído y acepto los <a href="/legal/terminos" target="_blank" className="font-bold hover:underline text-slate-900">Términos y Condiciones</a> y la <a href="/legal/privacidad" target="_blank" className="font-bold hover:underline text-slate-900">Política de Datos</a>.
+                <label htmlFor="terms" className="text-xs text-slate-500 cursor-pointer select-none">
+                    Acepto los <a href="/legal/terminos" target="_blank" className="font-bold hover:underline text-slate-900 transition-colors">Términos y Condiciones</a> y la <a href="/legal/privacidad" target="_blank" className="font-bold hover:underline text-slate-900 transition-colors">Política de Datos</a>.
                 </label>
             </div>
         </div>
