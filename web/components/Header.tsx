@@ -71,19 +71,43 @@ export function Header({ dark = true }: HeaderProps) {
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className={`lg:hidden p-2 rounded-xl transition-colors ${dark ? 'text-white hover:bg-white/10' : 'text-slate-900 hover:bg-slate-100'}`}
+                        className={`lg:hidden flex items-center justify-center size-12 rounded-2xl relative z-[150] transition-all active:scale-90 ${isMenuOpen ? 'bg-primary text-slate-900' : (dark ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-900')}`}
+                        aria-label="Toggle menu"
                     >
-                        <span className="material-symbols-outlined text-2xl">
+                        <span className="material-symbols-outlined text-3xl font-black">
                             {isMenuOpen ? 'close' : 'menu'}
                         </span>
                     </button>
                 </div>
             </div>
 
-            {/* Mobile Nav Overlay */}
-            {isMenuOpen && (
-                <div className={`lg:hidden fixed inset-0 top-20 z-[90] animate-in fade-in slide-in-from-top-5 duration-300 ${dark ? 'bg-[#102219]' : 'bg-white'}`}>
-                    <nav className="flex flex-col p-6 gap-2">
+            {/* Mobile Nav Sidebar / Drawer */}
+            <div
+                className={`lg:hidden fixed inset-0 z-[150] transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible pointer-events-none'}`}
+            >
+                {/* Backdrop with blur */}
+                <div
+                    className={`absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 ${isMenuOpen ? 'opacity-100' : 'opacity-0'}`}
+                    onClick={() => setIsMenuOpen(false)}
+                />
+
+                {/* Drawer Panel - White Solid */}
+                <div
+                    className={`absolute top-0 right-0 w-[80%] max-w-sm h-full bg-white shadow-2xl transition-transform duration-300 ease-out flex flex-col ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                >
+                    {/* Drawer Header */}
+                    <div className="p-6 flex items-center justify-between border-b border-slate-100">
+                        <span className="font-black text-xl text-slate-900 tracking-tighter">DonTendero</span>
+                        <button
+                            onClick={() => setIsMenuOpen(false)}
+                            className="size-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-900 active:scale-90 transition-transform"
+                        >
+                            <span className="material-symbols-outlined font-black">close</span>
+                        </button>
+                    </div>
+
+                    {/* Drawer Content */}
+                    <nav className="flex-1 overflow-y-auto p-6 space-y-3">
                         {navLinks.map((link) => {
                             const isActive = pathname === link.href;
                             return (
@@ -91,34 +115,40 @@ export function Header({ dark = true }: HeaderProps) {
                                     key={link.href}
                                     href={link.href}
                                     onClick={() => setIsMenuOpen(false)}
-                                    className={`flex items-center justify-between p-4 rounded-2xl font-black text-xl transition-all ${isActive
-                                            ? 'bg-primary/10 text-primary'
-                                            : (dark ? 'text-white/60 hover:text-white' : 'text-slate-500 hover:text-slate-900')
+                                    className={`flex items-center justify-between p-5 rounded-2xl font-black text-xl transition-all ${isActive
+                                        ? 'bg-primary text-slate-900 shadow-lg shadow-primary/20'
+                                        : 'text-slate-500 active:bg-slate-50'
                                         }`}
                                 >
                                     {link.name}
-                                    {isActive && <span className="material-symbols-outlined">arrow_forward_ios</span>}
+                                    <span className={`material-symbols-outlined text-sm ${isActive ? 'text-slate-900' : 'text-slate-300'}`}>
+                                        arrow_forward_ios
+                                    </span>
                                 </Link>
                             );
                         })}
-                        <div className="grid grid-cols-2 gap-4 mt-8">
+                    </nav>
+
+                    {/* Drawer Footer */}
+                    <div className="p-6 border-t border-slate-100 bg-slate-50">
+                        <div className="grid grid-cols-1 gap-4">
                             <a
                                 href="https://dontendero.com/login"
-                                className={`flex items-center justify-center h-14 rounded-2xl font-bold border ${dark ? 'border-white/10 text-white' : 'border-slate-200 text-slate-900'}`}
+                                className="flex items-center justify-center h-14 rounded-2xl font-black text-slate-900 border-2 border-slate-200 bg-white"
                             >
                                 Ingresar
                             </a>
                             <Link
                                 href="/planes"
                                 onClick={() => setIsMenuOpen(false)}
-                                className="flex items-center justify-center h-14 rounded-2xl font-black bg-primary text-slate-900 shadow-xl shadow-primary/20"
+                                className="flex items-center justify-center h-14 rounded-2xl font-black bg-primary text-slate-900 shadow-xl shadow-primary/30"
                             >
-                                Comenzar
+                                Comenzar ahora
                             </Link>
                         </div>
-                    </nav>
+                    </div>
                 </div>
-            )}
+            </div>
         </header>
     );
 }
