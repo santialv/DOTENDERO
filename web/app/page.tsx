@@ -75,6 +75,13 @@ export default function Home() {
               </div>
               <h2 className="text-white text-xl font-bold tracking-tight">DonTendero</h2>
             </div>
+
+            <nav className="hidden lg:flex items-center gap-8 mx-8">
+              <a href="#beneficios" className="text-gray-400 hover:text-primary text-sm font-medium transition-colors">Beneficios</a>
+              <a href="#como-funciona" className="text-gray-400 hover:text-primary text-sm font-medium transition-colors">Cómo funciona</a>
+              <a href="#planes" className="text-gray-400 hover:text-primary text-sm font-medium transition-colors">Planes</a>
+            </nav>
+
             <div className="flex gap-3">
               <button
                 onClick={() => setIsInvestorModalOpen(true)}
@@ -575,6 +582,109 @@ export default function Home() {
                     Entérate cuando se te está acabando el producto antes de que llegue el proveedor. Vende sin
                     interrupciones.
                   </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Pricing Section */}
+          <section id="planes" className="w-full bg-background-dark py-24 border-t border-[#234836] relative overflow-hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
+
+            <div className="w-full max-w-[1200px] mx-auto px-6 relative z-10">
+              <div className="text-center mb-16">
+                <h3 className="text-primary font-bold tracking-widest uppercase text-sm mb-3">Precios Transparentes</h3>
+                <h2 className="text-white text-3xl md:text-5xl font-black mb-6 tracking-tight">Elige el plan ideal para tu negocio</h2>
+                <div className="inline-flex items-center p-1 bg-[#193326] rounded-xl border border-[#234836] mb-8">
+                  <span className="px-4 py-2 bg-primary text-background-dark rounded-lg text-sm font-bold shadow-lg shadow-primary/20">Pago Mensual</span>
+                  <span className="px-4 py-2 text-gray-400 text-sm font-medium">Pago Anual (Ahorra 20%)</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Plan Gratis */}
+                <div className="p-8 rounded-3xl bg-[#193326]/40 border border-[#234836] backdrop-blur-sm flex flex-col hover:border-primary/30 transition-all duration-300">
+                  <h4 className="text-gray-400 font-bold text-sm uppercase tracking-widest mb-2">Estándar</h4>
+                  <div className="mb-6">
+                    <span className="text-white text-4xl font-black">$0</span>
+                    <span className="text-gray-500 ml-2">/por siempre</span>
+                  </div>
+                  <p className="text-[#92c9ad] text-sm mb-8 leading-relaxed">Ideal para nuevos tenderos que quieren digitalizar su cuaderno hoy.</p>
+                  <ul className="space-y-4 mb-10 flex-1">
+                    <li className="flex items-start gap-3 text-sm text-gray-300">
+                      <span className="text-primary material-symbols-outlined text-xl">check_circle</span>
+                      <span>Ventas ilimitadas</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-sm text-gray-300">
+                      <span className="text-primary material-symbols-outlined text-xl">check_circle</span>
+                      <span>Gestión de Fiados</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-sm text-gray-300">
+                      <span className="text-primary material-symbols-outlined text-xl">check_circle</span>
+                      <span>Cierre de Caja diario</span>
+                    </li>
+                  </ul>
+                  <a href="https://dontendero.com/register" className="w-full py-4 text-center rounded-xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all">Empezar Gratis</a>
+                </div>
+
+                {/* Plan Emprendedor (Destacado) */}
+                <div className="p-8 rounded-3xl bg-[#193326] border-2 border-primary shadow-[0_0_40px_rgba(19,236,128,0.15)] flex flex-col relative transform md:-translate-y-4 hover:scale-[1.02] transition-all duration-300">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-background-dark px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">Más Popular</div>
+                  <h4 className="text-primary font-bold text-sm uppercase tracking-widest mb-2">Emprendedor</h4>
+                  <div className="mb-6">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-white text-5xl font-black">$45.000</span>
+                      <span className="text-gray-500">/mes</span>
+                    </div>
+                    <p className="text-orange-400 text-[10px] font-bold mt-1">Precio especial: 50 primeros cupos</p>
+                  </div>
+                  <p className="text-white/80 text-sm mb-8 leading-relaxed">Para negocios que quieren dar el salto a las Grandes Superficies configurando inventarios.</p>
+                  <ul className="space-y-4 mb-10 flex-1">
+                    <li className="flex items-start gap-3 text-sm text-white">
+                      <span className="text-primary material-symbols-outlined text-xl">check_circle</span>
+                      <span>Todo lo del Plan Estándar</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-sm text-white">
+                      <span className="text-primary material-symbols-outlined text-xl">check_circle</span>
+                      <span>Inventario Inteligente</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-sm text-white">
+                      <span className="text-primary material-symbols-outlined text-xl">check_circle</span>
+                      <span>Alertas de stock bajo</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-sm text-white">
+                      <span className="text-primary material-symbols-outlined text-xl">check_circle</span>
+                      <span>Reportes detallados</span>
+                    </li>
+                  </ul>
+                  <a href="https://dontendero.com/register" className="w-full py-4 text-center rounded-xl bg-primary text-background-dark font-black shadow-lg shadow-primary/30 hover:bg-[#0fd672] transition-all group">
+                    Elegir Plan
+                  </a>
+                </div>
+
+                {/* Plan Business */}
+                <div className="p-8 rounded-3xl bg-[#193326]/40 border border-[#234836] backdrop-blur-sm flex flex-col hover:border-primary/30 transition-all duration-300">
+                  <h4 className="text-gray-400 font-bold text-sm uppercase tracking-widest mb-2">Empresario PRO</h4>
+                  <div className="mb-6">
+                    <span className="text-white text-4xl font-black">$90.000</span>
+                    <span className="text-gray-500 ml-2">/mes</span>
+                  </div>
+                  <p className="text-[#92c9ad] text-sm mb-8 leading-relaxed">Potencia máxima para depósitos, cigarrerías y tiendas con múltiples sedes.</p>
+                  <ul className="space-y-4 mb-10 flex-1">
+                    <li className="flex items-start gap-3 text-sm text-gray-300">
+                      <span className="text-primary material-symbols-outlined text-xl">check_circle</span>
+                      <span>Todo lo del Plan Emprendedor</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-sm text-gray-300">
+                      <span className="text-primary material-symbols-outlined text-xl">check_circle</span>
+                      <span>Multi-Organización</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-sm text-gray-300">
+                      <span className="text-primary material-symbols-outlined text-xl">check_circle</span>
+                      <span>Gerente de cuenta dedicado</span>
+                    </li>
+                  </ul>
+                  <a href="https://dontendero.com/register" className="w-full py-4 text-center rounded-xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all">Saber más</a>
                 </div>
               </div>
             </div>
