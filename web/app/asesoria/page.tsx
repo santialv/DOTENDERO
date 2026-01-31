@@ -82,7 +82,7 @@ export default function AsesoriaPage() {
                                 {
                                     stage: "EL DESTINO",
                                     title: "Tu Familia y Tu Vida",
-                                    desc: "El objetivo final. Cerramos el ciclo convirtiendo el éxito de la tienda en tranquilidad, patrimonio protegido y futuro para los tuyos.",
+                                    desc: "El objetivo final. Cerramos el ciclo convirtiendo el éxito del negocio en tranquilidad, patrimonio protegido y futuro para los tuyos.",
                                     icon: "family_restroom",
                                     label: "El Resultado"
                                 }
@@ -149,7 +149,7 @@ export default function AsesoriaPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                         <div className="space-y-6">
                                             <p className="text-slate-400 text-lg leading-relaxed">
-                                                Tu tienda es mucho más que un negocio; es el futuro de tus hijos. Nuestra asesoría te guía para que el crecimiento de la tienda se traduzca en **activos reales** (mejoras locativas, ahorro programado o estudio).
+                                                Tu negocio es mucho más que una fachada; es el futuro de tus hijos. Nuestra asesoría te guía para que el crecimiento del negocio se traduzca en **activos reales** (mejoras locativas, ahorro programado o estudio).
                                             </p>
                                         </div>
                                         <div className="bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md">

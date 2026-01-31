@@ -44,7 +44,7 @@ export default function BeneficiosPage() {
                         <div className="mb-20 reveal-on-scroll">
                             <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-3">Tu Ventaja Competitiva</h3>
                             <h2 className="text-slate-900 text-3xl md:text-6xl font-black max-w-[700px] tracking-tight leading-none mb-6">
-                                Tecnología diseñada para el <span className="text-primary italic">éxito de tu barrio</span>
+                                Tecnología diseñada para el <span className="text-primary italic">éxito de tu negocio</span>
                             </h2>
                             <p className="text-slate-500 text-lg max-w-2xl">
                                 Hemos digitalizado las mejores prácticas de los tenderos más exitosos y las pusimos en la palma de tu mano.
@@ -60,7 +60,7 @@ export default function BeneficiosPage() {
                                     </div>
                                     <h3 className="text-3xl font-bold text-slate-900 mb-4">Inventario Inteligente</h3>
                                     <p className="text-slate-600 leading-relaxed text-lg">
-                                        No más estantes vacíos. DonTendero predice cuándo te quedarás sin stock basándose en tu historial de ventas y te avisa qué comprar.
+                                        No más estantes vacíos. DonTendero predice cuándo te quedarás sin stock basándose en tu historial de ventas y te avisa qué comprar para tu negocio.
                                     </p>
                                 </div>
                                 <div className="absolute right-[-5%] bottom-[-5%] w-[50%] aspect-square bg-primary/5 rounded-full blur-[100px] group-hover:bg-primary/10 transition-all"></div>

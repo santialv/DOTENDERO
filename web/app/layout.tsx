@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DonTendero - El ERP para Tiendas de Barrio",
-  description: "Gestiona tu tienda fácil: Fiados, Inventario y Facturación Electrónica. ¡Prueba gratis!",
+  title: "DonTendero - El ERP para tu Negocio",
+  description: "Gestiona tu negocio fácil: Fiados, Inventario y Facturación Electrónica. ¡Prueba gratis!",
   manifest: "/manifest.json",
   icons: {
     icon: [

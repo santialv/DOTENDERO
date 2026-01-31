@@ -49,7 +49,7 @@ export default function Home() {
           </h1>
 
           <p className="text-gray-400 text-lg md:text-2xl font-medium leading-relaxed max-w-[700px] mb-12 reveal-on-scroll delay-100">
-            Digitaliza tu tienda de barrio. Gestiona inventario, fiados y ganancias desde tu celular con la tecnología más avanzada del mercado.
+            Digitaliza tu negocio. Gestiona inventario, fiados y ganancias desde tu celular con la tecnología más avanzada del mercado.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md justify-center reveal-on-scroll delay-200">
@@ -139,7 +139,7 @@ export default function Home() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-12">
                     {[
                       { icon: "analytics", t: "Análisis Personalizado", d: "Interpretamos tus números por ti. Te decimos dónde estás ganando y dónde estás perdiendo." },
-                      { icon: "account_balance", t: "Gestión de Activos", d: "Te ayudamos a convertir tus ganancias en crecimiento real para tu tienda." },
+                      { icon: "account_balance", t: "Gestión de Activos", d: "Te ayudamos a convertir tus ganancias en crecimiento real para tu negocio." },
                       { icon: "trending_up", t: "Proyecciones de Venta", d: "Planifica tus compras con datos reales, no con presentimientos." },
                       { icon: "shield_person", t: "Seguridad Patrimonial", d: "Asesoría para que tu negocio sea legal, sólido y rentable a largo plazo." }
                     ].map((item, i) => (
@@ -239,7 +239,7 @@ export default function Home() {
         <section className="w-full py-24 bg-primary text-background-dark text-center">
           <div className="w-full max-w-[800px] mx-auto px-6">
             <h2 className="text-4xl md:text-6xl font-black mb-8 leading-none tracking-tighter">¿Listo para dejar de <br />regalar plata?</h2>
-            <p className="text-xl md:text-3xl font-bold opacity-80 mb-12">Miles de tenderos en Colombia están digitalizando sus negocios hoy.</p>
+            <p className="text-xl md:text-3xl font-bold opacity-80 mb-12">Miles de empresarios en Colombia están digitalizando sus negocios hoy.</p>
             <Link href="/planes" className="inline-block py-5 px-12 bg-background-dark text-white rounded-2xl text-2xl font-black hover:scale-105 transition-transform shadow-2xl">Ver Planes y Precios</Link>
           </div>
         </section>

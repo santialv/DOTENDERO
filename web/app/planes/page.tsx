@@ -183,7 +183,7 @@ export default function PlanesPage() {
                                 },
                                 {
                                     q: "¿Qué pasa si pierdo mi celular?",
-                                    a: "Nada malo. Tu información está segura en nuestros servidores. Solo descarga la app en un nuevo celular, ingresa con tus datos y tendrás toda tu tienda intacta (inventario, fiados y reportes)."
+                                    a: "Nada malo. Tu información está segura en nuestros servidores. Solo descarga la app en un nuevo celular, ingresa con tus datos y tendrás todo tu negocio intacto (inventario, fiados y reportes)."
                                 }
                             ].map((faq, i) => (
                                 <div key={i} className="group p-8 rounded-[2rem] bg-white border border-slate-100 hover:border-primary/30 transition-all reveal-on-scroll">

@@ -107,7 +107,7 @@ export default function DashboardLayout({
                             <Logo collapsed={isCollapsed} />
                         </div>
 
-                        {/* Ghost Mode Exit in Sidebar */}
+                        {/* TAB 1: MI NEGOCIO (APP STATS & CHARTS) */}
                         {ghostOrgId && (
                             <div className={`px-3 pt-3 ${isCollapsed ? 'hidden' : 'block'}`}>
                                 <button
@@ -165,7 +165,7 @@ export default function DashboardLayout({
                             {!isCollapsed && (
                                 <div className="overflow-hidden">
                                     <p className="text-sm font-bold text-slate-700 truncate" title={businessInfo?.name}>
-                                        {businessInfo?.name || 'Mi Tienda'}
+                                        {businessInfo?.name || 'Mi Negocio'}
                                     </p>
                                     <p className="text-[10px] text-slate-400 font-medium truncate uppercase tracking-wider">
                                         {businessInfo?.owner_name || 'Admin'}

@@ -30,7 +30,7 @@ export default function ComoFuncionaPage() {
                     <div className="w-full max-w-[1200px] mx-auto px-6">
                         <div className="text-center mb-24 reveal-on-scroll">
                             <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-3">Simple y Rápido</h3>
-                            <h2 className="text-slate-900 text-4xl md:text-6xl font-black mb-6 tracking-tight">Tu tienda digital en <span className="text-primary italic">3 pasos</span></h2>
+                            <h2 className="text-slate-900 text-4xl md:text-6xl font-black mb-6 tracking-tight">Tu negocio digital en <span className="text-primary italic">3 pasos</span></h2>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-16 relative">

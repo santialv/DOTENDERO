@@ -72,7 +72,7 @@ export default function DashboardPage() {
                 <TabsList className="grid w-full grid-cols-2 lg:w-[400px] bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
                     <TabsTrigger value="app_stats" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-slate-600 transition-all gap-2">
                         <LayoutDashboard className="w-4 h-4" />
-                        Mi Tienda
+                        Mi Negocio
                     </TabsTrigger>
                     <TabsTrigger value="ai_partner" className="rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white font-bold text-slate-600 transition-all gap-2">
                         <Sparkles className="w-4 h-4" />
@@ -80,7 +80,7 @@ export default function DashboardPage() {
                     </TabsTrigger>
                 </TabsList>
 
-                {/* TAB 1: MI TIENDA (APP STATS & CHARTS) */}
+                {/* TAB 1: MI NEGOCIO (APP STATS & CHARTS) */}
                 <TabsContent value="app_stats" className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
 
                     {/* KEY METRICS ROW */}

@@ -8,7 +8,7 @@ import { Analytics } from "@vercel/analytics/react";
 export const metadata: Metadata = {
   // ... existing metadata
   title: "DonTendero",
-  description: "La plataforma para tu tienda de barrio",
+  description: "La plataforma para tu negocio de barrio",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

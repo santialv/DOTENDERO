@@ -82,7 +82,7 @@ function OnboardingContent() {
     }, [data, step, isHydrated]);
 
     const handleNext = () => {
-        if (step === 1 && !data.storeName) return toast("Por favor escribe el nombre de tu tienda", "error");
+        if (step === 1 && !data.storeName) return toast("Por favor escribe el nombre de tu negocio", "error");
         if (step === 2 && (!data.nit || !data.city || !data.department || data.nit.length < 6)) return toast("Completa el Departamento, Ciudad y un NIT válido (mín. 6 dígitos)", "error");
         if (step === 3 && (!data.activityCode)) return toast("Selecciona tu actividad económica", "error");
         // Step 4 is Upload, optional
@@ -223,7 +223,7 @@ function OnboardingContent() {
                     const result = await verifyAndActivateSubscription(transactionId, profile.organization_id);
 
                     if (result.success) {
-                        toast("¡Pago recibido! Tu tienda está activa.", "success");
+                        toast("¡Pago recibido! Tu negocio está activo.", "success");
                         setPaymentComplete(true);
                         setStep(8); // Ensure we are on the final step
                         window.history.replaceState({}, '', window.location.pathname);
@@ -311,7 +311,7 @@ function OnboardingContent() {
 
     const handleIgnoreRecovery = () => {
         setFoundStore(null);
-        toast("Vale, crearemos una tienda nueva.", "info");
+        toast("Vale, crearemos un negocio nuevo.", "info");
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -351,10 +351,10 @@ function OnboardingContent() {
                     <span className="material-symbols-outlined text-4xl">storefront</span>
                 </div>
                 <h2 className="text-2xl font-black text-slate-900">¿Cómo se llama tu negocio?</h2>
-                <p className="text-slate-500 mt-2">Démosle una identidad a tu nueva tienda digital.</p>
+                <p className="text-slate-500 mt-2">Démosle una identidad a tu nuevo negocio digital.</p>
             </div>
             <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Nombre de la Tienda</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Nombre del Negocio</label>
                 <input
                     type="text"
                     value={data.storeName}
@@ -379,7 +379,7 @@ function OnboardingContent() {
             <div className="flex flex-col gap-4">
                 <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex gap-3 text-orange-800 text-sm mb-2 animate-in fade-in duration-500">
                     <span className="material-symbols-outlined text-orange-600 shrink-0">warning</span>
-                    <p>Ten mucho cuidado: La <strong>Razón Social</strong> y el <strong>NIT</strong> no se podrán editar después de crear la tienda.</p>
+                    <p>Ten mucho cuidado: La <strong>Razón Social</strong> y el <strong>NIT</strong> no se podrán editar después de crear el negocio.</p>
                 </div>
                 <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Razón Social / Nombre Legal</label>
@@ -468,7 +468,7 @@ function OnboardingContent() {
                         </div>
                     </div>
                     <p className="text-xs text-slate-400 mt-2 ml-1">
-                        Si tienes una tienda pequeña de barrio, usualmente es <span className="font-bold text-slate-600">No Responsable de IVA</span>.
+                        Si tienes un negocio pequeño de barrio, usualmente es <span className="font-bold text-slate-600">No Responsable de IVA</span>.
                     </p>
                 </div>
 
@@ -478,7 +478,7 @@ function OnboardingContent() {
                         type="text"
                         value={data.activityCode}
                         onChange={e => setData({ ...data, activityCode: e.target.value })}
-                        placeholder="Ej. Tienda, Panadería, Droguería..."
+                        placeholder="Ej. Autoservicio, Panadería, Droguería..."
                         className="w-full h-14 px-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-primary outline-none transition-all"
                     />
 
@@ -500,14 +500,14 @@ function OnboardingContent() {
                             ))}
                             {CIIU_ACTIVITIES.filter(c => c.name.toLowerCase().includes(data.activityCode.toLowerCase()) || c.code.includes(data.activityCode)).length === 0 && (
                                 <div className="p-4 text-sm text-slate-400 text-center italic">
-                                    No encontramos resultados. Intenta con "4711" (Tiendas).
+                                    No encontramos resultados. Intenta con "4711" (Comercio al por menor).
                                 </div>
                             )}
                         </div>
                     )}
 
                     <p className="text-xs text-slate-400 mt-2 ml-1">
-                        Escribe "Tienda", "Droguería", o el número si lo sabes.
+                        Escribe "Supermercado", "Droguería", o el número si lo sabes.
                     </p>
                 </div>
             </div>
@@ -755,7 +755,7 @@ function OnboardingContent() {
                 <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
                 <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
-            <h2 className="text-2xl font-black text-slate-900 mb-2">Creando tu Tienda...</h2>
+            <h2 className="text-2xl font-black text-slate-900 mb-2">Creando tu Negocio...</h2>
             <p className="text-slate-500 max-w-sm text-center">Nuestra IA está configurando tu base de datos y optimizando tu inventario.</p>
         </div>
     );
@@ -797,7 +797,7 @@ function OnboardingContent() {
                                 onClick={async () => {
                                     // Lógica de Reparación Just-in-Time
                                     setLoading(true);
-                                    toast("Preparando tu tienda...", "info");
+                                    toast("Preparando tu negocio...", "info");
 
                                     try {
                                         // 1. Verificar/Crear Org
@@ -806,7 +806,7 @@ function OnboardingContent() {
                                         if (!profile?.organization_id) {
                                             // Crear Org si no existe (emergencia)
                                             const { data: newOrg } = await supabase.from('organizations').insert({
-                                                name: data.storeName || "Mi Tienda Nueva",
+                                                name: data.storeName || "Mi Negocio Nuevo",
                                                 created_at: new Date().toISOString(),
                                                 nit: data.nit,
                                                 city: data.city,
@@ -833,7 +833,7 @@ function OnboardingContent() {
                                 }}
                                 className="h-14 px-10 bg-[#00E054] hover:bg-[#00c94a] text-slate-900 text-lg font-black rounded-xl transition-all shadow-xl shadow-green-500/20 hover:shadow-green-500/40 hover:-translate-y-1 active:scale-95 flex items-center gap-2 group"
                             >
-                                {data.plan === 'free' ? "Entrar a mi Tienda" : "Explorar mi Tienda ahora"}
+                                {data.plan === 'free' ? "Entrar a mi Negocio" : "Explorar mi Negocio ahora"}
                                 <span className="material-symbols-outlined font-bold group-hover:translate-x-1 transition-transform">arrow_forward</span>
                             </button>
 
@@ -869,7 +869,7 @@ function OnboardingContent() {
 
                     <h2 className="text-2xl font-black text-slate-900 mb-2">¡Hola de nuevo!</h2>
                     <p className="text-slate-500 mb-6">
-                        Hemos encontrado una tienda vinculada a tu correo: <br />
+                        Hemos encontrado un negocio vinculado a tu correo: <br />
                         <span className="font-bold text-slate-800 text-lg block mt-2">{foundStore.name}</span>
                     </p>
 
@@ -887,7 +887,7 @@ function OnboardingContent() {
                             ) : (
                                 <>
                                     <span className="material-symbols-outlined">login</span>
-                                    Entrar a mi Tienda
+                                    Entrar a mi Negocio
                                 </>
                             )}
                         </button>

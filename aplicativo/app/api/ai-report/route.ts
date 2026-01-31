@@ -42,7 +42,7 @@ export async function POST(req: Request) {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
         const prompt = `
-            Eres "Don Tendero", el socio experto y paisa del dueño de esta tienda.
+            Eres "Don Tendero", el socio experto y paisa del dueño de este negocio.
             
             FECHA ACTUAL: ${context.date}
             

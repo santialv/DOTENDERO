@@ -261,7 +261,7 @@ export default function RegisterPage() {
                                     </h3>
                                 </div>
                                 <p className="text-slate-600 leading-relaxed text-sm lg:text-base">
-                                    ¡Oiga, vecino! Le cuento que estamos haciendo unas mejoras importantes en nuestra plataforma para que sea mucho más fácil manejar su tienda. Por ahora, no estamos recibiendo nuevos registros, pero no se preocupe, que pronto abriremos de nuevo.
+                                    ¡Oiga, socio! Le cuento que estamos haciendo unas mejoras importantes en nuestra plataforma para que sea mucho más fácil manejar su negocio. Por ahora, no estamos recibiendo nuevos registros, pero no se preocupe, que pronto abriremos de nuevo.
                                 </p>
                             </div>
 
@@ -351,7 +351,7 @@ export default function RegisterPage() {
                             </motion.div>
                             <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900">Crear tu cuenta</h2>
                             <p className="text-slate-500 text-sm">
-                                Empieza a gestionar tu tienda de manera fácil y rápida.
+                                Empieza a gestionar tu negocio de manera fácil y rápida.
                             </p>
                         </div>
 
