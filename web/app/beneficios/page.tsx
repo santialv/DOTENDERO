@@ -227,6 +227,69 @@ export default function BeneficiosPage() {
                         </div>
                     </div>
                 </section>
+                {/* Professional Financial Cycle Section */}
+                <section className="w-full py-24 bg-slate-50 border-t border-slate-100">
+                    <div className="w-full max-w-[1200px] mx-auto px-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-20 items-center">
+                            <div className="reveal-on-scroll">
+                                <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-4">Servicio Profesional</h3>
+                                <h2 className="text-slate-900 text-3xl md:text-5xl font-black mb-8 leading-tight">
+                                    No solo una App, <br />un <span className="text-primary italic">aliado financiero</span>
+                                </h2>
+                                <p className="text-slate-500 text-lg leading-relaxed mb-10">
+                                    Acompañamos al tendero en el cierre de su ciclo financiero. Desde que entra el primer peso hasta que se convierte en inversión para su patrimonio.
+                                </p>
+
+                                <div className="space-y-6">
+                                    {[
+                                        { t: "Análisis Semanal", d: "Revisamos tus números y te damos consejos prácticos para mejorar." },
+                                        { t: "Conciliación de Fiados", d: "Estrategias de cobro efectivas para que tu dinero siempre vuelva." },
+                                        { t: "Plan de Crecimiento", d: "Te ayudamos a planear la expansión o mejora de tu local." }
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex gap-4">
+                                            <div className="size-6 bg-primary rounded-full flex-shrink-0 mt-1"></div>
+                                            <div>
+                                                <p className="text-slate-900 font-bold mb-1">{item.t}</p>
+                                                <p className="text-slate-500 text-sm">{item.d}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="reveal-on-scroll delay-200">
+                                <div className="bg-white p-12 rounded-[3rem] border border-slate-200 shadow-xl relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-8">
+                                        <span className="material-symbols-outlined text-primary/20 text-8xl">account_balance_wallet</span>
+                                    </div>
+                                    <h4 className="text-slate-900 font-black text-2xl mb-6">Cerramos el Ciclo</h4>
+                                    <div className="space-y-10 relative z-10">
+                                        <div className="flex gap-6 items-center">
+                                            <div className="size-14 rounded-2xl bg-slate-900 text-primary flex items-center justify-center font-black italic">V</div>
+                                            <div>
+                                                <p className="text-slate-400 text-[10px] uppercase font-bold">Paso 1</p>
+                                                <p className="text-slate-900 font-bold">Venta Inteligente</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-6 items-center">
+                                            <div className="size-14 rounded-2xl bg-slate-900 text-primary flex items-center justify-center font-black italic">G</div>
+                                            <div>
+                                                <p className="text-slate-400 text-[10px] uppercase font-bold">Paso 2</p>
+                                                <p className="text-slate-900 font-bold">Ganancia Neta Real</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-6 items-center">
+                                            <div className="size-14 rounded-2xl bg-primary text-slate-900 flex items-center justify-center font-black italic">P</div>
+                                            <div>
+                                                <p className="text-slate-400 text-[10px] uppercase font-bold">Paso 3</p>
+                                                <p className="text-slate-900 font-bold">Patrimonio Familiar</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </main>
 
             <Footer dark={false} />

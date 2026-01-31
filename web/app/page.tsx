@@ -122,6 +122,84 @@ export default function Home() {
           </section>
         </section>
 
+        {/* FINANCIAL ADVISORY SECTION - Professional Accompaniment */}
+        <section className="w-full py-32 bg-white text-slate-900 rounded-[5rem] -mt-10 relative z-10 border-b border-slate-100 reveal-on-scroll">
+          <div className="w-full max-w-[1200px] mx-auto px-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+              <div>
+                <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-4">Acompañamiento 360</h3>
+                <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-8 leading-tight tracking-tighter">
+                  Cerramos tu <span className="text-primary italic">ciclo financiero</span>
+                </h2>
+                <div className="space-y-8 text-slate-600 text-lg leading-relaxed">
+                  <p>
+                    Para nosotros, entregarte una aplicación es solo el comienzo. DonTendero es la única plataforma en Colombia que te ofrece un **acompañamiento real** en todas las etapas de tu negocio.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-12">
+                    {[
+                      { icon: "analytics", t: "Análisis Personalizado", d: "Interpretamos tus números por ti. Te decimos dónde estás ganando y dónde estás perdiendo." },
+                      { icon: "account_balance", t: "Gestión de Activos", d: "Te ayudamos a convertir tus ganancias en crecimiento real para tu tienda." },
+                      { icon: "trending_up", t: "Proyecciones de Venta", d: "Planifica tus compras con datos reales, no con presentimientos." },
+                      { icon: "shield_person", t: "Seguridad Patrimonial", d: "Asesoría para que tu negocio sea legal, sólido y rentable a largo plazo." }
+                    ].map((item, i) => (
+                      <div key={i} className="flex flex-col gap-3">
+                        <div className="size-10 rounded-xl bg-slate-900 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                          <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                        </div>
+                        <h4 className="text-slate-900 font-bold text-sm tracking-tight">{item.t}</h4>
+                        <p className="text-xs text-slate-500 leading-snug">{item.d}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="pt-8 border-t border-slate-100 font-medium text-slate-400 italic">
+                    "No eres solo un usuario; eres un socio. Nuestro éxito depende de que tu patrimonio crezca cada mes."
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="absolute -inset-10 bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
+                <div className="relative bg-slate-50 p-12 rounded-[4rem] border border-slate-200">
+                  <h4 className="text-slate-900 font-black text-2xl mb-8 flex items-center gap-3">
+                    <span className="material-symbols-outlined text-primary text-3xl">psychology_alt</span>
+                    Asesoría que transforma
+                  </h4>
+                  <div className="space-y-8">
+                    <div className="flex gap-6 items-start">
+                      <div className="size-12 rounded-full border-2 border-primary flex items-center justify-center font-black text-slate-900 flex-shrink-0 italic">1</div>
+                      <div>
+                        <p className="font-bold text-slate-900 text-lg mb-1">Diagnóstico Inicial</p>
+                        <p className="text-sm text-slate-500">Evaluamos la salud actual de tu inventario y tus deudas por cobrar.</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-6 items-start">
+                      <div className="size-12 rounded-full border-2 border-primary flex items-center justify-center font-black text-slate-900 flex-shrink-0 italic">2</div>
+                      <div>
+                        <p className="font-bold text-slate-900 text-lg mb-1">Optimización de Caja</p>
+                        <p className="text-sm text-slate-500">Implementamos estrategias para mejorar el flujo de efectivo diario.</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-6 items-start">
+                      <div className="size-12 rounded-full border-2 border-primary flex items-center justify-center font-black text-slate-900 flex-shrink-0 italic">3</div>
+                      <div>
+                        <p className="font-bold text-slate-900 text-lg mb-1">Cierre de Ciclo</p>
+                        <p className="text-sm text-slate-500">Revisión mensual de metas para asegurar que el patrimonio familiar aumentó.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-12 p-6 bg-slate-900 rounded-3xl text-center">
+                    <p className="text-primary font-bold text-sm mb-2">¿Necesitas asesoría ya?</p>
+                    <a href="https://wa.me/573107146415" className="text-white font-black text-lg hover:underline underline-offset-4 decoration-primary">Hablar con un experto →</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* DEMO / PHONE MOCKUP SECTION */}
         <section id="demo" className="w-full max-w-[1200px] px-6 py-24 flex justify-center reveal-on-scroll">
           <div className="relative w-full max-w-[900px] aspect-[16/9] rounded-[3rem] overflow-hidden border border-[#234836] bg-[#11221a]/50 backdrop-blur-3xl shadow-2xl flex flex-col md:flex-row">

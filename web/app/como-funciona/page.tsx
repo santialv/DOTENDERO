@@ -137,6 +137,40 @@ export default function ComoFuncionaPage() {
                         </div>
                     </div>
                 </section>
+                {/* Professional Advisory Section */}
+                <section className="w-full py-24 bg-slate-50 border-y border-slate-100 reveal-on-scroll">
+                    <div className="w-full max-w-[1200px] mx-auto px-6">
+                        <div className="bg-white rounded-[3rem] p-12 md:p-20 shadow-2xl flex flex-col items-center text-center">
+                            <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-6">El Toque Humano</h3>
+                            <h2 className="text-slate-900 text-3xl md:text-5xl font-black mb-10 max-w-3xl leading-tight">
+                                Cerramos tu ciclo financiero con <br /><span className="text-primary italic">asesoría personalizada</span>
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-left w-full mt-8">
+                                <div className="space-y-4">
+                                    <div className="size-12 rounded-2xl bg-slate-900 text-primary flex items-center justify-center">
+                                        <span className="material-symbols-outlined">psychology_alt</span>
+                                    </div>
+                                    <h4 className="text-slate-900 font-bold text-lg">Entendimiento</h4>
+                                    <p className="text-slate-500 text-sm leading-relaxed">No solo graficamos datos. Analizamos tu contexto real de barrio para darte consejos que sí puedas aplicar.</p>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="size-12 rounded-2xl bg-slate-900 text-primary flex items-center justify-center">
+                                        <span className="material-symbols-outlined">trending_up</span>
+                                    </div>
+                                    <h4 className="text-slate-900 font-bold text-lg">Optimización</h4>
+                                    <p className="text-slate-500 text-sm leading-relaxed">Te ayudamos a encontrar esos "pesos perdidos" y a reinvertirlos en stock que rote más rápido.</p>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="size-12 rounded-2xl bg-slate-900 text-primary flex items-center justify-center">
+                                        <span className="material-symbols-outlined">verified_user</span>
+                                    </div>
+                                    <h4 className="text-slate-900 font-bold text-lg">Sostenibilidad</h4>
+                                    <p className="text-slate-500 text-sm leading-relaxed">Nuestro objetivo es que tu negocio no solo sobreviva, sino que crezca y sea el sustento seguro de tu familia.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </main>
 
             <Footer dark={false} />
