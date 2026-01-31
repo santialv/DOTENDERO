@@ -71,22 +71,25 @@ export default function Home() {
           <section className="w-full max-w-[1200px] mt-32 px-6 py-24 bg-white/5 rounded-[4rem] border border-white/10 reveal-on-scroll">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center text-left">
               <div>
-                <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-4">Nuestra Razón de Ser</h3>
-                <h2 className="text-4xl md:text-6xl font-black text-white mb-8 leading-tight">No somos otra <br /><span className="text-primary italic">app de ventas</span></h2>
+                <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-4">Nuestra Raíz</h3>
+                <h2 className="text-4xl md:text-6xl font-black text-white mb-8 leading-tight">Venimos de abajo, <br /><span className="text-primary italic">como tú</span></h2>
                 <div className="space-y-6 text-gray-400 text-lg leading-relaxed">
                   <p>
-                    La mayoría de las aplicaciones fueron hechas por ingenieros para empresas grandes. Nosotros nacimos viendo cómo el <span className="text-white font-bold">cuaderno de fiados</span> se mojaba, se perdía o simplemente no sumaba bien.
+                    Mientras otros diseñan sistemas en oficinas de lujo para empresas gigantes, DonTendero nació en la esquina. Crecimos viendo el esfuerzo de quienes levantan la persiana antes de que salga el sol y entendemos el valor de un <span className="text-white font-bold">cuaderno de fiados</span> manchado de café.
                   </p>
                   <p>
-                    Existimos para que el tendero no sea el último en enterarse cuánto ganó al mes. Existimos para <span className="text-white font-bold">proteger tu patrimonio</span>, no para complicarte la vida con tecnología difícil.
+                    Existimos porque estamos cansados de ver al tendero ser el último en enterarse cuánto ganó. No somos una aplicación más; somos un escudo para <span className="text-white font-bold">proteger tu patrimonio</span> y el futuro de tu familia.
+                  </p>
+                  <p className="text-primary font-black italic text-2xl mt-8">
+                    "Porque en este barrio sabemos que los últimos seremos los primeros."
                   </p>
                   <div className="pt-4 flex items-center gap-4">
                     <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                      <span className="material-symbols-outlined">favorite</span>
+                      <span className="material-symbols-outlined">volunteer_activism</span>
                     </div>
                     <div>
-                      <p className="text-white font-bold text-sm">Tecnología con Corazón</p>
-                      <p className="text-xs">Diseñado para ayudar, no para extraer.</p>
+                      <p className="text-white font-bold text-sm">Tecnología con Alma</p>
+                      <p className="text-xs">Hecha por quienes saben lo que cuesta cada peso.</p>
                     </div>
                   </div>
                 </div>

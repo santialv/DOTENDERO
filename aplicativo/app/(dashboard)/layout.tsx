@@ -13,6 +13,7 @@ import { NotificationBell } from "@/components/layout/NotificationBell";
 import { DonTenderoChat } from '@/components/chat/DonTenderoChat';
 import { OnboardingTour } from "@/components/layout/OnboardingTour";
 import { ChangelogModal } from "@/components/layout/ChangelogModal";
+import { Logo } from '@/components/ui/Logo';
 
 export default function DashboardLayout({
     children,
@@ -82,8 +83,6 @@ export default function DashboardLayout({
         }
     };
 
-    // ... existing logic ...
-
     return (
         <AuthGuard>
             <ChangelogModal />
@@ -105,17 +104,7 @@ export default function DashboardLayout({
 
                     <div>
                         <div id="logo-container" className={`h-20 flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-6'} border-b border-slate-100 overflow-hidden whitespace-nowrap`}>
-                            <div className="flex items-center justify-center w-full">
-                                {isCollapsed ? (
-                                    <div className="flex items-center justify-center transition-opacity duration-300">
-                                        <img src="/icon.png" alt="Icon" className="w-[42px] h-[42px] object-contain rounded-lg shadow-sm" />
-                                    </div>
-                                ) : (
-                                    <div className="flex justify-start w-full transition-opacity duration-300 animate-in fade-in">
-                                        <img src="/logo.png" alt="DonTendero" className="h-[42px] w-auto object-contain" />
-                                    </div>
-                                )}
-                            </div>
+                            <Logo collapsed={isCollapsed} />
                         </div>
 
                         {/* Ghost Mode Exit in Sidebar */}
@@ -132,7 +121,6 @@ export default function DashboardLayout({
                         )}
 
                         <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
-                            {/* Inicio eliminado por solicitud del usuario */}
                             <NavItem href="/venta" icon="point_of_sale" label="Venta" collapsed={isCollapsed} />
                             <NavItem href="/caja" icon="payments" label="Caja" collapsed={isCollapsed} />
                             <NavItem href="/inventario" icon="inventory_2" label="Inventario" collapsed={isCollapsed} />
@@ -164,7 +152,6 @@ export default function DashboardLayout({
                     </div>
 
                     <div id="profile-section" className="p-3 border-t border-slate-100">
-                        {/* User Profile Info (Moved from Header) */}
                         <div className={`flex items-center gap-3 mb-3 px-2 rounded-xl bg-slate-50 py-2 border border-slate-100 ${isCollapsed ? 'justify-center p-0 w-full aspect-square mb-2' : ''}`}>
                             {businessInfo?.logoUrl ? (
                                 <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 shrink-0 bg-white">
@@ -197,17 +184,11 @@ export default function DashboardLayout({
                     </div>
                 </aside>
 
-                {/* Main Content */}
                 <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
                     {/* Header - Mobile Only */}
                     <header className="md:hidden h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-10">
                         <div className="flex items-center gap-3">
-                            {/* Logo for Mobile */}
-                            {businessInfo?.logoUrl ? (
-                                <img src={businessInfo.logoUrl} alt={businessInfo.name} className="h-8 w-8 rounded-lg object-cover border border-slate-100" />
-                            ) : (
-                                <img src="/icon.png" alt="DonTendero" className="h-8 w-8 object-contain rounded-md" />
-                            )}
+                            <Logo showText={false} className="scale-75 origin-left" />
                             <span className="font-bold text-slate-800 text-sm truncate max-w-[150px]">
                                 {businessInfo?.name || 'DonTendero'}
                             </span>
@@ -220,17 +201,14 @@ export default function DashboardLayout({
                         </div>
                     </header>
 
-                    {/* Page Content */}
                     <main className="flex-1 flex flex-col overflow-y-auto bg-slate-50/50 pb-24 md:pb-0">
                         <div className="flex-1 w-full h-full relative flex flex-col">
                             {children}
                         </div>
                     </main>
 
-                    {/* Mobile Navigation (Fixed Bottom) */}
                     <MobileNav />
 
-                    {/* Bot de Soporte Global */}
                     <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50">
                         <DonTenderoChat />
                     </div>

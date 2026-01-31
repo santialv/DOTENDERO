@@ -101,8 +101,8 @@ export default function PlanesPage() {
                                     <div
                                         key={plan.id}
                                         className={`p-10 rounded-[3rem] flex flex-col transition-all duration-500 relative ${plan.id === 'pro'
-                                                ? 'bg-slate-900 text-white shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] md:-translate-y-8 z-10'
-                                                : 'bg-slate-50 border border-slate-100'
+                                            ? 'bg-slate-900 text-white shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] md:-translate-y-8 z-10'
+                                            : 'bg-slate-50 border border-slate-100'
                                             }`}
                                     >
                                         {plan.id === 'pro' && (
@@ -146,8 +146,8 @@ export default function PlanesPage() {
                                         <a
                                             href="https://dontendero.com/register"
                                             className={`w-full py-5 text-center rounded-2xl font-black transition-all ${plan.id === 'pro'
-                                                    ? 'bg-primary text-background-dark shadow-xl shadow-primary/20 hover:scale-[1.02]'
-                                                    : 'bg-slate-900 text-white hover:bg-slate-800'
+                                                ? 'bg-primary text-background-dark shadow-xl shadow-primary/20 hover:scale-[1.02]'
+                                                : 'bg-slate-900 text-white hover:bg-slate-800'
                                                 }`}
                                         >
                                             {plan.price === 0 ? 'Empezar Gratis' : 'Elegir Plan'}
@@ -194,6 +194,46 @@ export default function PlanesPage() {
                                     <p className="text-slate-500 text-sm leading-relaxed">{faq.a}</p>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Emotional Purpose Section - Minimal Light Version */}
+                <section className="w-full py-32 bg-white">
+                    <div className="w-full max-w-[1200px] mx-auto px-6">
+                        <div className="flex flex-col md:flex-row gap-16 items-center">
+                            <div className="flex-1 reveal-on-scroll">
+                                <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-6">Nuestra Motivación</h3>
+                                <h2 className="text-slate-900 text-4xl md:text-6xl font-black mb-8 leading-tight">
+                                    No estamos aquí para <br /><span className="text-primary italic">sacarte plata</span>
+                                </h2>
+                                <p className="text-slate-500 text-lg leading-relaxed mb-8">
+                                    Creamos DonTendero porque sabemos que el sistema financiero muchas veces ignora al pequeño. Nosotros no. Tu pago no es un gasto, es el motor que nos permite seguir construyendo herramientas que te devuelven el control de tu vida.
+                                </p>
+                                <div className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 italic text-slate-700 font-medium text-lg relative">
+                                    <span className="material-symbols-outlined absolute -top-4 -left-4 size-10 bg-primary rounded-full flex items-center justify-center text-slate-900 text-xl font-black">format_quote</span>
+                                    "Trabajamos para que el tendero, el que siempre ha estado abajo, hoy tenga la tecnología del más grande. Porque los últimos seremos los primeros."
+                                </div>
+                            </div>
+                            <div className="w-full md:w-[400px] grid grid-cols-2 gap-4 reveal-on-scroll delay-200">
+                                <div className="aspect-square bg-slate-900 rounded-[2rem] flex flex-col items-center justify-center text-white p-6 text-center">
+                                    <span className="material-symbols-outlined text-primary text-3xl mb-3">shield_heart</span>
+                                    <p className="text-xs font-bold uppercase tracking-tighter">Protección Social</p>
+                                </div>
+                                <div className="aspect-square bg-primary rounded-[2rem] flex flex-col items-center justify-center text-slate-900 p-6 text-center">
+                                    <span className="material-symbols-outlined text-3xl mb-3">groups</span>
+                                    <p className="text-xs font-black uppercase tracking-tighter">Comunidad Real</p>
+                                </div>
+                                <div className="col-span-2 h-32 bg-slate-100 rounded-[2rem] flex items-center justify-center gap-4 px-8 overflow-hidden relative">
+                                    <div className="relative z-10 flex items-center gap-4">
+                                        <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                            <span className="material-symbols-outlined text-primary">verified</span>
+                                        </div>
+                                        <p className="text-slate-900 font-black text-sm uppercase tracking-widest">Hecho con ❤️ en Colombia</p>
+                                    </div>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>

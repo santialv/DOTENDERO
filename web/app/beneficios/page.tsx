@@ -174,6 +174,59 @@ export default function BeneficiosPage() {
                         </div>
                     </div>
                 </section>
+
+                {/* Emotional Purpose Section - Light Version */}
+                <section className="w-full py-32 overflow-hidden">
+                    <div className="w-full max-w-[1200px] mx-auto px-6">
+                        <div className="bg-slate-900 rounded-[4rem] p-12 md:p-20 relative overflow-hidden reveal-on-scroll">
+                            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                                <div>
+                                    <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-6">Nuestra Raíz</h3>
+                                    <h2 className="text-white text-4xl md:text-6xl font-black mb-10 leading-none">
+                                        Entendemos el barrio porque <span className="text-primary italic">venimos de él</span>
+                                    </h2>
+                                    <div className="space-y-6 text-slate-400 text-lg leading-relaxed">
+                                        <p>
+                                            DonTendero no nació en un laboratorio de Silicon Valley. Nació viendo cómo mi abuelo tachaba deudas en un cuaderno que apenas se entendía.
+                                        </p>
+                                        <p>
+                                            Sabemos que cada peso cuenta y que el éxito no se mide en reportes corporativos, sino en <span className="text-white font-bold">la tranquilidad de tu familia</span> al final del día.
+                                        </p>
+                                        <p className="text-primary font-black italic text-2xl mt-8 leading-tight">
+                                            "Estamos aquí para que los últimos, los que siempre han trabajado más duro, finalmente seamos los primeros."
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="hidden lg:block relative">
+                                    <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full"></div>
+                                    <div className="relative border border-white/10 p-10 rounded-[3rem] bg-white/5 backdrop-blur-sm">
+                                        <h4 className="text-white font-bold text-xl mb-8 flex items-center gap-3">
+                                            <span className="material-symbols-outlined text-primary">auto_awesome</span>
+                                            Por qué confiar en nosotros
+                                        </h4>
+                                        <div className="space-y-8">
+                                            {[
+                                                { t: "Foco en el Fiado", d: "Digitalizamos el corazón de tu negocio sin quitarle la humanidad." },
+                                                { t: "Hecho para tenderos", d: "Si sabes usar una calculadora, ya eres un experto en DonTendero." },
+                                                { t: "Tu dinero es sagrado", d: "Cada función está diseñada para evitar que un solo peso se escape." }
+                                            ].map((item, i) => (
+                                                <div key={i} className="flex gap-5">
+                                                    <div className="size-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-sm text-slate-900 font-black">{i + 1}</div>
+                                                    <div>
+                                                        <p className="text-white font-bold mb-1">{item.t}</p>
+                                                        <p className="text-sm text-slate-500 leading-relaxed">{item.d}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Decorative background circle */}
+                            <div className="absolute -right-20 -bottom-20 size-96 bg-primary/10 rounded-full blur-[120px]"></div>
+                        </div>
+                    </div>
+                </section>
             </main>
 
             <Footer dark={false} />

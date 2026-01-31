@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { useToast } from "@/components/ui/toast";
 import { motion } from 'framer-motion';
 import { Store, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -202,8 +203,8 @@ export default function LoginPage() {
                             transition={{ delay: 0.3, duration: 0.6 }}
                             className="mb-8"
                         >
-                            <div className="mb-4 flex size-12 items-center justify-center rounded-lg bg-primary/20 backdrop-blur-sm">
-                                <Store className="w-8 h-8 text-primary" />
+                            <div className="mb-4">
+                                <Logo dark={true} showText={false} className="scale-125 origin-left" />
                             </div>
                             <h2 className="text-3xl font-bold leading-tight tracking-tight text-white mb-2">Tu aliado en el crecimiento</h2>
                             <p className="text-lg text-gray-300 max-w-md">Gestiona tu inventario, ventas y fiados en un solo lugar. DonTendero hace que tu negocio prospere.</p>
@@ -239,7 +240,7 @@ export default function LoginPage() {
                                 transition={{ delay: 0.2, duration: 0.5 }}
                                 className="flex items-center gap-3 mb-2"
                             >
-                                <img src="/logo.png" alt="DonTendero POS" className="h-[60px] w-auto object-contain" />
+                                <Logo />
                             </motion.div>
                             <div>
                                 <h1 className="text-3xl font-bold tracking-tight text-text-main">Bienvenido de nuevo</h1>

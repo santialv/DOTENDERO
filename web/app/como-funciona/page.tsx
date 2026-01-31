@@ -109,6 +109,34 @@ export default function ComoFuncionaPage() {
                         </div>
                     </div>
                 </section>
+
+                {/* Emotional Purpose Section - Light Version */}
+                <section className="w-full py-32 bg-white">
+                    <div className="w-full max-w-[1000px] mx-auto px-6 text-center reveal-on-scroll">
+                        <div className="inline-flex size-16 rounded-3xl bg-primary/20 items-center justify-center text-primary mb-10">
+                            <span className="material-symbols-outlined text-4xl">handshake</span>
+                        </div>
+                        <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-6">Nuestra Alianza contigo</h3>
+                        <h2 className="text-slate-900 text-3xl md:text-5xl font-black mb-8 leading-tight">
+                            Hacerlo fácil no es un lujo, <br /><span className="text-primary italic">es un acto de respeto</span>
+                        </h2>
+                        <div className="max-w-3xl mx-auto space-y-8 text-slate-500 text-xl leading-relaxed">
+                            <p>
+                                Sabemos que tu tiempo es lo más valioso que tienes. Por eso, DonTendero no tiene manuales aburridos ni cursos complicados. Si sabes usar el celular para llamar a tu familia, ya sabes usar nuestra app.
+                            </p>
+                            <div className="h-px w-24 bg-primary mx-auto"></div>
+                            <p className="font-medium text-slate-800 italic">
+                                "Venimos de abajo y sabemos que para salir adelante no necesitas más trabajo, necesitas herramientas que trabajen por ti. Porque los últimos seremos los primeros."
+                            </p>
+                        </div>
+                        <div className="mt-16">
+                            <a href="https://dontendero.com/register" className="inline-flex items-center gap-3 px-10 py-5 bg-slate-900 text-white rounded-2xl font-black hover:bg-primary hover:text-slate-900 transition-all group">
+                                Crear mi cuenta ahora
+                                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                            </a>
+                        </div>
+                    </div>
+                </section>
             </main>
 
             <Footer dark={false} />
