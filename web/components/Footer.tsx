@@ -27,6 +27,7 @@ export function Footer({ dark = true }: FooterProps) {
                         <ul className="space-y-4">
                             <li><Link href="/beneficios" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm transition-colors`}>Beneficios</Link></li>
                             <li><Link href="/asesoria" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm transition-colors`}>Asesoría Financiera</Link></li>
+                            <li><Link href="/historia" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm transition-colors`}>Historia</Link></li>
                             <li><Link href="/planes" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm transition-colors`}>Planes y Precios</Link></li>
                             <li><a href="https://dontendero.com/register" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm transition-colors`}>Crear Cuenta</a></li>
                         </ul>
