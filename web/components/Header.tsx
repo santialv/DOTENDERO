@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface HeaderProps {
     dark?: boolean;
@@ -8,6 +9,16 @@ interface HeaderProps {
 
 export function Header({ dark = true }: HeaderProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const pathname = usePathname();
+
+    const navLinks = [
+        { name: "Inicio", href: "/" },
+        { name: "Beneficios", href: "/beneficios" },
+        { name: "Cómo funciona", href: "/como-funciona" },
+        { name: "Asesoría", href: "/asesoria" },
+        { name: "Historia", href: "/historia" },
+        { name: "Planes", href: "/planes" },
+    ];
 
     return (
         <header className={`w-full h-20 flex items-center justify-center fixed top-0 z-[100] transition-all ${dark ? 'bg-[#102219]/80 backdrop-blur-md border-b border-[#234836]' : 'bg-white/80 backdrop-blur-md border-b border-gray-100'}`}>
@@ -20,12 +31,25 @@ export function Header({ dark = true }: HeaderProps) {
                 </Link>
 
                 {/* Desktop Nav */}
-                <nav className="hidden lg:flex items-center gap-8 mx-8">
-                    <Link href="/beneficios" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm font-medium transition-colors`}>Beneficios</Link>
-                    <Link href="/como-funciona" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm font-medium transition-colors`}>Cómo funciona</Link>
-                    <Link href="/asesoria" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm font-medium transition-colors`}>Asesoría</Link>
-                    <Link href="/historia" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm font-medium transition-colors`}>Historia</Link>
-                    <Link href="/planes" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm font-medium transition-colors`}>Planes</Link>
+                <nav className="hidden lg:flex items-center gap-6 mx-8">
+                    {navLinks.map((link) => {
+                        const isActive = pathname === link.href;
+                        return (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className={`text-sm font-bold transition-all relative py-1 px-2 rounded-lg ${isActive
+                                        ? (dark ? 'text-primary bg-primary/10' : 'text-primary bg-primary/5')
+                                        : (dark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-slate-900')
+                                    }`}
+                            >
+                                {link.name}
+                                {isActive && (
+                                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></span>
+                                )}
+                            </Link>
+                        );
+                    })}
                 </nav>
 
                 <div className="flex gap-3">
