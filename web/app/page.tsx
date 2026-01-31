@@ -49,6 +49,7 @@ export default function Home() {
           </h1>
 
           <p className="text-gray-400 text-lg md:text-2xl font-medium leading-relaxed max-w-[700px] mb-12 reveal-on-scroll delay-100">
+            <span className="text-white font-black block mb-2 text-primary">Somos como tu contador personal y asistente inteligente.</span>
             Digitaliza tu negocio. Gestiona inventario, fiados y ganancias desde tu celular con la tecnología más avanzada del mercado.
           </p>
 

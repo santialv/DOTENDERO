@@ -271,11 +271,12 @@ export default function HistoriaPage() {
 
                 <MusicPlayer />
 
-                <section className="h-screen flex items-center justify-center text-center px-6">
+                {/* FINAL CALL TO ACTION - Removed white background section to avoid gaps */}
+                <section className="pb-32 bg-slate-900 flex items-center justify-center text-center px-6 relative z-10">
                     <div className="max-w-4xl reveal-on-scroll">
-                        <h2 className="text-5xl md:text-8xl font-black text-slate-900 mb-8 leading-none">Tu historia <br /> sigue aquí.</h2>
-                        <p className="text-2xl text-slate-400 mb-12">Desde el primer trueque hasta hoy, el comercio es el motor de tu vida. Hagámoslo durar para siempre.</p>
-                        <a href="/planes" className="py-6 px-12 bg-slate-900 text-white rounded-2xl text-2xl font-black hover:scale-105 transition-transform inline-block">Ver mi futuro</a>
+                        <h2 className="text-5xl md:text-8xl font-black text-white mb-8 leading-none">Tu historia <br /> sigue aquí.</h2>
+                        <p className="text-2xl text-slate-400 mb-12">No dejes que tu historia se quede en el papel. Hagamos tu negocio eterno.</p>
+                        <a href="/planes" className="py-6 px-12 bg-primary text-slate-900 rounded-2xl text-2xl font-black hover:scale-105 transition-transform inline-block">Ver mi futuro</a>
                     </div>
                 </section>
             </main>

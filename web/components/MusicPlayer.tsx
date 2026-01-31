@@ -37,7 +37,7 @@ export function MusicPlayer() {
     }, []);
 
     return (
-        <section className="py-32 flex flex-col items-center justify-center bg-slate-900 overflow-hidden relative">
+        <section className="py-16 flex flex-col items-center justify-center bg-slate-900 overflow-hidden relative">
             <div className="absolute inset-0 bg-primary/5 blur-[120px] rounded-full transform -translate-y-1/2"></div>
 
             <div className="reveal-on-scroll text-center mb-16 z-10">

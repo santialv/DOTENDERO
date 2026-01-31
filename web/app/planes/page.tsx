@@ -17,6 +17,12 @@ export default function PlanesPage() {
     const [loadingPlans, setLoadingPlans] = useState(true);
     const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly');
 
+    const DEFAULT_PLANS: Plan[] = [
+        { id: 'free', name: 'Plan Gratuito', price: 0, description: 'Ideal para quienes están empezando y quieren digitalizar su negocio sin costo.', features: ["Ventas ilimitadas", "Inventario básico", "Gestión de fiados básica", "Sin costo mensual"] },
+        { id: 'pro', name: 'Plan Pro', price: 50000, description: 'La mejor opción para negocios en crecimiento que necesitan control total.', features: ["Todo lo del Gratuito", "Facturación Electrónica", "Reportes de ganancias", "Soporte prioritario 24/7"] },
+        { id: 'premium', name: 'Plan Premium', price: 90000, description: 'Para empresarios con múltiples sedes o grandes volúmenes de venta.', features: ["Todo lo del Pro", "Multi-Bodega / Multi-Sede", "Asesoría financiera mensual", "Personalización de reportes"] }
+    ];
+
     useEffect(() => {
         async function fetchPlans() {
             try {
@@ -26,14 +32,18 @@ export default function PlanesPage() {
                     .eq('active', true)
                     .order('price', { ascending: true });
 
-                if (data && !error) {
+                if (data && data.length > 0 && !error) {
                     setPlans(data.map(p => ({
                         ...p,
                         features: Array.isArray(p.features) ? p.features : JSON.parse(p.features || '[]')
                     })));
+                } else {
+                    // Fallback to default plans if database is empty or error
+                    setPlans(DEFAULT_PLANS);
                 }
             } catch (err) {
                 console.error("Error fetching plans:", err);
+                setPlans(DEFAULT_PLANS);
             } finally {
                 setLoadingPlans(false);
             }
