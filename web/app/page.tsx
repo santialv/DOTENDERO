@@ -70,8 +70,8 @@ export default function Home() {
         <header className="w-full flex justify-center sticky top-0 z-50 backdrop-blur-md bg-background-dark/80 border-b border-[#234836]">
           <div className="w-full max-w-[1200px] px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3 text-white cursor-pointer select-none">
-              <div className="size-8 text-primary">
-                <span className="material-symbols-outlined text-3xl">storefront</span>
+              <div className="size-10 flex items-center justify-center">
+                <img src="/icon.png" alt="DonTendero Icon" className="w-full h-full object-contain rounded-lg" />
               </div>
               <h2 className="text-white text-xl font-bold tracking-tight">DonTendero</h2>
             </div>
@@ -95,7 +95,7 @@ export default function Home() {
                 <span className="truncate">Descargar App</span>
               </button>
               <a
-                href="https://www.dontendero.com/login"
+                href="https://dontendero.com/login"
                 className="flex items-center justify-center overflow-hidden rounded-full h-10 px-4 sm:px-6 bg-[#234836] text-white text-xs sm:text-sm font-bold border border-[#234836] hover:bg-[#1e3d2f] transition-colors"
               >
                 <span className="truncate">Ingresar</span>
@@ -125,7 +125,7 @@ export default function Home() {
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-[#234836] rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-500"></div>
               <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
                 <a
-                  href="https://www.dontendero.com/register"
+                  href="https://dontendero.com/register"
                   className="flex items-center justify-center rounded-lg h-14 px-8 bg-primary hover:bg-[#0fd672] text-[#11221a] text-lg font-bold transition-all transform active:scale-95 shadow-[0_0_20px_rgba(19,236,128,0.3)] hover:shadow-[0_0_30px_rgba(19,236,128,0.5)] whitespace-nowrap w-full sm:w-auto"
                 >
                   <span>Comenzar Gratis</span>
@@ -591,8 +591,8 @@ export default function Home() {
             ></div>
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1/2 bg-primary/5 blur-[100px] rounded-full pointer-events-none"></div>
             <div className="relative z-10 w-full max-w-[800px] mx-auto px-6 flex flex-col items-center text-center">
-              <div className="mb-6 inline-flex items-center justify-center size-12 rounded-xl bg-[#193326] border border-[#234836] shadow-lg">
-                <span className="material-symbols-outlined text-primary text-2xl">flag</span>
+              <div className="mb-6 inline-flex items-center justify-center size-14 rounded-2xl bg-[#193326] border border-[#234836] shadow-xl overflow-hidden p-2">
+                <img src="/icon.png" alt="DonTendero Icon" className="w-full h-full object-contain" />
               </div>
               <h2 className="text-2xl md:text-4xl font-bold text-white mb-8 tracking-tight">Nuestra Misión</h2>
               <div className="space-y-6 text-lg md:text-xl text-[#92c9ad] font-light leading-relaxed">
@@ -602,7 +602,7 @@ export default function Home() {
                 </p>
                 <p>
                   Creamos esta plataforma para <span className="text-white font-medium">nivelar la cancha</span>, dándote
-                  la misma tecnología de los supermercados pero fácil de usar.
+                  la misma tecnología de las grandes superficies pero fácil de usar.
                 </p>
                 <p>
                   Para que tengas el control total, cumplas con la ley sin miedo y{" "}

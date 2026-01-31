@@ -144,6 +144,15 @@ export default function DashboardLayout({
 
                             <NavItem href="/asesoria" icon="support_agent" label="Asesoría Financiera" collapsed={isCollapsed} />
                             <NavItem href="/configuracion" icon="settings" label="Configuración" collapsed={isCollapsed} />
+                            <a
+                                href="https://somos.dontendero.com"
+                                target="_blank"
+                                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 ${isCollapsed ? 'justify-center' : ''}`}
+                                title={isCollapsed ? "Conoce más" : ""}
+                            >
+                                <span className="material-symbols-outlined transition-colors">info</span>
+                                {!isCollapsed && <span className="whitespace-nowrap">Conoce más</span>}
+                            </a>
 
                             {userRole === 'super_admin' && (
                                 <>
