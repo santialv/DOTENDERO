@@ -23,6 +23,7 @@ export function Header({ dark = true }: HeaderProps) {
                 <nav className="hidden lg:flex items-center gap-8 mx-8">
                     <Link href="/beneficios" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm font-medium transition-colors`}>Beneficios</Link>
                     <Link href="/como-funciona" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm font-medium transition-colors`}>Cómo funciona</Link>
+                    <Link href="/asesoria" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm font-medium transition-colors`}>Asesoría</Link>
                     <Link href="/planes" className={`${dark ? 'text-gray-400 hover:text-primary' : 'text-gray-500 hover:text-primary'} text-sm font-medium transition-colors`}>Planes</Link>
                 </nav>
 

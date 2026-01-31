@@ -192,7 +192,10 @@ export default function Home() {
 
                   <div className="mt-12 p-6 bg-slate-900 rounded-3xl text-center">
                     <p className="text-primary font-bold text-sm mb-2">¿Necesitas asesoría ya?</p>
-                    <a href="https://wa.me/573107146415" className="text-white font-black text-lg hover:underline underline-offset-4 decoration-primary">Hablar con un experto →</a>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                      <a href="https://wa.me/573107146415" className="text-white font-black text-lg hover:underline underline-offset-4 decoration-primary">Hablar con un experto →</a>
+                      <Link href="/asesoria" className="text-slate-400 font-bold text-sm hover:text-white transition-colors">Ver detalles de asesoría</Link>
+                    </div>
                   </div>
                 </div>
               </div>
