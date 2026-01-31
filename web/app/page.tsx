@@ -67,16 +67,56 @@ export default function Home() {
             </a>
           </div>
 
-          {/* Trust Bar */}
-          <div className="w-full max-w-[900px] mt-24 pt-10 border-t border-[#234836]/30 reveal-on-scroll delay-300">
-            <p className="text-gray-500 text-[10px] uppercase font-bold tracking-[0.3em] mb-10">Compatible con tus aliados de confianza</p>
-            <div className="flex flex-wrap justify-center items-center gap-12 md:gap-20 opacity-30 grayscale hover:grayscale-0 transition-all duration-1000">
-              <span className="text-white font-black text-2xl italic tracking-tighter">wompi</span>
-              <span className="text-white font-black text-2xl italic tracking-tighter">Nequi</span>
-              <span className="text-white font-black text-2xl italic tracking-tighter">Daviplata</span>
-              <span className="text-white font-black text-2xl italic tracking-tighter">Bancolombia</span>
+          {/* PURPOSE SECTION: Why we are different */}
+          <section className="w-full max-w-[1200px] mt-32 px-6 py-24 bg-white/5 rounded-[4rem] border border-white/10 reveal-on-scroll">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center text-left">
+              <div>
+                <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-4">Nuestra Razón de Ser</h3>
+                <h2 className="text-4xl md:text-6xl font-black text-white mb-8 leading-tight">No somos otra <br /><span className="text-primary italic">app de ventas</span></h2>
+                <div className="space-y-6 text-gray-400 text-lg leading-relaxed">
+                  <p>
+                    La mayoría de las aplicaciones fueron hechas por ingenieros para empresas grandes. Nosotros nacimos viendo cómo el <span className="text-white font-bold">cuaderno de fiados</span> se mojaba, se perdía o simplemente no sumaba bien.
+                  </p>
+                  <p>
+                    Existimos para que el tendero no sea el último en enterarse cuánto ganó al mes. Existimos para <span className="text-white font-bold">proteger tu patrimonio</span>, no para complicarte la vida con tecnología difícil.
+                  </p>
+                  <div className="pt-4 flex items-center gap-4">
+                    <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                      <span className="material-symbols-outlined">favorite</span>
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">Tecnología con Corazón</p>
+                      <p className="text-xs">Diseñado para ayudar, no para extraer.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="relative group">
+                <div className="absolute -inset-4 bg-primary/10 rounded-[3rem] blur-2xl group-hover:bg-primary/20 transition-all"></div>
+                <div className="relative bg-[#193326] p-8 rounded-[3rem] border border-primary/20 shadow-2xl">
+                  <h4 className="text-white font-bold text-xl mb-6 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">psychology</span>
+                    Lo que nos hace diferentes:
+                  </h4>
+                  <ul className="space-y-6">
+                    {[
+                      { t: "Foco en el Fiado", d: "Sabemos que el fiado es el corazón del barrio. Lo digitalizamos con respeto." },
+                      { t: "Cero Curva de Aprendizaje", d: "Si sabes mandar un audio de WhatsApp, ya sabes usar DonTendero." },
+                      { t: "Caja que se Paga Sola", d: "Nuestro objetivo es que recuperes más de lo que pagas en suscripción." }
+                    ].map((item, i) => (
+                      <li key={i} className="flex gap-4">
+                        <div className="size-6 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-[10px] text-background-dark font-black">{i + 1}</div>
+                        <div>
+                          <p className="text-white font-bold text-sm">{item.t}</p>
+                          <p className="text-xs text-gray-500">{item.d}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
         </section>
 
         {/* DEMO / PHONE MOCKUP SECTION */}

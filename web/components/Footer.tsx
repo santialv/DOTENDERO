@@ -42,7 +42,7 @@ export function Footer({ dark = true }: FooterProps) {
 
                 <div className={`pt-8 border-t ${dark ? 'border-[#234836]' : 'border-gray-200'} flex flex-col md:flex-row items-center justify-between gap-4`}>
                     <p className="text-gray-500 text-xs">
-                        © 2025 DonTendero. Hecho con <span className="text-red-500">❤</span> para Colombia.
+                        © 2026 DonTendero. Hecho con <span className="text-red-500">❤</span> para Colombia.
                     </p>
                     <div className="flex gap-6">
                         <a href="#" className="text-gray-500 hover:text-primary transition-colors text-xs uppercase font-bold tracking-widest">Privacidad</a>
