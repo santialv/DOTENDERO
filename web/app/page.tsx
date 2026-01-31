@@ -53,6 +53,29 @@ export default function Home() {
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly');
 
+  // ROI Calculator State
+  const [dailySales, setDailySales] = useState(300000);
+  const [errorRate, setErrorRate] = useState(3);
+  const monthlySavings = useMemo(() => {
+    return (dailySales * 30) * (errorRate / 100);
+  }, [dailySales, errorRate]);
+
+  useEffect(() => {
+    // Scroll reveal animation observer
+    const observerOptions = { threshold: 0.1 };
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('reveal-visible');
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [loadingPlans]); // Re-run when plans load to catch new elements
+
   useEffect(() => {
     async function fetchPlans() {
       try {
@@ -172,7 +195,7 @@ export default function Home() {
               Deja de perder plata en tu tienda. Gestiona inventario, fiados y ganancias desde tu celular. Únete a
               la revolución de los tenderos.
             </h2>
-            <div className="w-full max-w-[520px] mb-6 relative group">
+            <div className="w-full max-w-[520px] mb-12 relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-[#234836] rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-500"></div>
               <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
                 <a
@@ -181,6 +204,17 @@ export default function Home() {
                 >
                   <span>Comenzar Gratis</span>
                 </a>
+              </div>
+            </div>
+
+            {/* Trust Bar / Logos */}
+            <div className="w-full max-w-[900px] mt-8 pt-8 border-t border-[#234836]/30 reveal-on-scroll">
+              <p className="text-gray-500 text-[10px] uppercase font-bold tracking-[0.2em] mb-8">Compatible con tus aliados de siempre</p>
+              <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
+                <span className="text-white font-black text-xl italic tracking-tighter">wompi</span>
+                <span className="text-white font-black text-xl italic tracking-tighter">Nequi</span>
+                <span className="text-white font-black text-xl italic tracking-tighter">Daviplata</span>
+                <span className="text-white font-black text-xl italic tracking-tighter">Bancolombia</span>
               </div>
             </div>
           </section>
@@ -669,57 +703,109 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Features / Problema vs Solución */}
-          <section className="w-full bg-[#0d1a14] border-t border-[#234836]">
-            <div className="w-full max-w-[1000px] mx-auto px-6 py-20">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
-                <div className="max-w-[600px]">
-                  <h3 className="text-primary font-bold tracking-widest uppercase text-sm mb-2">
-                    Problema vs Solución
-                  </h3>
-                  <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight">
-                    Olvídate del cuaderno y los errores de cálculo.
-                  </h2>
-                </div>
-                <p className="text-gray-400 max-w-[300px] text-sm md:text-right">
-                  Diseñado específicamente para las necesidades del tendero colombiano moderno.
-                </p>
+          {/* Bento Grid Features */}
+          <section id="beneficios" className="w-full bg-[#11221a] py-24 relative">
+            <div className="w-full max-w-[1200px] mx-auto px-6">
+              <div className="mb-20 reveal-on-scroll">
+                <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-3">Tu Ventaja Competitiva</h3>
+                <h2 className="text-white text-3xl md:text-5xl font-black max-w-[600px] tracking-tight">Todo lo que necesitas para dominar tu barrio</h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="group p-6 rounded-2xl bg-[#193326] border border-[#234836] hover:border-primary/50 transition duration-300 hover:-translate-y-1">
-                  <div className="size-12 rounded-xl bg-[#11221a] flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                    <span className="material-symbols-outlined text-white group-hover:text-primary transition-colors text-2xl">
-                      edit_off
-                    </span>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                {/* Big Tile: Inventory */}
+                <div className="md:col-span-8 p-10 rounded-[2.5rem] bg-gradient-to-br from-[#193326] to-[#11221a] border border-[#234836] relative overflow-hidden group reveal-on-scroll">
+                  <div className="relative z-10 max-w-[340px]">
+                    <span className="material-symbols-outlined text-primary text-4xl mb-6">inventory_2</span>
+                    <h3 className="text-2xl font-bold text-white mb-4">Inventario Inteligente</h3>
+                    <p className="text-[#92c9ad] leading-relaxed">DonTendero analiza tus ventas y te avisa qué comprar antes de que se agote. No más "no hay" para tus clientes.</p>
                   </div>
-                  <h3 className="text-white text-xl font-bold mb-3">No más cuentas en cuaderno</h3>
-                  <p className="text-[#92c9ad] leading-relaxed text-sm">
-                    El papel se pierde, se moja y se rompe. Tu información estará segura en la nube y accesible
-                    siempre.
-                  </p>
+                  <div className="absolute right-[-10%] bottom-[-10%] w-[60%] aspect-square bg-primary/10 rounded-full blur-[80px] group-hover:bg-primary/20 transition-all"></div>
+                  {/* Floating UI Elements abstraction */}
+                  <div className="absolute right-10 bottom-10 hidden lg:block transform group-hover:translate-y-[-10px] transition-transform duration-700">
+                    <div className="bg-[#11221a] border border-primary/20 p-4 rounded-2xl shadow-2xl">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 rounded-full bg-orange-400/20 flex items-center justify-center text-orange-400">!</div>
+                        <div>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase">Stock Bajo</p>
+                          <p className="text-xs text-white font-bold">Arroz Diana 500g</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="group p-6 rounded-2xl bg-[#193326] border border-[#234836] hover:border-primary/50 transition duration-300 hover:-translate-y-1">
-                  <div className="size-12 rounded-xl bg-[#11221a] flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                    <span className="material-symbols-outlined text-white group-hover:text-primary transition-colors text-2xl">
-                      verified_user
-                    </span>
-                  </div>
-                  <h3 className="text-white text-xl font-bold mb-3">Control total de fiados</h3>
-                  <p className="text-[#92c9ad] leading-relaxed text-sm">
-                    Nunca más olvides quién te debe plata. Envía recordatorios de cobro automáticos por WhatsApp.
-                  </p>
+
+                {/* Medium Tile: Fiados */}
+                <div className="md:col-span-4 p-10 rounded-[2.5rem] bg-[#193326] border border-[#234836] hover:border-primary/40 transition-all reveal-on-scroll delay-100">
+                  <span className="material-symbols-outlined text-orange-400 text-4xl mb-6">menu_book</span>
+                  <h3 className="text-2xl font-bold text-white mb-4">Libro de Fiados Digital</h3>
+                  <p className="text-[#92c9ad] leading-relaxed text-sm">Cobra con un click por WhatsApp. El sistema le envía el resumen de deuda a tu cliente automáticamente.</p>
                 </div>
-                <div className="group p-6 rounded-2xl bg-[#193326] border border-[#234836] hover:border-primary/50 transition duration-300 hover:-translate-y-1">
-                  <div className="size-12 rounded-xl bg-[#11221a] flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                    <span className="material-symbols-outlined text-white group-hover:text-primary transition-colors text-2xl">
-                      inventory_2
-                    </span>
+
+                {/* Smaller Tiles */}
+                <div className="md:col-span-4 p-8 rounded-[2.5rem] bg-stone-900 border border-white/5 reveal-on-scroll delay-200">
+                  <span className="material-symbols-outlined text-white text-3xl mb-4">wifi_off</span>
+                  <h4 className="text-lg font-bold text-white mb-2">Modo Offline</h4>
+                  <p className="text-gray-400 text-sm">¿Se fue el internet? Sigue vendiendo. El sistema sincroniza todo cuando vuelva la señal.</p>
+                </div>
+
+                <div className="md:col-span-4 p-8 rounded-[2.5rem] bg-[#193326] border border-[#234836] reveal-on-scroll delay-300">
+                  <span className="material-symbols-outlined text-primary text-3xl mb-4">payments</span>
+                  <h4 className="text-lg font-bold text-white mb-2">Costos y Margen</h4>
+                  <p className="text-[#92c9ad] text-sm">Mira tu utilidad neta en tiempo real. Sabes exactamente cuánta plata limpia te quedó el día.</p>
+                </div>
+
+                <div className="md:col-span-4 p-8 rounded-[2.5rem] bg-primary text-background-dark reveal-on-scroll delay-400">
+                  <span className="material-symbols-outlined text-3xl mb-4 font-black">qr_code_scanner</span>
+                  <h4 className="text-lg font-black mb-2 leading-tight">Escaneo con Cámara</h4>
+                  <p className="text-background-dark/80 text-sm font-bold">Usa la cámara de tu celular como escáner de barras profesional. Rápido y sin errores.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ROI Calculator Section */}
+          <section className="w-full bg-background-dark py-24 border-y border-[#234836] relative">
+            <div className="w-full max-w-[1000px] mx-auto px-6 flex flex-col lg:flex-row gap-16 items-center">
+              <div className="flex-1 reveal-on-scroll">
+                <h2 className="text-white text-3xl md:text-5xl font-black mb-6 leading-tight">Mira cómo DonTendero <span className="text-primary italic">se paga solo</span></h2>
+                <p className="text-gray-400 mb-10 leading-relaxed">Las cuentas mal echas y el olvido de cobrar fiados te quitan plata todos los días. Calcula cuánto podrías estar recuperando con nosotros.</p>
+
+                <div className="space-y-12">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <label className="text-white font-bold text-sm">Ventas Diarias Estimadas</label>
+                      <span className="text-primary font-black text-xl">{formatCurrency(dailySales)}</span>
+                    </div>
+                    <input
+                      type="range" min="50000" max="2000000" step="50000"
+                      value={dailySales} onChange={(e) => setDailySales(Number(e.target.value))}
+                      className="w-full accent-primary h-2 bg-[#193326] rounded-lg appearance-none cursor-pointer"
+                    />
                   </div>
-                  <h3 className="text-white text-xl font-bold mb-3">Inventario automático</h3>
-                  <p className="text-[#92c9ad] leading-relaxed text-sm">
-                    Entérate cuando se te está acabando el producto antes de que llegue el proveedor. Vende sin
-                    interrupciones.
-                  </p>
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <label className="text-white font-bold text-sm">% de errores y fugas</label>
+                      <span className="text-orange-400 font-black text-xl">{errorRate}%</span>
+                    </div>
+                    <input
+                      type="range" min="1" max="10" step="1"
+                      value={errorRate} onChange={(e) => setErrorRate(Number(e.target.value))}
+                      className="w-full accent-orange-400 h-2 bg-[#193326] rounded-lg appearance-none cursor-pointer"
+                    />
+                    <p className="text-[10px] text-gray-500 uppercase font-bold">*Promedio nacional en tiendas: 3% - 5%</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full max-w-[400px] p-1 reveal-on-scroll delay-200">
+                <div className="bg-primary p-10 rounded-[3rem] text-background-dark flex flex-col items-center text-center shadow-[0_0_80px_rgba(19,236,128,0.2)]">
+                  <p className="text-[10px] font-black uppercase tracking-widest mb-6 border-b border-background-dark/20 pb-2">Ahorro Mensual Estimado</p>
+                  <h4 className="text-5xl md:text-6xl font-black mb-4 tracking-tighter">
+                    {formatCurrency(monthlySavings)}
+                  </h4>
+                  <p className="font-bold text-sm opacity-80 leading-relaxed mb-8">Esa es plata que hoy estás perdiendo y que DonTendero te devuelve. ¡Más de 10 veces el costo del Plan Pro!</p>
+                  <a href="https://dontendero.com/register" className="w-full py-4 bg-background-dark text-white rounded-2xl font-black hover:scale-105 transition-transform">Reclamar mi Ahorro</a>
                 </div>
               </div>
             </div>
@@ -793,11 +879,26 @@ export default function Home() {
                   <span className="text-white font-medium">recuperes tiempo para tu familia</span>.
                 </p>
               </div>
-              <div className="mt-10 px-6 py-4 rounded-2xl bg-[#193326]/40 border border-[#234836] backdrop-blur-sm">
+              <div className="mt-10 px-6 py-4 rounded-2xl bg-[#193326]/40 border border-[#234836] backdrop-blur-sm reveal-on-scroll">
                 <p className="text-white font-medium text-base md:text-lg flex flex-col md:flex-row items-center gap-2">
                   <span>Tecnología honesta, hecha en Colombia para los que mueven el país.</span>
                   <span className="text-2xl">🇨🇴</span>
                 </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Social Proof Quote / Final CTA */}
+          <section className="w-full bg-background-dark py-24 border-t border-white/5 reveal-on-scroll">
+            <div className="w-full max-w-[800px] mx-auto px-6 text-center">
+              <div className="text-primary text-6xl font-serif mb-8 opacity-20">"</div>
+              <p className="text-2xl md:text-3xl font-bold text-white mb-8 leading-tight">"Desde que uso DonTendero, me di cuenta que antes regalaba casi un millón de pesos al mes en fiados que no anotaba. Ahora mi tienda es de verdad un negocio."</p>
+              <div className="flex items-center justify-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-slate-800 border border-primary/20 bg-[url('https://randomuser.me/api/portraits/men/32.jpg')] bg-cover"></div>
+                <div className="text-left">
+                  <p className="text-white font-bold text-sm">José Manuel Díaz</p>
+                  <p className="text-primary text-xs font-bold uppercase tracking-wider">Taller Las Brisas, Medellín</p>
+                </div>
               </div>
             </div>
           </section>

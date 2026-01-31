@@ -134,8 +134,20 @@
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
+/* Custom Scroll Reveal */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .glow-text {
-  text-shadow: 0 0 20px rgba(19, 236, 128, 0.3);
+  text-shadow: 0 0 40px rgba(19, 236, 128, 0.3);
 }
 
 @layer utilities {
