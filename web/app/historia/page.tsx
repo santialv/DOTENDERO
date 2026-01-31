@@ -180,8 +180,8 @@ export default function HistoriaPage() {
 
                 {/* TIMELINE CONTAINER */}
                 <div className="relative" ref={timelineRef}>
-                    {/* STICKY YEAR DISPLAY */}
-                    <div ref={yearDisplayRef} className="year-number sticky top-[25vh] z-30 flex justify-center items-center text-[12vw] pointer-events-none mix-blend-difference text-white font-mono font-black leading-none opacity-40">
+                    {/* STICKY YEAR DISPLAY - Adjusted for mobile visibility */}
+                    <div ref={yearDisplayRef} className="year-number sticky top-[15vh] md:top-[25vh] z-30 flex justify-center items-center text-[25vw] md:text-[12vw] pointer-events-none mix-blend-difference text-white font-mono font-black leading-none opacity-20 md:opacity-40">
                         <span className="digit inline-block overflow-hidden w-[1ch] text-center">1</span>
                         <span className="digit inline-block overflow-hidden w-[1ch] text-center">9</span>
                         <span className="digit inline-block overflow-hidden w-[1ch] text-center">2</span>
