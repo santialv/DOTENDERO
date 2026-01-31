@@ -72,43 +72,65 @@ export function InstallPrompt() {
         }
     };
 
+    const [isExpanded, setIsExpanded] = useState(false);
+
     if (!isVisible) return null;
 
     return (
-        <div className="fixed bottom-24 left-4 right-4 md:bottom-8 md:right-8 md:left-auto md:w-80 z-[100] animate-in slide-in-from-bottom-5 duration-500">
-            <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 flex flex-col gap-4">
-                <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-[#13ec80] rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-green-200">
-                        <img src="/icon.png" alt="Logo" className="w-8 h-8 object-contain" />
+        <div className="fixed bottom-24 left-4 z-[100] animate-in fade-in zoom-in duration-500">
+            {!isExpanded ? (
+                // Floating Bubble (Closed State)
+                <button
+                    onClick={() => setIsExpanded(true)}
+                    className="group relative flex items-center justify-center size-14 bg-primary rounded-full shadow-2xl shadow-primary/40 hover:scale-110 transition-transform active:scale-95 overflow-hidden"
+                >
+                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                    <img src="/icon.png" alt="App" className="size-8 object-contain relative z-10" />
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                </button>
+            ) : (
+                // Expanded Message (Open State)
+                <div
+                    className="bg-slate-900 border border-white/10 rounded-[2rem] p-4 pr-12 shadow-2xl flex items-center gap-4 animate-in slide-in-from-left-4 duration-300 relative max-w-[calc(100vw-2rem)] md:max-w-xs"
+                >
+                    <div className="size-12 rounded-2xl bg-primary flex items-center justify-center shrink-0 shadow-lg">
+                        <img src="/icon.png" alt="Logo" className="size-8 object-contain" />
                     </div>
-                    <div className="flex-1">
-                        <h3 className="font-bold text-slate-900 text-sm">Instalar DonTendero</h3>
-                        <p className="text-xs text-slate-500 leading-relaxed mt-1">
-                            {isIOS
-                                ? "Agrégalo a tu pantalla de inicio para una mejor experiencia."
-                                : "Instala la aplicación para acceder más rápido y sin distracciones."}
+                    <div className="flex-1 overflow-hidden">
+                        <p className="text-white font-black text-xs uppercase tracking-tight truncate">Instalar App</p>
+                        <p className="text-[10px] text-gray-400 leading-tight mt-0.5">
+                            {isIOS ? "Toca compartir y 'Agregar a inicio'" : "Accede más rápido a tu negocio."}
                         </p>
                     </div>
-                    <button onClick={() => setIsVisible(false)} className="text-slate-400 hover:text-slate-600">
-                        <span className="material-symbols-outlined text-sm">close</span>
+
+                    <div className="flex flex-col gap-1 ml-2">
+                        {!isIOS && (
+                            <button
+                                onClick={handleInstallClick}
+                                className="bg-primary text-slate-900 text-[10px] font-black px-3 py-1.5 rounded-full hover:bg-white transition-colors"
+                            >
+                                INSTALAR
+                            </button>
+                        )}
+                        <button
+                            onClick={() => setIsExpanded(false)}
+                            className="text-gray-500 text-[10px] font-bold hover:text-white transition-colors text-center"
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+
+                    <button
+                        onClick={() => setIsVisible(false)}
+                        className="absolute top-2 right-2 size-6 flex items-center justify-center text-gray-500 hover:text-white"
+                    >
+                        <span className="material-symbols-outlined text-[16px]">close</span>
                     </button>
                 </div>
-
-                {isIOS ? (
-                    <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <span className="text-[10px] font-medium text-slate-600 flex items-center gap-1.5 leading-none">
-                            Toca <span className="material-symbols-outlined text-[18px] text-blue-500">ios_share</span> y luego <span className="font-bold text-slate-900">"Agregar a inicio"</span>
-                        </span>
-                    </div>
-                ) : (
-                    <button
-                        onClick={handleInstallClick}
-                        className="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl hover:bg-slate-800 transition-all active:scale-95 text-sm"
-                    >
-                        Instalar ahora
-                    </button>
-                )}
-            </div>
+            )}
         </div>
     );
 }
