@@ -51,28 +51,50 @@ export default function AsesoriaPage() {
                     </div>
                 </section>
 
-                {/* THE CYCLE - VISUAL SECTION */}
+                {/* THE JOURNEY - VISUAL SECTION */}
                 <section className="w-full py-24 bg-slate-50 border-y border-slate-100">
                     <div className="w-full max-w-[1200px] mx-auto px-6">
                         <div className="text-center mb-20 reveal-on-scroll">
-                            <h2 className="text-slate-900 text-3xl md:text-5xl font-black tracking-tight">El Ciclo del <span className="text-primary italic">Éxito Tendero</span></h2>
-                            <p className="text-slate-500 mt-4">Nuestra metodología paso a paso para transformar tu negocio.</p>
+                            <h2 className="text-slate-900 text-3xl md:text-5xl font-black tracking-tight">El Camino de la <span className="text-primary italic">Transformación</span></h2>
+                            <p className="text-slate-500 mt-4">Un ciclo que comienza en tu celular y termina en el bienestar de tu hogar.</p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
+                            {/* Visual connector for desktop */}
+                            <div className="absolute top-1/2 left-0 w-full h-px bg-slate-200 hidden md:block -z-0"></div>
+
                             {[
-                                { step: "1", title: "Diagnóstico", desc: "Auditamos tu inventario y tus deudas por cobrar para saber dónde estás parado.", icon: "detection_and_zone" },
-                                { step: "2", title: "Optimización", desc: "Eliminamos fugas de dinero y te enseñamos a comprar lo que sí se vende.", icon: "unfold_more_double" },
-                                { step: "3", title: "Control", desc: "Implementamos cierres de caja ciegos para que no falte ni un solo peso.", icon: "security_update_good" },
-                                { step: "4", title: "Patrimonio", desc: "Convertimos tus ganancias en inversión real para tu propiedad o local.", icon: "account_balance" }
+                                {
+                                    stage: "EL INICIO",
+                                    title: "La Tecnología",
+                                    desc: "Donde el desorden se acaba. La App DonTendero es el primer paso para tomar las riendas de cada peso que entra y sale de tu negocio.",
+                                    icon: "install_mobile",
+                                    label: "La Herramienta"
+                                },
+                                {
+                                    stage: "EL PUENTE",
+                                    title: "Nuestra Asesoría",
+                                    desc: "No te dejamos solo con los datos. Interpretamos tus números juntos para cerrar las fugas y multiplicar tus ganancias con estrategia real.",
+                                    icon: "psychology_alt",
+                                    label: "El Acompañamiento",
+                                    highlight: true
+                                },
+                                {
+                                    stage: "EL DESTINO",
+                                    title: "Tu Familia y Tu Vida",
+                                    desc: "El objetivo final. Cerramos el ciclo convirtiendo el éxito de la tienda en tranquilidad, patrimonio protegido y futuro para los tuyos.",
+                                    icon: "family_restroom",
+                                    label: "El Resultado"
+                                }
                             ].map((item, i) => (
-                                <div key={i} className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm relative group reveal-on-scroll" style={{ transitionDelay: `${i * 100}ms` }}>
-                                    <div className="size-14 rounded-2xl bg-slate-50 flex items-center justify-center text-primary mb-8 group-hover:bg-primary group-hover:text-slate-900 transition-all duration-500">
-                                        <span className="material-symbols-outlined text-3xl">{item.icon}</span>
+                                <div key={i} className="relative z-10 flex flex-col items-center text-center reveal-on-scroll" style={{ transitionDelay: `${i * 200}ms` }}>
+                                    <div className={`size-24 rounded-3xl ${item.highlight ? 'bg-primary text-slate-900 shadow-[0_20px_40px_-10px_rgba(19,236,128,0.5)]' : 'bg-white text-slate-900 shadow-xl border border-slate-100'} flex items-center justify-center mb-8 relative group-hover:scale-110 transition-transform duration-500`}>
+                                        <span className="material-symbols-outlined text-4xl font-black">{item.icon}</span>
+                                        <div className="absolute -top-3 px-3 py-1 bg-slate-900 text-white text-[10px] font-black rounded-full uppercase tracking-widest">{item.stage}</div>
                                     </div>
-                                    <div className="absolute top-8 right-8 text-slate-100 font-black text-6xl group-hover:text-primary/10 transition-colors">{item.step}</div>
-                                    <h4 className="text-xl font-bold text-slate-900 mb-4">{item.title}</h4>
-                                    <p className="text-slate-500 text-sm leading-relaxed">{item.desc}</p>
+                                    <h4 className="text-2xl font-black text-slate-900 mb-2">{item.title}</h4>
+                                    <p className="text-primary font-bold text-xs uppercase tracking-widest mb-4">{item.label}</p>
+                                    <p className="text-slate-500 leading-relaxed max-w-[300px]">{item.desc}</p>
                                 </div>
                             ))}
                         </div>
