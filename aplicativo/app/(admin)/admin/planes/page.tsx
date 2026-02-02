@@ -9,9 +9,8 @@ interface Plan {
     id: string;
     name: string;
     price: number;
-    users: number; // Storing users limit in features JSON would be better but keeping simple for now
     active: boolean;
-    features: string[];
+    features: any;
 }
 
 export default function PlanesPage() {
@@ -33,22 +32,22 @@ export default function PlanesPage() {
             if (error) throw error;
 
             if (data) {
-                // Map DB standard to UI local state
-                const mappedPlans = data.map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    price: p.price,
-                    users: p.features && Array.isArray(p.features) && p.features.includes('Multi-Bodega') ? 5 : 1, // Rough mapping
-                    active: p.active,
-                    features: p.features || []
-                }));
-                // Combine with default structure if DB is empty or partial
+                const mappedPlans = data.map(p => {
+                    const features = p.features || {};
+                    return {
+                        id: p.id,
+                        name: p.name,
+                        price: p.price,
+                        active: p.active,
+                        features: typeof features === 'string' ? JSON.parse(features) : features
+                    };
+                });
+
                 if (mappedPlans.length === 0) {
-                    // Fallback to defaults to show something
                     setPlans([
-                        { id: "free", name: "Estándar (Gratis)", price: 0, users: 1, active: true, features: [] },
-                        { id: "basic", name: "Emprendedor", price: 50000, users: 2, active: true, features: [] },
-                        { id: "pro", name: "Empresario PRO", price: 90000, users: 5, active: true, features: [] },
+                        { id: "free", name: "Estándar (Gratis)", price: 0, active: true, features: { max_users: 1, max_registers: 1 } },
+                        { id: "basic", name: "Emprendedor", price: 50000, active: true, features: { max_users: 2, max_registers: 1 } },
+                        { id: "pro", name: "Empresario PRO", price: 90000, active: true, features: { max_users: 5, max_registers: 99 } },
                     ]);
                 } else {
                     setPlans(mappedPlans);
@@ -175,24 +174,44 @@ export default function PlanesPage() {
                                     </div>
                                 </div>
 
-                                {/* Placeholder for Users Limit - Not directly editable in this simplified view without modifying Schema deeply */}
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider block opacity-50">Límite Usuarios (Fijo)</label>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Límite Usuarios</label>
                                     <input
                                         type="number"
-                                        value={plan.users}
-                                        disabled
-                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 font-medium text-slate-600 bg-slate-50 cursor-not-allowed"
+                                        value={plan.features?.max_users || 1}
+                                        onChange={(e) => setPlans(plans.map(p => p.id === plan.id ? {
+                                            ...p,
+                                            features: { ...p.features, max_users: Number(e.target.value) }
+                                        } : p))}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 font-medium text-slate-600 focus:ring-2 focus:ring-[#13ec80] outline-none mb-3"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Límite Cajas / Bodegas</label>
+                                    <input
+                                        type="number"
+                                        value={plan.features?.max_registers || 1}
+                                        onChange={(e) => setPlans(plans.map(p => p.id === plan.id ? {
+                                            ...p,
+                                            features: { ...p.features, max_registers: Number(e.target.value) }
+                                        } : p))}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 font-medium text-slate-600 focus:ring-2 focus:ring-[#13ec80] outline-none"
                                     />
                                 </div>
                             </div>
 
                             <div className="mt-6 pt-4 border-t border-slate-100">
-                                <h4 className="text-xs font-bold text-slate-400 mb-2">Características Activadas</h4>
+                                <h4 className="text-xs font-bold text-slate-400 mb-2">Resumen</h4>
                                 <ul className="text-xs text-slate-600 space-y-1">
-                                    <li className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px] text-green-500">check</span> Panel Administrativo</li>
-                                    {plan.id !== 'free' && <li className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px] text-green-500">check</span> Soporte Prioritario</li>}
-                                    {plan.id === 'pro' && <li className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px] text-green-500">check</span> API & Webhooks</li>}
+                                    <li className="flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-[14px] text-green-500">group</span>
+                                        {plan.features?.max_users || 1} Usuarios permitidos
+                                    </li>
+                                    <li className="flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-[14px] text-green-500">inventory_2</span>
+                                        {plan.features?.max_registers === 99 ? 'Ilimitadas' : (plan.features?.max_registers || 1) + ' Cajas'}
+                                    </li>
                                 </ul>
                             </div>
                         </div>

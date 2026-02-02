@@ -15,27 +15,35 @@ export default function HistoriaPage() {
     useEffect(() => {
         gsap.registerPlugin(ScrollTrigger);
 
-        // CONFIG: Lenis Smooth Scroll
-        const lenis = new Lenis({
-            duration: 1.2,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
-        });
+        const isMobile = window.innerWidth < 768;
 
-        function raf(time: number) {
-            lenis.raf(time);
-            ScrollTrigger.update();
+        // CONFIG: Lenis Smooth Scroll - Only for desktop to save resources on mobile
+        let lenis: any = null;
+        if (!isMobile) {
+            lenis = new Lenis({
+                duration: 1.2,
+                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+            });
+
+            function raf(time: number) {
+                lenis.raf(time);
+                ScrollTrigger.update();
+                requestAnimationFrame(raf);
+            }
             requestAnimationFrame(raf);
         }
-        requestAnimationFrame(raf);
 
         // AUTO-SCROLL to first section on load
         const handleInitialScroll = () => {
             if (timelineRef.current) {
-                lenis.scrollTo(timelineRef.current, { offset: 0, duration: 1.5 });
+                if (lenis) {
+                    lenis.scrollTo(timelineRef.current, { offset: 0, duration: 1.5 });
+                } else {
+                    timelineRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
             }
         };
 
-        // Execute scroll after a short delay and also on window load to ensure images are ready
         const scrollTimeout = setTimeout(handleInitialScroll, 800);
         window.addEventListener('load', handleInitialScroll);
 
@@ -90,12 +98,12 @@ export default function HistoriaPage() {
                 trigger: section,
                 start: "top top",
                 end: "+=100%",
-                pin: true,
+                pin: !isMobile, // Disable pinning on mobile for better performance
                 scrub: true,
                 onEnter: () => {
                     animateYearRoll(currentYear, newYear, "up");
                     currentYear = newYear;
-                    gsap.to("body", { backgroundColor: bgColor, duration: 0.6 });
+                    if (!isMobile) gsap.to("body", { backgroundColor: bgColor, duration: 0.6 });
                 },
                 onLeaveBack: () => {
                     const prev = sections[index - 1];
@@ -103,11 +111,12 @@ export default function HistoriaPage() {
                     const prevColor = prev?.dataset.bgColor || "#ffffff";
                     animateYearRoll(currentYear, prevYear, "down");
                     currentYear = prevYear;
-                    gsap.to("body", { backgroundColor: prevColor, duration: 0.6 });
+                    if (!isMobile) gsap.to("body", { backgroundColor: prevColor, duration: 0.6 });
                 }
             });
 
-            if (intro) {
+            // Text reveal animation - disable or simplify on mobile
+            if (intro && !isMobile) {
                 const text = intro.textContent || "";
                 intro.innerHTML = text.split(" ").map(word =>
                     `<span class="opacity-10 transition-opacity duration-300 pointer-events-none">${word}</span>`
@@ -127,31 +136,34 @@ export default function HistoriaPage() {
                 });
             }
 
+            // Media items animation
             items.forEach((item, i) => {
                 const element = item as HTMLElement;
                 gsap.set(element, {
-                    opacity: 0,
+                    opacity: isMobile ? 1 : 0,
                     zIndex: i,
                     rotation: Math.random() * 8 - 4,
-                    scale: 0.95
+                    scale: isMobile ? 1 : 0.95
                 });
 
-                gsap.to(element, {
-                    opacity: 1,
-                    scale: 1,
-                    zIndex: items.length + i,
-                    scrollTrigger: {
-                        trigger: section,
-                        start: `top+=${i * 15}% center`,
-                        end: `top+=${(i + 1) * 15}% center`,
-                        scrub: true
-                    }
-                });
+                if (!isMobile) {
+                    gsap.to(element, {
+                        opacity: 1,
+                        scale: 1,
+                        zIndex: items.length + i,
+                        scrollTrigger: {
+                            trigger: section,
+                            start: `top+=${i * 15}% center`,
+                            end: `top+=${(i + 1) * 15}% center`,
+                            scrub: true
+                        }
+                    });
+                }
             });
         });
 
         return () => {
-            lenis.destroy();
+            if (lenis) lenis.destroy();
             ScrollTrigger.getAll().forEach(t => t.kill());
             clearTimeout(scrollTimeout);
             window.removeEventListener('load', handleInitialScroll);

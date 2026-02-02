@@ -18,9 +18,9 @@ export default function PlanesPage() {
     const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly');
 
     const DEFAULT_PLANS: Plan[] = [
-        { id: 'free', name: 'Plan Gratuito', price: 0, description: 'Ideal para quienes están empezando y quieren digitalizar su negocio sin costo.', features: ["Ventas ilimitadas", "Inventario básico", "Gestión de fiados básica", "Sin costo mensual"] },
-        { id: 'pro', name: 'Plan Pro', price: 50000, description: 'La mejor opción para negocios en crecimiento que necesitan control total.', features: ["Todo lo del Gratuito", "Facturación Electrónica", "Reportes de ganancias", "Soporte prioritario 24/7"] },
-        { id: 'premium', name: 'Plan Premium', price: 90000, description: 'Para empresarios con múltiples sedes o grandes volúmenes de venta.', features: ["Todo lo del Pro", "Multi-Bodega / Multi-Sede", "Asesoría financiera mensual", "Personalización de reportes"] }
+        { id: 'free', name: 'Estándar (Gratis)', price: 0, description: 'Ideal para quienes están empezando y quieren digitalizar su negocio sin costo.', features: ["Ventas ilimitadas", "1 Usuario", "1 Caja / Bodega", "Gestión de fiados básica"] },
+        { id: 'basic', name: 'Emprendedor', price: 50000, description: 'La mejor opción para negocios en crecimiento que necesitan control total.', features: ["Todo lo de Estándar", "2 Usuarios", "Facturación Electrónica", "Reportes de ganancias", "Soporte prioritario"] },
+        { id: 'pro', name: 'Empresario PRO', price: 90000, description: 'Para empresarios con múltiples sedes o grandes volúmenes de venta.', features: ["Todo lo de Emprendedor", "5 Usuarios", "Multi-Caja / Multi-Sede", "Asesoría financiera mensual", "Personalización de reportes"] }
     ];
 
     useEffect(() => {
@@ -33,10 +33,20 @@ export default function PlanesPage() {
                     .order('price', { ascending: true });
 
                 if (data && data.length > 0 && !error) {
-                    setPlans(data.map(p => ({
-                        ...p,
-                        features: Array.isArray(p.features) ? p.features : JSON.parse(p.features || '[]')
-                    })));
+                    setPlans(data.map(p => {
+                        let features = p.features;
+                        if (features && !Array.isArray(features)) {
+                            // If it's an object with limits, convert to display labels
+                            const labels = features.labels || [];
+                            if (features.max_users) labels.push(`${features.max_users} Usuario(s)`);
+                            if (features.max_registers) labels.push(features.max_registers === 99 ? 'Cajas Ilimitadas' : `${features.max_registers} Caja(s)`);
+                            features = labels;
+                        }
+                        return {
+                            ...p,
+                            features: Array.isArray(features) ? features : []
+                        };
+                    }));
                 } else {
                     // Fallback to default plans if database is empty or error
                     setPlans(DEFAULT_PLANS);
@@ -83,7 +93,7 @@ export default function PlanesPage() {
                     <div className="w-full max-w-[1200px] mx-auto px-6">
                         <div className="text-center mb-16 reveal-on-scroll">
                             <h3 className="text-primary font-bold tracking-widest uppercase text-xs mb-3">Precios Claros</h3>
-                            <h2 className="text-slate-900 text-4xl md:text-6xl font-black mb-10 tracking-tight">Invierte en el <span className="text-primary italic">crecimiento de tu tienda</span></h2>
+                            <h2 className="text-slate-900 text-4xl md:text-6xl font-black mb-10 tracking-tight">Invierte en el <span className="text-primary italic">crecimiento de tu negocio</span></h2>
 
                             <div className="inline-flex items-center p-1.5 bg-slate-50 rounded-2xl border border-slate-100 mb-8 shadow-sm">
                                 <button

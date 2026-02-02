@@ -12,6 +12,9 @@ UPDATE public.plans SET code = id WHERE code IS NULL;
 -- (They currently use 'subscription_plan' column)
 
 -- 3. Update the activation function to use the 'plans' table
+-- First drop the old version to avoid parameter name mismatch error (42P13)
+DROP FUNCTION IF EXISTS activate_subscription_plan(uuid,text,text,numeric);
+
 CREATE OR REPLACE FUNCTION activate_subscription_plan(
     p_org_id UUID,
     p_plan_id TEXT, -- Changed to TEXT to match plans.id

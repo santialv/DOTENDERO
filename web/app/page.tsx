@@ -43,15 +43,14 @@ export default function Home() {
           </div>
 
           <h1 className="text-white text-5xl md:text-7xl lg:text-8xl font-black leading-[1] tracking-tight max-w-[1000px] mb-8 glow-text reveal-on-scroll">
-            La Caja Registradora que <br />
+            No somos un software. <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-400">
-              se paga sola
+              Somos justicia tecnológica.
             </span>
           </h1>
 
-          <p className="text-gray-400 text-lg md:text-2xl font-medium leading-relaxed max-w-[700px] mb-12 reveal-on-scroll delay-100">
-            <span className="text-white font-black block mb-2 text-primary">Somos como tu contador personal y asistente inteligente.</span>
-            Digitaliza tu negocio. Gestiona inventario, fiados y ganancias desde tu celular con la tecnología más avanzada del mercado.
+          <p className="text-gray-400 text-lg md:text-2xl font-medium leading-relaxed max-w-[850px] mb-12 reveal-on-scroll delay-100">
+            Llevamos la herramienta más avanzada del mercado a quienes el sistema <span className="text-white font-black">siempre ha dejado atrás</span>. Porque democratizar la innovación de punta no es una opción, es nuestra obligación con cada rincón de nuestro país. 👊💚
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md justify-center reveal-on-scroll delay-200">

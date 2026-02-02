@@ -25,15 +25,32 @@ export async function createTeamMember(
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         if (!currentUser) return { success: false, message: "No autenticado" };
 
-        // 1. Verify the current user is owner or admin
+        // 1. Verify permissions and plan limits
         const { data: profile } = await supabase
             .from('profiles')
-            .select('organization_id, role')
+            .select('organization_id, role, organizations(plan)')
             .eq('id', currentUser.id)
             .single();
 
         if (!profile || !['owner', 'admin'].includes(profile.role)) {
             return { success: false, message: "No tienes permisos para crear usuarios." };
+        }
+
+        const orgId = profile.organization_id;
+        const currentPlanId = (profile.organizations as any)?.plan || 'free';
+
+        // 1.1 Check Plan Limits
+        const [{ data: plan }, { count: userCount }] = await Promise.all([
+            supabase.from('plans').select('features').eq('id', currentPlanId).single(),
+            supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('organization_id', orgId)
+        ]);
+
+        const maxUsers = plan?.features?.max_users || 1;
+        if (userCount !== null && userCount >= maxUsers) {
+            return {
+                success: false,
+                message: `Límite de usuarios alcanzado (${userCount}/${maxUsers}). Por favor mejora tu plan para agregar más miembros.`
+            };
         }
 
         // 2. Create the user in Supabase Auth
