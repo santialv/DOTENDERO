@@ -79,9 +79,16 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
                 // 1. Obtener Perfil y Organización
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('organization_id, role, organizations(plan, subscription_status)')
+                    .select('organization_id, role, status, organizations(plan, subscription_status)')
                     .eq('id', session.user.id)
                     .maybeSingle();
+
+                if (profile?.status === 'inactive') {
+                    console.warn("Guardián: Usuario desactivado. Expulsando...");
+                    await supabase.auth.signOut();
+                    router.replace("/login");
+                    return;
+                }
 
                 if (!profile?.organization_id) {
                     console.warn("Usuario sin tienda vinculada.");
@@ -134,8 +141,15 @@ function AuthGuardContent({ children }: { children: React.ReactNode }) {
                     return;
                 }
 
-                // CASO B: SI TIENE ORGANIZACIÓN
                 if (pathname === "/onboarding") {
+                    router.replace("/venta");
+                    return;
+                }
+
+                // ROLE PERMISSIONS CHECK
+                const forbiddenPathsForCashier = ['/reportes', '/asesoria'];
+                if (profile.role === 'cashier' && forbiddenPathsForCashier.some(p => pathname.startsWith(p))) {
+                    console.warn(`Guardián: Acceso denegado a ${pathname} para rol Cajero.`);
                     router.replace("/venta");
                     return;
                 }

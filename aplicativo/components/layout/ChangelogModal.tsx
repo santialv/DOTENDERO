@@ -5,14 +5,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Rocket, ShieldCheck, Calculator, Bug, CheckCircle2 } from "lucide-react";
+import { Rocket, ShieldCheck, Calculator, Bug, CheckCircle2, LayoutGrid } from "lucide-react";
 import confetti from "canvas-confetti";
 
 export function ChangelogModal() {
     const [open, setOpen] = useState(false);
 
     // Versión actual de los cambios. Cambiar esto forzará que el modal vuelva a salir.
-    const CURRENT_VERSION = "2026-01-29-updates";
+    const CURRENT_VERSION = "2026-02-01-registers-and-perms";
 
     useEffect(() => {
         const hasSeenUpdate = localStorage.getItem(`changelog_${CURRENT_VERSION}`);
@@ -42,29 +42,29 @@ export function ChangelogModal() {
                 <DialogHeader>
                     <div className="flex items-center gap-2 mb-2">
                         <Badge variant="default" className="bg-[#13ec80] text-black hover:bg-[#0fd673]">
-                            ¡Nuevo!
+                            ¡Actualización!
                         </Badge>
-                        <span className="text-xs text-muted-foreground">Actualización 29 Ene</span>
+                        <span className="text-xs text-muted-foreground">Actualización 1 Feb</span>
                     </div>
                     <DialogTitle className="text-xl flex items-center gap-2">
-                        <Rocket className="w-5 h-5 text-purple-600" />
-                        Novedades en DonTendero
+                        <Rocket className="w-5 h-5 text-indigo-600" />
+                        Super Control de Caja y Equipo
                     </DialogTitle>
                     <DialogDescription>
-                        Hemos realizado mejoras importantes para ti y tu equipo. Aquí tienes un resumen de lo nuevo:
+                        Hemos blindado tu negocio y mejorado el control de tu dinero. Mira lo nuevo:
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-2">
                     {/* Item 1 */}
                     <div className="flex gap-3 items-start">
-                        <div className="bg-purple-100 p-2 rounded-full shrink-0">
-                            <ShieldCheck className="w-4 h-4 text-purple-600" />
+                        <div className="bg-indigo-100 p-2 rounded-full shrink-0">
+                            <LayoutGrid className="w-4 h-4 text-indigo-600" />
                         </div>
                         <div>
-                            <h4 className="text-sm font-semibold text-foreground">Login Más Seguro</h4>
+                            <h4 className="text-sm font-semibold text-foreground">Multi-Cajas & Numeración</h4>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                                Implementamos protección contra intentos fallidos. Ahora tu cuenta se bloquea temporalmente si detectamos actividad sospechosa.
+                                Crea y elimina cajas fácilmente. El sistema ahora las numera automáticamente y permite borrarlas sin perder historial.
                             </p>
                         </div>
                     </div>
@@ -73,13 +73,13 @@ export function ChangelogModal() {
 
                     {/* Item 2 */}
                     <div className="flex gap-3 items-start">
-                        <div className="bg-green-100 p-2 rounded-full shrink-0">
-                            <Calculator className="w-4 h-4 text-green-600" />
+                        <div className="bg-purple-100 p-2 rounded-full shrink-0">
+                            <ShieldCheck className="w-4 h-4 text-purple-600" />
                         </div>
                         <div>
-                            <h4 className="text-sm font-semibold text-foreground">Calculadora de Precios 2.0</h4>
+                            <h4 className="text-sm font-semibold text-foreground">Permisos Granulares</h4>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                                Cálculo de márgenes optimizado. Ahora descuenta impuestos automáticamente para mostrarte tu ganancia real.
+                                Ahora decides quién puede ver tus costos de compra, quién puede dar descuentos y quién crea clientes. ¡Control total!
                             </p>
                         </div>
                     </div>
@@ -88,13 +88,13 @@ export function ChangelogModal() {
 
                     {/* Item 3 */}
                     <div className="flex gap-3 items-start">
-                        <div className="bg-blue-100 p-2 rounded-full shrink-0">
-                            <Bug className="w-4 h-4 text-blue-600" />
+                        <div className="bg-emerald-100 p-2 rounded-full shrink-0">
+                            <Calculator className="w-4 h-4 text-emerald-600" />
                         </div>
                         <div>
-                            <h4 className="text-sm font-semibold text-foreground">Correcciones & Estilo</h4>
+                            <h4 className="text-sm font-semibold text-foreground">Contabilidad de Diferencias</h4>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                                Solucionado error en Cierre de Caja (perfil sin tienda) y renovamos nuestra identidad visual con nuevo Logo.
+                                Al cerrar turno, el sistema detecta sobrantes o faltantes y los contabiliza automáticamente como ajustes de caja.
                             </p>
                         </div>
                     </div>
@@ -102,11 +102,11 @@ export function ChangelogModal() {
 
                 <DialogFooter className="sm:justify-between sm:flex-row gap-2">
                     <div className="text-[10px] text-muted-foreground self-center">
-                        v1.2.0
+                        v2.0.0 (Registers & Perms)
                     </div>
-                    <Button onClick={handleClose} className="w-full sm:w-auto gap-2">
+                    <Button onClick={handleClose} className="w-full sm:w-auto gap-2 bg-[#13ec80] text-slate-900 hover:bg-[#10d673] font-bold">
                         <CheckCircle2 className="w-4 h-4" />
-                        Entendido, a trabajar
+                        ¡Excelente, a vender!
                     </Button>
                 </DialogFooter>
             </DialogContent>

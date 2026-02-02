@@ -12,8 +12,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutDashboard, Sparkles, TrendingUp, DollarSign, Package } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function DashboardPage() {
+    const { role } = useUserRole();
     const { businessInfo, loading: confLoading } = useConfiguration();
     const [stats, setStats] = useState({
         salesToday: 0,
@@ -69,15 +71,17 @@ export default function DashboardPage() {
             <Tabs defaultValue="app_stats" className="space-y-6">
 
                 {/* TOP LEVEL TABS: SEPARATION OF APP vs AI */}
-                <TabsList className="grid w-full grid-cols-2 lg:w-[400px] bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
+                <TabsList className={`grid w-full bg-white border border-slate-200 p-1 rounded-xl shadow-sm ${role !== 'cashier' ? 'grid-cols-2 lg:w-[400px]' : 'grid-cols-1 lg:w-[200px]'}`}>
                     <TabsTrigger value="app_stats" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-slate-600 transition-all gap-2">
                         <LayoutDashboard className="w-4 h-4" />
                         Mi Negocio
                     </TabsTrigger>
-                    <TabsTrigger value="ai_partner" className="rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white font-bold text-slate-600 transition-all gap-2">
-                        <Sparkles className="w-4 h-4" />
-                        Don Tendero IA
-                    </TabsTrigger>
+                    {role !== 'cashier' && (
+                        <TabsTrigger value="ai_partner" className="rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white font-bold text-slate-600 transition-all gap-2">
+                            <Sparkles className="w-4 h-4" />
+                            Don Tendero IA
+                        </TabsTrigger>
+                    )}
                 </TabsList>
 
                 {/* TAB 1: MI NEGOCIO (APP STATS & CHARTS) */}
@@ -95,16 +99,18 @@ export default function DashboardPage() {
                                 <p className="text-xs text-muted-foreground">Transacciones: {stats.transactionsToday}</p>
                             </CardContent>
                         </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Utilidad</CardTitle>
-                                <TrendingUp className="h-4 w-4 text-blue-600" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(stats.profitToday)}</div>
-                                <p className="text-xs text-muted-foreground">Margen real</p>
-                            </CardContent>
-                        </Card>
+                        {role !== 'cashier' && (
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Utilidad</CardTitle>
+                                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(stats.profitToday)}</div>
+                                    <p className="text-xs text-muted-foreground">Margen real</p>
+                                </CardContent>
+                            </Card>
+                        )}
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Bajo Stock</CardTitle>

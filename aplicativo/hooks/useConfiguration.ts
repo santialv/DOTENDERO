@@ -132,6 +132,7 @@ export function useConfiguration() {
         businessInfo,
         setBusinessInfo,
         saveConfiguration,
+        refresh: loadOrganization,
         loading,
         userId,
     };

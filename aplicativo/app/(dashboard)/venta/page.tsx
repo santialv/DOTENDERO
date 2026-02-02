@@ -14,6 +14,7 @@ import { usePOS } from "@/hooks/usePOS";
 import { useCashShift } from "@/hooks/useCashShift";
 import { PRODUCT_CATEGORIES } from "@/lib/constants";
 import { Transaction } from "@/types";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function VentaPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -77,8 +78,11 @@ export default function VentaPage() {
     clearCart,
     holdOrder,
     resumeOrder,
+    updateItemPrice,
     checkout
   } = usePOS();
+
+  const { role, permissions } = useUserRole();
 
   // Wrapped addToCart with haptic
   const addToCart = (productId: string | number) => {
@@ -111,12 +115,12 @@ export default function VentaPage() {
     }
   }, [isPaymentModalOpen, lastTransaction, isAllCategoriesOpen, isMobileCartOpen, isOpenShiftModalOpen, isCustomerModalOpen, isHeldOrdersModalOpen, isCashCloseModalOpen, currentShift]);
 
-  // Aggressive Auto-focus: Capture keys even if not focused
+  // Aggressive Auto-focus: Capture keys and maintain focus for scanners
   useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      const isAnyModalOpen = isPaymentModalOpen || !!lastTransaction || isAllCategoriesOpen || isMobileCartOpen || isOpenShiftModalOpen || isCustomerModalOpen || isHeldOrdersModalOpen || isCashCloseModalOpen;
+    const isAnyModalOpen = () => isPaymentModalOpen || !!lastTransaction || isAllCategoriesOpen || isMobileCartOpen || isOpenShiftModalOpen || isCustomerModalOpen || isHeldOrdersModalOpen || isCashCloseModalOpen;
 
-      if (isAnyModalOpen || !currentShift) return;
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (isAnyModalOpen() || !currentShift) return;
 
       // If user starts typing and not in an input, focus the search
       const target = e.target as HTMLElement;
@@ -127,6 +131,15 @@ export default function VentaPage() {
       }
     };
 
+    const handleFocusRecovery = () => {
+      // Small delay to allow click events to process (e.g. clicking a button in a modal)
+      setTimeout(() => {
+        if (!isAnyModalOpen() && currentShift && document.activeElement?.tagName !== 'INPUT') {
+          searchInputRef.current?.focus();
+        }
+      }, 500); // 0.5s recovery
+    };
+
     const handleClearSearch = () => {
       setSearchQuery("");
       searchInputRef.current?.focus();
@@ -134,9 +147,24 @@ export default function VentaPage() {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     window.addEventListener('clear-search', handleClearSearch);
+    window.addEventListener('click', handleFocusRecovery);
+
+    // Recovery interval for mass scanning
+    const interval = setInterval(() => {
+      if (!isAnyModalOpen() && currentShift && document.activeElement !== searchInputRef.current) {
+        // Only focus if no other input is active (avoid stealing focus from modal inputs)
+        const isFocusOnInput = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
+        if (!isFocusOnInput) {
+          searchInputRef.current?.focus();
+        }
+      }
+    }, 2000); // Check every 2s
+
     return () => {
       window.removeEventListener('keydown', handleGlobalKeyDown);
       window.removeEventListener('clear-search', handleClearSearch);
+      window.removeEventListener('click', handleFocusRecovery);
+      clearInterval(interval);
     };
   }, [isPaymentModalOpen, lastTransaction, isAllCategoriesOpen, isMobileCartOpen, isOpenShiftModalOpen, isCustomerModalOpen, isHeldOrdersModalOpen, isCashCloseModalOpen, currentShift]);
 
@@ -339,6 +367,8 @@ export default function VentaPage() {
           onHoldOrder={holdOrder}
           onViewHeldOrders={() => setIsHeldOrdersModalOpen(true)}
           heldOrdersCount={heldOrders.length}
+          permissions={permissions}
+          onUpdatePrice={updateItemPrice}
         />
       </div>
 
@@ -387,8 +417,25 @@ export default function VentaPage() {
             {cartItems.map(item => (
               <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex gap-4">
                 <div className="flex-1">
-                  <h4 className="font-bold text-slate-900 mb-1">{item.name}</h4>
-                  <p className="text-slate-500 text-sm mb-3">${item.finalPrice.toLocaleString()}</p>
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="font-bold text-slate-900">{item.name}</h4>
+                    <div className="flex items-center gap-1 group/price">
+                      <p className="text-slate-500 text-sm">${item.finalPrice.toLocaleString()}</p>
+                      {(permissions?.apply_discounts !== false) && (
+                        <button
+                          onClick={() => {
+                            const newPrice = prompt(`Ajustar precio para ${item.name}:`, item.finalPrice.toString());
+                            if (newPrice && !isNaN(parseFloat(newPrice))) {
+                              updateItemPrice(item.id, parseFloat(newPrice));
+                            }
+                          }}
+                          className="p-1 text-slate-300 active:text-indigo-500"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">edit</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
                   <div className="flex items-center gap-4">
                     <div className="flex items-center border border-slate-200 rounded-lg bg-slate-50 h-10">
@@ -512,7 +559,7 @@ export default function VentaPage() {
         }}
         onFinalize={async (payments, amountTendered, change) => {
           triggerHaptic();
-          const tx = await checkout(payments, amountTendered, change);
+          const tx = await checkout(payments, amountTendered, change, currentShift?.id);
           if (tx) {
             setLastTransaction(tx as any);
             setIsPaymentModalOpen(false);

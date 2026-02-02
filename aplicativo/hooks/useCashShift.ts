@@ -33,11 +33,12 @@ export function useCashShift() {
                 .from('cash_shifts')
                 .select('*')
                 .eq('organization_id', profile.organization_id)
+                .eq('user_id', session.user.id)
                 .eq('status', 'open')
                 .maybeSingle();
 
             if (error) {
-                console.error("Error fetching shift:", error);
+                console.error("Error fetching shift (Detailed):", JSON.stringify(error));
             }
 
             setCurrentShift(data);

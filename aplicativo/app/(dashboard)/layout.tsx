@@ -126,12 +126,17 @@ export default function DashboardLayout({
                             <NavItem href="/inventario" icon="inventory_2" label="Inventario" collapsed={isCollapsed} />
                             <NavItem href="/compras" icon="shopping_cart" label="Compras" collapsed={isCollapsed} />
                             <NavItem href="/clientes" icon="group" label="Clientes" collapsed={isCollapsed} />
-                            <NavItem href="/reportes" icon="bar_chart" label="Reportes" collapsed={isCollapsed} />
 
-                            <div className="my-2 border-t border-slate-100 mx-2" />
+                            {userRole !== 'cashier' && (
+                                <>
+                                    <NavItem href="/reportes" icon="bar_chart" label="Reportes" collapsed={isCollapsed} />
+                                    <div className="my-2 border-t border-slate-100 mx-2" />
+                                    <NavItem href="/asesoria" icon="support_agent" label="Asesoría Financiera" collapsed={isCollapsed} />
+                                </>
+                            )}
 
-                            <NavItem href="/asesoria" icon="support_agent" label="Asesoría Financiera" collapsed={isCollapsed} />
                             <NavItem href="/configuracion" icon="settings" label="Configuración" collapsed={isCollapsed} />
+
                             <a
                                 href="https://somos.dontendero.com"
                                 target="_blank"

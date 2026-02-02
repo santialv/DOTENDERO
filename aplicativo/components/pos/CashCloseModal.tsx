@@ -37,6 +37,7 @@ export function CashCloseModal({ isOpen, onClose, onSuccess, activeShift }: Cash
     // Metadata for PDF
     const [orgName, setOrgName] = useState("");
     const [userName, setUserName] = useState("");
+    const [userRole, setUserRole] = useState<string | null>(null);
 
     // System Data
     const [systemTotals, setSystemTotals] = useState({
@@ -110,8 +111,11 @@ export function CashCloseModal({ isOpen, onClose, onSuccess, activeShift }: Cash
                 }
                 workingOrgId = profile.organization_id;
                 setUserName(session.user.email || "Usuario");
+                setUserRole(profile.role);
             } else {
-                // If we have the shift, we default to email since full_name might not exist
+                // Fetch role even if workingOrgId is provided
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+                setUserRole(profile?.role || 'cashier');
                 setUserName(session.user.email || "Usuario");
             }
 
@@ -400,27 +404,36 @@ export function CashCloseModal({ isOpen, onClose, onSuccess, activeShift }: Cash
 
                                             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm print:border-none print:p-0">
                                                 <p className="text-sm text-gray-500 mb-1">Total Esperado en Caja</p>
-                                                <p className="text-3xl font-bold text-blue-600">{formatCurrency(expectedCash)}</p>
+                                                {userRole === 'cashier' ? (
+                                                    <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
+                                                        <span className="material-symbols-outlined text-[18px]">visibility_off</span>
+                                                        <p className="text-sm font-bold">Conteo Ciego Activado</p>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-3xl font-bold text-blue-600">{formatCurrency(expectedCash)}</p>
+                                                )}
                                             </div>
 
-                                            <div className="space-y-2 text-sm bg-white p-3 rounded-lg border border-gray-100 print:border-none print:p-0">
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-500">Base Inicial</span>
-                                                    <span className="font-semibold text-gray-900">{formatCurrency(systemTotals.initialCash)}</span>
+                                            {userRole !== 'cashier' && (
+                                                <div className="space-y-2 text-sm bg-white p-3 rounded-lg border border-gray-100 print:border-none print:p-0">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-500">Base Inicial</span>
+                                                        <span className="font-semibold text-gray-900">{formatCurrency(systemTotals.initialCash)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-500">Ventas Efectivo</span>
+                                                        <span className="font-semibold text-green-600">+{formatCurrency(systemTotals.cash)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-500">Ingresos Manuales</span>
+                                                        <span className="font-semibold text-green-600">+{formatCurrency(systemTotals.manualIncome)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-500">Gastos/Salidas</span>
+                                                        <span className="font-semibold text-red-600">-{formatCurrency(systemTotals.expenses)}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-500">Ventas Efectivo</span>
-                                                    <span className="font-semibold text-green-600">+{formatCurrency(systemTotals.cash)}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-500">Ingresos Manuales</span>
-                                                    <span className="font-semibold text-green-600">+{formatCurrency(systemTotals.manualIncome)}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-500">Gastos/Salidas</span>
-                                                    <span className="font-semibold text-red-600">-{formatCurrency(systemTotals.expenses)}</span>
-                                                </div>
-                                            </div>
+                                            )}
 
                                             <div className="mt-4 pt-4 border-t border-gray-200">
                                                 <p className="text-xs font-bold text-gray-400 uppercase mb-2">Otros Medios</p>
@@ -490,15 +503,23 @@ export function CashCloseModal({ isOpen, onClose, onSuccess, activeShift }: Cash
                                         <p className="text-xs text-gray-500 uppercase font-bold text-right">Total Contado</p>
                                         <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalCounted)}</p>
                                     </div>
-                                    <div className={`px-4 py-2 rounded-lg border ${isBalanced ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
-                                        <p className={`text-xs uppercase font-bold ${isBalanced ? 'text-green-600' : 'text-red-600'}`}>
-                                            {isBalanced ? 'Cuadrado' : 'Diferencia'}
-                                        </p>
-                                        <p className={`text-xl font-bold flex items-center gap-2 ${isBalanced ? 'text-green-700' : 'text-red-700'}`}>
-                                            {isBalanced ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-                                            {formatCurrency(difference)}
-                                        </p>
-                                    </div>
+                                    {userRole !== 'cashier' && (
+                                        <div className={`px-4 py-2 rounded-lg border ${isBalanced ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+                                            <p className={`text-xs uppercase font-bold ${isBalanced ? 'text-green-600' : 'text-red-600'}`}>
+                                                {isBalanced ? 'Cuadrado' : 'Diferencia'}
+                                            </p>
+                                            <p className={`text-xl font-bold flex items-center gap-2 ${isBalanced ? 'text-green-700' : 'text-red-700'}`}>
+                                                {isBalanced ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                                                {formatCurrency(difference)}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {userRole === 'cashier' && (
+                                        <div className="px-4 py-2 rounded-lg border bg-amber-50 border-amber-100">
+                                            <p className="text-xs uppercase font-bold text-amber-600">Seguridad Financiera</p>
+                                            <p className="text-sm font-medium text-amber-800">El descuadre se revelará al cerrar el turno.</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex gap-3">

@@ -10,7 +10,7 @@ import { verifyAndActivateSubscription } from "@/app/actions/wompi";
 import { useToast } from "@/components/ui/toast";
 
 export const SubscriptionCard = () => {
-    const { businessInfo } = useConfiguration();
+    const { businessInfo, refresh } = useConfiguration();
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
@@ -35,6 +35,9 @@ export const SubscriptionCard = () => {
                         const newUrl = window.location.pathname;
                         window.history.replaceState({}, '', newUrl);
                         toast("¡Pago confirmado! Tu suscripción ha sido activada.", "success");
+
+                        // Force a refresh of the organization data
+                        refresh();
                     } else {
                         if (result.status === 'PENDING') {
                             toast("El pago está en proceso de validación por tu banco.", "warning");

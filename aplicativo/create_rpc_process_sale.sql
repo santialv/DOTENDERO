@@ -1,16 +1,4 @@
--- Type for input items
-DO $$ BEGIN
-    CREATE TYPE public.invoice_item_input AS (
-        product_id UUID,
-        quantity NUMERIC,
-        unit_price NUMERIC,
-        subtotal NUMERIC
-    );
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
--- Main Function
+-- Updated Process Sale RPC with Shift Support
 CREATE OR REPLACE FUNCTION public.process_sale(
     p_org_id UUID,
     p_user_id UUID,
@@ -18,7 +6,8 @@ CREATE OR REPLACE FUNCTION public.process_sale(
     p_customer_id UUID,
     p_total NUMERIC,
     p_payment_method TEXT,
-    p_items JSONB -- Array of objects
+    p_items JSONB, -- Array of objects
+    p_shift_id UUID DEFAULT NULL -- Added shift_id
 )
 RETURNS UUID -- Returns the new Invoice ID
 LANGUAGE plpgsql
@@ -42,7 +31,8 @@ BEGIN
         total,
         payment_method,
         status,
-        created_at
+        created_at,
+        shift_id -- Track the shift
     ) VALUES (
         p_org_id,
         p_user_id,
@@ -50,8 +40,9 @@ BEGIN
         p_invoice_number,
         p_total,
         p_payment_method,
-        'paid', -- Default to paid, handled by frontend logic for now
-        NOW()
+        'paid', 
+        NOW(),
+        p_shift_id
     ) RETURNING id INTO v_invoice_id;
 
     -- 2. Process Items
@@ -59,7 +50,7 @@ BEGIN
     LOOP
         v_product_id := (v_item->>'product_id')::UUID;
         v_quantity := (v_item->>'quantity')::NUMERIC;
-        v_unit_price := (v_item->>'unit_price')::NUMERIC;
+        v_unit_price := (v_item->>'price')::NUMERIC; -- Support both 'price' and 'unit_price' if needed, mapping to schema
         v_subtotal := (v_item->>'subtotal')::NUMERIC;
 
         -- Get current cost for profit calculation
@@ -73,14 +64,13 @@ BEGIN
             unit_price,
             subtotal,
             unit_cost,
-            organization_id, -- Redundant but good for partitioning/RLS
-            product_name -- Snapshot name in case it changes? For now relation is fine, or fetch name.
-            -- Simplifying schema match. Assuming invoice_items has these cols.
+            organization_id, 
+            product_name 
         ) VALUES (
             v_invoice_id,
             v_product_id,
             v_quantity,
-            v_unit_price,
+            COALESCE(v_unit_price, 0),
             v_subtotal,
             COALESCE(v_cost, 0),
             p_org_id,
@@ -96,14 +86,10 @@ BEGIN
 
     -- 4. Handle Credit (Fiado)
     IF p_payment_method = 'credit' AND p_customer_id IS NOT NULL THEN
-        -- Update customer balance (Assuming 'balance' column exists on customers or separate ledger)
-        -- Let's assume 'customers' table has 'balance' or equivalent.
-        -- If not, we might fail here. Let's try standard update.
         UPDATE public.customers
         SET current_debt = COALESCE(current_debt, 0) + p_total
         WHERE id = p_customer_id;
         
-        -- Also set invoice status to 'pending' if credit?
         UPDATE public.invoices SET status = 'pending' WHERE id = v_invoice_id;
     END IF;
 

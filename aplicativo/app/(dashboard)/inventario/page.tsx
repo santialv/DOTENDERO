@@ -4,8 +4,10 @@ import { useInventory } from "@/hooks/useInventory";
 import { InventoryStatsCards } from "@/components/inventory/InventoryStatsCards";
 import { ProductTable } from "@/components/inventory/ProductTable";
 import Link from "next/link";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function InventoryPage() {
+    const { role, permissions } = useUserRole();
     const {
         filteredProducts,
         searchTerm,
@@ -17,10 +19,9 @@ export default function InventoryPage() {
         setCategoryFilter,
         stockFilter,
         setStockFilter,
-        statusFilter, // New
-        setStatusFilter, // New
+        statusFilter,
+        setStatusFilter,
         uniqueCategories,
-        // Pagination
         page,
         setPage,
         totalPages,
@@ -44,14 +45,19 @@ export default function InventoryPage() {
                         <span className="material-symbols-outlined mr-2 text-[18px]">history</span>
                         Ver Kardex
                     </Link>
-                    <button className="flex h-10 px-4 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm font-bold text-slate-700">
-                        <span className="material-symbols-outlined mr-2 text-[18px]">file_download</span>
-                        Exportar
-                    </button>
-                    <Link href="/inventario/nuevo" className="flex h-10 px-4 items-center justify-center rounded-lg bg-[#13ec80] hover:bg-[#10d673] text-slate-900 text-sm font-black transition-colors shadow-sm whitespace-nowrap gap-2">
-                        <span className="material-symbols-outlined text-[18px] font-bold">add</span>
-                        Nuevo Producto
-                    </Link>
+
+                    {role !== 'cashier' && (
+                        <>
+                            <button className="flex h-10 px-4 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-sm font-bold text-slate-700">
+                                <span className="material-symbols-outlined mr-2 text-[18px]">file_download</span>
+                                Exportar
+                            </button>
+                            <Link href="/inventario/nuevo" className="flex h-10 px-4 items-center justify-center rounded-lg bg-[#13ec80] hover:bg-[#10d673] text-slate-900 text-sm font-black transition-colors shadow-sm whitespace-nowrap gap-2">
+                                <span className="material-symbols-outlined text-[18px] font-bold">add</span>
+                                Nuevo Producto
+                            </Link>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -144,6 +150,7 @@ export default function InventoryPage() {
                             products={filteredProducts}
                             onDelete={deleteProduct}
                             calculateMargin={calculateMargin}
+                            permissions={permissions}
                         />
                     </div>
 

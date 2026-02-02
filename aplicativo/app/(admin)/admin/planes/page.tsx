@@ -151,19 +151,26 @@ export default function PlanesPage() {
                                 {plan.name.charAt(0)}
                             </div>
 
-                            <h3 className="font-bold text-lg text-slate-900 mb-1">{plan.name}</h3>
-                            <p className="text-xs text-slate-400 mb-6">ID: {plan.id}</p>
-
                             <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Nombre del Plan</label>
+                                    <input
+                                        type="text"
+                                        value={plan.name}
+                                        onChange={(e) => setPlans(plans.map(p => p.id === plan.id ? { ...p, name: e.target.value } : p))}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 font-bold text-slate-900 focus:ring-2 focus:ring-[#13ec80] outline-none mb-3"
+                                    />
+                                </div>
+
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Precio Mensual (COP)</label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-2 text-slate-400">$</span>
+                                        <span className="absolute left-3 top-2 text-slate-400 font-bold">$</span>
                                         <input
                                             type="number"
                                             value={plan.price}
                                             onChange={(e) => handlePriceChange(plan.id, Number(e.target.value))}
-                                            className="w-full pl-6 pr-4 py-2 rounded-lg border border-slate-200 font-bold text-slate-900 focus:ring-2 focus:ring-[#13ec80] outline-none"
+                                            className="w-full pl-7 pr-4 py-2 rounded-lg border border-slate-200 font-bold text-slate-900 focus:ring-2 focus:ring-[#13ec80] outline-none"
                                         />
                                     </div>
                                 </div>

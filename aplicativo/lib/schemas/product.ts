@@ -2,16 +2,16 @@ import { z } from "zod";
 
 export const productSchema = z.object({
     name: z.string().min(1, "El nombre del producto es obligatorio"),
-    description: z.string().optional(),
+    description: z.string().min(3, "La descripción es obligatoria"),
     category: z.string().min(1, "La categoría es obligatoria"),
 
-    costPrice: z.coerce.number().min(0, "El costo no puede ser negativo"),
-    salePrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo"),
+    costPrice: z.coerce.number().min(1, "El costo de compra es obligatorio"),
+    salePrice: z.coerce.number().min(1, "El precio de venta es obligatorio"),
     tax: z.coerce.number().default(0),
     taxType: z.enum(["IVA", "ICO"]).default("IVA"),
     stock: z.coerce.number().min(0, "El stock inicial no puede ser negativo").default(0),
     minStock: z.coerce.number().min(0, "El stock mínimo no puede ser negativo").default(5),
-    unit: z.string().default("und"),
+    unit: z.string().min(1, "La unidad es obligatoria").default("und"),
     status: z.enum(["Activo", "Inactivo"]).default("Activo"),
 
     // DIAN / Fiscal Compliance
@@ -29,7 +29,7 @@ export const productSchema = z.object({
 
     // Logic helpers (not DB fields)
     skuMode: z.enum(["manual", "auto"]).default("manual"),
-    barcode: z.string().optional().or(z.literal("")),
+    barcode: z.string().min(3, "El código de barras es obligatorio"),
 }).refine((data) => {
     if (data.salePrice < data.costPrice) {
         // We allow this but maybe a warning? 

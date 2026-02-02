@@ -7,9 +7,12 @@ interface ProductTableProps {
     products: Product[];
     onDelete: (id: string) => void;
     calculateMargin: (cost: number, price: number) => number;
+    permissions?: any;
 }
 
-export function ProductTable({ products, onDelete, calculateMargin }: ProductTableProps) {
+export function ProductTable({ products, onDelete, calculateMargin, permissions }: ProductTableProps) {
+    const canViewCosts = permissions?.view_purchase_costs !== false; // Default to true if not provided or admin
+
     return (
         <div className="w-full">
             {/* Desktop Table View */}
@@ -22,9 +25,9 @@ export function ProductTable({ products, onDelete, calculateMargin }: ProductTab
                             </th>
                             <th className="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500 min-w-[280px]">Producto</th>
                             <th className="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">Stock</th>
-                            <th className="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Costo</th>
+                            {canViewCosts && <th className="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Costo</th>}
                             <th className="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">P. Venta</th>
-                            <th className="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-center">Margen</th>
+                            {canViewCosts && <th className="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-center">Margen</th>}
                             <th className="py-4 px-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-center">Estado</th>
                             <th className="py-4 pr-6 pl-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right sticky right-0 bg-slate-50 shadow-[-10px_0_10px_-10px_rgba(0,0,0,0.05)]">Acciones</th>
                         </tr>
@@ -68,16 +71,18 @@ export function ProductTable({ products, onDelete, calculateMargin }: ProductTab
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="py-3 px-4 text-right text-sm text-slate-500 font-mono">${product.costPrice.toLocaleString()}</td>
+                                    {canViewCosts && <td className="py-3 px-4 text-right text-sm text-slate-500 font-mono">${product.costPrice.toLocaleString()}</td>}
                                     <td className="py-3 px-4 text-right text-sm font-bold text-slate-900 font-mono">${product.salePrice.toLocaleString()}</td>
-                                    <td className="py-3 px-4 text-center">
-                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${isInactive ? 'bg-slate-100 text-slate-500' :
-                                            margin < 20 ? 'bg-yellow-100 text-yellow-700' :
-                                                'bg-green-100 text-green-700'
-                                            }`}>
-                                            {margin.toFixed(1)}%
-                                        </span>
-                                    </td>
+                                    {canViewCosts && (
+                                        <td className="py-3 px-4 text-center">
+                                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${isInactive ? 'bg-slate-100 text-slate-500' :
+                                                margin < 20 ? 'bg-yellow-100 text-yellow-700' :
+                                                    'bg-green-100 text-green-700'
+                                                }`}>
+                                                {margin.toFixed(1)}%
+                                            </span>
+                                        </td>
+                                    )}
                                     <td className="py-3 px-4 text-center">
                                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${isInactive ? 'bg-slate-100 text-slate-500 border-slate-200' :
                                             'bg-green-50 text-green-700 border-green-200'
@@ -137,7 +142,7 @@ export function ProductTable({ products, onDelete, calculateMargin }: ProductTab
                                 </div>
                                 <div className="text-right">
                                     <div className="font-bold text-slate-900">${product.salePrice.toLocaleString()}</div>
-                                    <div className="text-[10px] text-slate-400">Costo: ${product.costPrice.toLocaleString()}</div>
+                                    {canViewCosts && <div className="text-[10px] text-slate-400">Costo: ${product.costPrice.toLocaleString()}</div>}
                                 </div>
                             </div>
 

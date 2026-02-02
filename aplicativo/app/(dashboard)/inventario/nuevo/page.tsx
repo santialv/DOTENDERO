@@ -239,7 +239,7 @@ export default function CreateProductPage() {
                                         {/* Barcode */}
                                         <div className="space-y-2">
                                             <label className="text-sm font-bold text-slate-700 flex justify-between items-center">
-                                                Código de Barras
+                                                <span>Código de Barras <span className="text-red-500">*</span></span>
                                                 <div className="flex bg-slate-100 rounded-lg p-0.5">
                                                     <button
                                                         type="button"
@@ -274,17 +274,19 @@ export default function CreateProductPage() {
                                                     placeholder="Escanea el código..."
                                                 />
                                             </div>
+                                            {errors.barcode && <p className="text-xs text-red-500 font-medium mt-1">{errors.barcode.message}</p>}
                                         </div>
                                     </div>
 
                                     {/* Description */}
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-slate-700">Descripción (Opcional)</label>
+                                        <label className="text-sm font-bold text-slate-700">Descripción <span className="text-red-500">*</span></label>
                                         <textarea
                                             {...register("description")}
-                                            className="w-full h-24 p-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none placeholder:text-slate-400"
+                                            className={`w-full h-24 p-4 rounded-xl border bg-slate-50/50 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none placeholder:text-slate-400 ${errors.description ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
                                             placeholder="Detalles adicionales..."
                                         ></textarea>
+                                        {errors.description && <p className="text-xs text-red-500 font-medium mt-1">{errors.description.message}</p>}
                                     </div>
                                 </div>
                             </section>
@@ -491,10 +493,11 @@ export default function CreateProductPage() {
                                                 type="number"
                                                 step="0.01"
                                                 {...register("costPrice")}
-                                                className="w-full h-12 pl-7 pr-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-primary/20 font-bold text-lg"
+                                                className={`w-full h-12 pl-7 pr-3 rounded-xl border bg-white text-slate-700 focus:ring-2 focus:ring-primary/20 font-bold text-lg ${errors.costPrice ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
                                                 placeholder="0"
                                             />
                                         </div>
+                                        {errors.costPrice && <p className="text-xs text-red-500 font-medium mt-1">{errors.costPrice.message}</p>}
                                     </div>
 
                                     {/* Profit Margin Control */}
@@ -558,11 +561,12 @@ export default function CreateProductPage() {
                                                 type="number"
                                                 step="50"
                                                 {...register("salePrice")}
-                                                className="w-full h-16 pl-10 pr-4 rounded-xl border-2 border-[#13ec80] bg-white text-slate-900 focus:ring-4 focus:ring-[#13ec80]/20 focus:border-[#13ec80] font-black text-3xl text-right transition-all"
+                                                className={`w-full h-16 pl-10 pr-4 rounded-xl border-2 bg-white text-slate-900 focus:ring-4 focus:ring-[#13ec80]/20 focus:border-[#13ec80] font-black text-3xl text-right transition-all ${errors.salePrice ? 'border-red-500 bg-red-50' : 'border-[#13ec80]'}`}
                                                 placeholder="0"
                                             />
                                             <div className="absolute right-4 bottom-2 text-[10px] text-slate-400 font-bold pointer-events-none">COP</div>
                                         </div>
+                                        {errors.salePrice && <p className="text-xs text-red-500 font-bold text-right pt-1">{errors.salePrice.message}</p>}
 
                                         {/* Tax Breakdown Preview */}
                                         <div className="flex justify-between items-center mt-2 px-1">

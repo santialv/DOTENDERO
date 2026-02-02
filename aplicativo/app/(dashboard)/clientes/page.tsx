@@ -5,8 +5,10 @@ import { useCustomers, Customer } from "@/hooks/useCustomers";
 import { useToast } from "@/components/ui/toast";
 
 import { useRouter } from "next/navigation";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function CustomersPage() {
+    const { role, permissions } = useUserRole();
     const router = useRouter();
     const { toast } = useToast();
     const {
@@ -106,13 +108,15 @@ export default function CustomersPage() {
                     <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900">Gestión de Clientes</h1>
                     <p className="text-slate-500 text-base">Administra tu base de clientes y sus cuentas por cobrar.</p>
                 </div>
-                <button
-                    onClick={handleCreate}
-                    className="h-12 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-95 transition-all flex items-center gap-2"
-                >
-                    <span className="material-symbols-outlined">person_add</span>
-                    Nuevo Cliente
-                </button>
+                {(role === 'owner' || role === 'admin' || permissions?.create_customers) && (
+                    <button
+                        onClick={handleCreate}
+                        className="h-12 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-95 transition-all flex items-center gap-2"
+                    >
+                        <span className="material-symbols-outlined">person_add</span>
+                        Nuevo Cliente
+                    </button>
+                )}
             </div>
 
             {/* Content */}
@@ -214,12 +218,17 @@ export default function CustomersPage() {
                                             <button onClick={() => window.location.href = `/clientes/${c.id}`} className="p-2 text-slate-400 hover:text-blue-600 rounded-lg" title="Ver Perfil Completo">
                                                 <span className="material-symbols-outlined text-[20px]">visibility</span>
                                             </button>
-                                            <button onClick={() => handleEdit(c)} className="p-2 text-slate-400 hover:text-blue-600 rounded-lg">
-                                                <span className="material-symbols-outlined text-[20px]">edit</span>
-                                            </button>
-                                            <button onClick={() => deleteCustomer(c.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg">
-                                                <span className="material-symbols-outlined text-[20px]">delete</span>
-                                            </button>
+
+                                            {role !== 'cashier' && (
+                                                <>
+                                                    <button onClick={() => handleEdit(c)} className="p-2 text-slate-400 hover:text-blue-600 rounded-lg">
+                                                        <span className="material-symbols-outlined text-[20px]">edit</span>
+                                                    </button>
+                                                    <button onClick={() => deleteCustomer(c.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg">
+                                                        <span className="material-symbols-outlined text-[20px]">delete</span>
+                                                    </button>
+                                                </>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

@@ -30,20 +30,31 @@ export async function verifyAndActivateSubscription(transactionId: string, orgId
             };
         }
 
-        // 2. Determinar Plan basado en el monto
+        // 2. Determinar Plan basado en el monto pagado
         const amount = transaction.amount_in_cents / 100;
-        let planCode = 'basic_monthly';
 
-        // Umbrales rebajados para asegurar detección en prods/tests
-        if (amount >= 400000) planCode = 'pro_annual'; // Mayor a 400k -> Anual
-        else if (amount >= 30000) planCode = 'pro_monthly'; // Mayor a 30k -> Mensual
+        // Buscamos el plan en la base de datos que coincida con este precio
+        const { data: matchedPlans } = await supabase
+            .from('plans')
+            .select('id')
+            .eq('price', amount)
+            .eq('active', true);
 
-        console.log(`[SUBSCRIPTION DEBUG] Amount: ${amount}, Plan Determined: ${planCode}`);
+        let planId = 'pro'; // Default fallback
+        if (matchedPlans && matchedPlans.length > 0) {
+            planId = matchedPlans[0].id;
+        } else {
+            // Fallback razonable si no hay match exacto (ej: por descuentos de Wompi o IVA)
+            if (amount >= 400000) planId = 'pro';
+            else if (amount >= 30000) planId = 'basic';
+        }
+
+        console.log(`[SUBSCRIPTION DEBUG] Amount: ${amount}, Plan Identified: ${planId}`);
 
         // 3. Activar Plan usando la Función RPC de Base de Datos
         const { data, error } = await supabase.rpc('activate_subscription_plan', {
             p_org_id: orgId,
-            p_plan_code: planCode,
+            p_plan_id: planId, // Changed from p_plan_code
             p_payment_ref: transactionId,
             p_amount: amount
         });
@@ -56,7 +67,7 @@ export async function verifyAndActivateSubscription(transactionId: string, orgId
         return {
             success: true,
             message: "¡Plan activado exitosamente!",
-            plan: planCode,
+            plan: planId,
             status: 'APPROVED',
             data
         };

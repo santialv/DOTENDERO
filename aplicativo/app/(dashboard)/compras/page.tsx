@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { addInventoryMovement } from "../../utils/inventory";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface EntryItem {
     tempId: string;
@@ -29,6 +30,7 @@ interface PurchaseRecord {
 }
 
 export default function PurchasesHistoryPage() {
+    const { role } = useUserRole();
     // Pagination State
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(false);
@@ -197,13 +199,15 @@ export default function PurchasesHistoryPage() {
                     <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight text-slate-900">Historial de Compras</h1>
                     <p className="text-sm md:text-base text-slate-500">Gestiona y consulta todas las compras de mercancía realizadas.</p>
                 </div>
-                <Link
-                    href="/compras/ingreso"
-                    className="h-10 md:h-12 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-95 transition-all flex items-center gap-2 text-sm md:text-base w-full md:w-auto justify-center"
-                >
-                    <span className="material-symbols-outlined">add_circle</span>
-                    Nueva Compra
-                </Link>
+                {role !== 'cashier' && (
+                    <Link
+                        href="/compras/ingreso"
+                        className="h-10 md:h-12 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-95 transition-all flex items-center gap-2 text-sm md:text-base w-full md:w-auto justify-center"
+                    >
+                        <span className="material-symbols-outlined">add_circle</span>
+                        Nueva Compra
+                    </Link>
+                )}
             </div>
 
             {/* Stats Cards - Scrollable on mobile */}
@@ -320,36 +324,41 @@ export default function PurchasesHistoryPage() {
                                             >
                                                 <span className="material-symbols-outlined text-[20px]">visibility</span>
                                             </button>
-                                            <button
-                                                onClick={async () => {
-                                                    const { data: items } = await supabase.from('purchase_items').select('*').eq('purchase_id', purchase.id);
-                                                    const fullPurchase = {
-                                                        ...purchase, items: items?.map(i => ({
-                                                            tempId: i.id,
-                                                            productId: i.product_id,
-                                                            name: i.product_name,
-                                                            barcode: '',
-                                                            qty: i.quantity,
-                                                            cost: i.cost,
-                                                            taxPercent: i.tax_percent,
-                                                            discountPercent: i.discount_percent,
-                                                            isNew: false
-                                                        }))
-                                                    };
-                                                    handleEdit(fullPurchase as any);
-                                                }}
-                                                className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                                                title="Editar (Rehacer)"
-                                            >
-                                                <span className="material-symbols-outlined text-[20px]">edit</span>
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(purchase)}
-                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                title="Eliminar"
-                                            >
-                                                <span className="material-symbols-outlined text-[20px]">delete</span>
-                                            </button>
+
+                                            {role !== 'cashier' && (
+                                                <>
+                                                    <button
+                                                        onClick={async () => {
+                                                            const { data: items } = await supabase.from('purchase_items').select('*').eq('purchase_id', purchase.id);
+                                                            const fullPurchase = {
+                                                                ...purchase, items: items?.map(i => ({
+                                                                    tempId: i.id,
+                                                                    productId: i.product_id,
+                                                                    name: i.product_name,
+                                                                    barcode: '',
+                                                                    qty: i.quantity,
+                                                                    cost: i.cost,
+                                                                    taxPercent: i.tax_percent,
+                                                                    discountPercent: i.discount_percent,
+                                                                    isNew: false
+                                                                }))
+                                                            };
+                                                            handleEdit(fullPurchase as any);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                                        title="Editar (Rehacer)"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[20px]">edit</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(purchase)}
+                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Eliminar"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[20px]">delete</span>
+                                                    </button>
+                                                </>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

@@ -194,7 +194,7 @@ export function usePOS() {
             return {
                 ...product,
                 ...cartItem,
-                finalPrice: product.salePrice || product.price || 0,
+                finalPrice: (cartItem as any).customPrice !== undefined ? (cartItem as any).customPrice : (product.salePrice || product.price || 0),
             } as CartItem;
         }).filter((item): item is CartItem => item !== null);
     }, [cart, products, productCache]);
@@ -229,6 +229,14 @@ export function usePOS() {
 
     const deleteFromCart = useCallback((productId: string | number) => {
         setCart(prev => prev.filter(item => String(item.id) !== String(productId)));
+    }, []);
+
+    const updateItemPrice = useCallback((productId: string | number, newPrice: number) => {
+        setCart(prev => prev.map(item =>
+            String(item.id) === String(productId)
+                ? { ...item, customPrice: newPrice }
+                : item
+        ));
     }, []);
 
     const clearCart = useCallback(() => {
@@ -282,7 +290,8 @@ export function usePOS() {
     const checkout = useCallback(async (
         paymentMethods: Payment[],
         amountTendered: number,
-        change: number
+        change: number,
+        shiftId?: string
     ) => {
         if (cartItems.length === 0) return null;
 
@@ -316,7 +325,8 @@ export function usePOS() {
                 quantity: item.quantity,
                 unit_price: item.finalPrice,
                 subtotal: item.finalPrice * item.quantity
-            }))
+            })),
+            p_shift_id: shiftId
         };
 
         try {
@@ -388,6 +398,7 @@ export function usePOS() {
         clearCart,
         holdOrder,
         resumeOrder,
+        updateItemPrice,
         checkout
     };
 }

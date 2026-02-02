@@ -24,7 +24,9 @@ interface Product {
 
 // Add Supabase import
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/components/ui/toast"; // Correct import
+import { useToast } from "@/components/ui/toast";
+import { updateProduct } from "@/app/actions/products";
+import { ProductFormValues } from "@/lib/schemas/product";
 
 export default function EditProductPage() {
     const { toast } = useToast();
@@ -93,74 +95,76 @@ export default function EditProductPage() {
     }, [productId, router, toast]);
 
     const handleSave = async () => {
-        if (!name) {
+        if (!name || name.length < 1) {
             toast("El nombre del producto es obligatorio.", "error");
             return;
         }
 
-        if (!salePrice) {
-            toast("El precio de venta es obligatorio.", "error");
+        if (!description || description.length < 3) {
+            toast("La descripción es obligatoria (mínimo 3 caracteres).", "error");
             return;
         }
 
-        let finalBarcode = barcode;
-
-        // If still in auto mode but no barcode generated yet (fallback), generate one now
-        if (skuMode === 'auto' && (!finalBarcode || finalBarcode === "SIN-CODIGO")) {
-            const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-            finalBarcode = `SKU-${randomSuffix}`;
-        } else if (!finalBarcode) {
-            if (!confirm("El código de barras está vacío. ¿Desea guardar sin código?")) return;
-            finalBarcode = "SIN-CODIGO";
+        if (!barcode || barcode.length < 3) {
+            toast("El código de barras es obligatorio.", "error");
+            return;
         }
 
-        // Check duplicate barcode (excluding current product)
-        if (finalBarcode !== "SIN-CODIGO") {
-            try {
-                const { data: duplicate } = await supabase
-                    .from("products")
-                    .select("id")
-                    .eq("barcode", finalBarcode)
-                    .neq("id", productId)
-                    .maybeSingle();
-
-                if (duplicate) {
-                    toast(`El código de barras "${finalBarcode}" ya está registrado en otro producto.`, "error");
-                    return;
-                }
-            } catch (err) {
-                console.error("Error checking duplicate:", err);
-            }
+        const salePriceNum = parseFloat(salePrice);
+        if (isNaN(salePriceNum) || salePriceNum <= 0) {
+            toast("El precio de venta debe ser mayor a 0.", "error");
+            return;
         }
 
+        const costPriceNum = parseFloat(costPrice);
+        if (isNaN(costPriceNum) || costPriceNum <= 0) {
+            toast("El costo de compra debe ser mayor a 0.", "error");
+            return;
+        }
+
+        setLoading(true);
         try {
-            const updates = {
+            // Map state to the structure expected by updateProduct (ProductFormValues)
+            // Note: The edit page is missing some fields like 'priceIncludesTax' etc, 
+            // so we'll provide defaults or fetch them if needed. 
+            // For now, we'll use what we have.
+
+            // First, let's fetch the full product to get missing fields
+            const { data: fullProduct } = await supabase.from('products').select('*').eq('id', productId).single();
+
+            const data: ProductFormValues = {
                 name,
                 description,
-                category: category || "General",
-                barcode: finalBarcode,
-                cost: parseFloat(costPrice) || 0,
-                price: parseFloat(salePrice) || 0,
-                tax_rate: parseFloat(tax) || 0,
+                category,
+                barcode,
+                costPrice: costPriceNum,
+                salePrice: salePriceNum,
+                tax: parseFloat(tax) || 0,
+                taxType: "IVA",
                 stock: parseFloat(stock) || 0,
-                min_stock: parseFloat(minStock) || 0,
+                minStock: parseFloat(minStock) || 0,
                 unit,
-                status: status === 'Activo' ? 'active' : 'inactive',
-                updated_at: new Date().toISOString()
+                status: status as any,
+                skuMode,
+                priceIncludesTax: fullProduct?.price_includes_tax ?? false,
+                isService: fullProduct?.is_service ?? false,
+                fiscalClassification: fullProduct?.fiscal_classification ?? "gravado",
+                taxes: [] // We'll handle taxes in the server action based on legacy fields for now
             };
 
-            const { error } = await supabase
-                .from('products')
-                .update(updates)
-                .eq('id', productId);
+            const result = await updateProduct(productId, data);
 
-            if (error) throw error;
-
-            toast("Producto actualizado correctamente", "success");
-            router.push("/inventario");
+            if (result.success) {
+                toast(result.message || "Producto actualizado", "success");
+                router.push("/inventario");
+            } else {
+                toast(result.message || "Error al actualizar", "error");
+            }
         } catch (error: any) {
             console.error("Error updating product:", error);
             toast(`Error al guardar: ${error.message}`, "error");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -223,7 +227,7 @@ export default function EditProductPage() {
                                     />
                                 </label>
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm text-slate-700">Descripción</span>
+                                    <span className="text-sm text-slate-700">Descripción <span className="text-red-500">*</span></span>
                                     <textarea
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
@@ -250,7 +254,7 @@ export default function EditProductPage() {
                                     </label>
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-slate-700">Código de Barras</span>
+                                            <span className="text-sm text-slate-700">Código de Barras <span className="text-red-500">*</span></span>
                                             <div className="flex bg-slate-100 p-0.5 rounded-lg">
                                                 <button
                                                     onClick={() => setSkuMode('manual')}
@@ -303,7 +307,7 @@ export default function EditProductPage() {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm text-slate-700">Precio de Costo ($)</span>
+                                    <span className="text-sm text-slate-700">Precio de Costo ($) <span className="text-red-500">*</span></span>
                                     <input
                                         value={costPrice}
                                         onChange={(e) => setCostPrice(e.target.value)}
@@ -314,7 +318,7 @@ export default function EditProductPage() {
                                     />
                                 </label>
                                 <label className="flex flex-col gap-2">
-                                    <span className="text-sm text-slate-700">Precio de Venta ($)</span>
+                                    <span className="text-sm text-slate-700">Precio de Venta ($) <span className="text-red-500">*</span></span>
                                     <div className="relative">
                                         <input
                                             value={salePrice}

@@ -14,6 +14,8 @@ interface CartSidebarProps {
     onHoldOrder: () => void;
     onViewHeldOrders: () => void;
     heldOrdersCount: number;
+    permissions?: any;
+    onUpdatePrice?: (id: string | number, newPrice: number) => void;
 }
 
 export function CartSidebar({
@@ -27,7 +29,9 @@ export function CartSidebar({
     onCheckout,
     onHoldOrder,
     onViewHeldOrders,
-    heldOrdersCount
+    heldOrdersCount,
+    permissions,
+    onUpdatePrice
 }: CartSidebarProps) {
     return (
         <aside className="hidden md:flex w-[380px] bg-white border-l border-slate-200 flex-col shadow-xl shrink-0 z-10 h-full">
@@ -51,9 +55,27 @@ export function CartSidebar({
                                 <div className="flex-1 flex flex-col justify-center">
                                     <div className="flex justify-between items-start">
                                         <h4 className="font-medium text-slate-900 line-clamp-1 text-sm">{item.name}</h4>
-                                        <span className="font-bold text-slate-900 text-sm">${(item.finalPrice * item.quantity).toLocaleString()}</span>
+                                        <div className="flex flex-col items-end">
+                                            <span className="font-bold text-slate-900 text-sm">${(item.finalPrice * item.quantity).toLocaleString()}</span>
+                                            <div className="flex items-center gap-1 group/price">
+                                                <span className="text-xs text-slate-500">${item.finalPrice.toLocaleString()} c/u</span>
+                                                {(permissions?.apply_discounts !== false) && onUpdatePrice && (
+                                                    <button
+                                                        onClick={() => {
+                                                            const newPrice = prompt(`Ajustar precio para ${item.name}:`, item.finalPrice.toString());
+                                                            if (newPrice && !isNaN(parseFloat(newPrice))) {
+                                                                onUpdatePrice(item.id, parseFloat(newPrice));
+                                                            }
+                                                        }}
+                                                        className="p-0.5 text-slate-300 hover:text-indigo-500 rounded transition-colors"
+                                                        title="Aplicar Descuento"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="text-xs text-slate-500 mt-0.5">${item.finalPrice.toLocaleString()} c/u</div>
                                     <div className="flex items-center gap-3 mt-2">
                                         <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden h-7">
                                             <button onClick={() => removeFromCart(item.id)} className="w-7 h-full flex items-center justify-center hover:bg-slate-100 text-slate-500 transition-colors">
