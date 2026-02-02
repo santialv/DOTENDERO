@@ -103,7 +103,7 @@ export default function HistoriaPage() {
                 onEnter: () => {
                     animateYearRoll(currentYear, newYear, "up");
                     currentYear = newYear;
-                    if (!isMobile) gsap.to("body", { backgroundColor: bgColor, duration: 0.6 });
+                    gsap.to("body", { backgroundColor: bgColor, duration: 0.6 });
                 },
                 onLeaveBack: () => {
                     const prev = sections[index - 1];
@@ -111,7 +111,7 @@ export default function HistoriaPage() {
                     const prevColor = prev?.dataset.bgColor || "#ffffff";
                     animateYearRoll(currentYear, prevYear, "down");
                     currentYear = prevYear;
-                    if (!isMobile) gsap.to("body", { backgroundColor: prevColor, duration: 0.6 });
+                    gsap.to("body", { backgroundColor: prevColor, duration: 0.6 });
                 }
             });
 
@@ -167,6 +167,7 @@ export default function HistoriaPage() {
             ScrollTrigger.getAll().forEach(t => t.kill());
             clearTimeout(scrollTimeout);
             window.removeEventListener('load', handleInitialScroll);
+            gsap.set("body", { clearProps: "backgroundColor" });
         };
     }, []);
 

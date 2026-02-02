@@ -50,7 +50,7 @@ export default function Home() {
           </h1>
 
           <p className="text-gray-400 text-lg md:text-2xl font-medium leading-relaxed max-w-[850px] mb-12 reveal-on-scroll delay-100">
-            Llevamos la herramienta más avanzada del mercado a quienes el sistema <span className="text-white font-black">siempre ha dejado atrás</span>. Porque democratizar la innovación de punta no es una opción, es nuestra obligación con cada rincón de nuestro país. 👊💚
+            Llevamos la herramienta más avanzada del mercado a quienes el sistema <span className="text-white font-black">siempre ha dejado atrás</span>. Porque democratizar la innovación de punta no es una opción, es nuestra obligación con cada rincón de nuestro país.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md justify-center reveal-on-scroll delay-200">
@@ -254,7 +254,7 @@ export default function Home() {
       </div>
 
       <InstallPrompt />
-    </div>
+    </div >
   );
 }
 
