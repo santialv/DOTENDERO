@@ -137,29 +137,34 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
                                         if (!whatsappPhone) return;
 
                                         // Build Message
-                                        let msg = `🧾 *Recibo de Compra* - ${businessInfo.name}\n\n`;
-                                        msg += `📅 *Fecha:* ${new Date(transaction.date).toLocaleDateString()} ${new Date(transaction.date).toLocaleTimeString()}\n`;
-                                        msg += `🔢 *Ticket:* #${transaction.id.toString().slice(-6)}\n`;
-                                        msg += `--------------------------------\n`;
+                                        // Build Enhanced Message with Emojis & Life
+                                        let msg = `🌟 *¡Hola! Gracias por tu compra en ${businessInfo.name}* 🏪\n\n`;
+                                        msg += `Aquí tienes el resumen de tu pedido 🧾:\n`;
+                                        msg += `───────────────────────\n`;
 
                                         transaction.items?.forEach(item => {
-                                            msg += `▪ ${item.quantity}x ${item.name} ($${((item.finalPrice || 0) * (item.quantity || 0)).toLocaleString()})\n`;
+                                            msg += `▪ ${item.quantity}x *${item.name}* ... $${((item.finalPrice || 0) * (item.quantity || 0)).toLocaleString()}\n`;
                                         });
 
-                                        msg += `--------------------------------\n`;
-                                        msg += `💰 *TOTAL A PAGAR: $${(transaction.amount || 0).toLocaleString()}*\n`;
+                                        msg += `───────────────────────\n`;
+                                        msg += `✅ *TOTAL PAGADO: $${(transaction.amount || 0).toLocaleString()}* 💰\n\n`;
 
                                         if (transaction.change && transaction.change > 0) {
-                                            msg += `💵 Cambio: $${transaction.change.toLocaleString()}\n`;
+                                            msg += `💵 _Recibido:_ $${(transaction.amount + transaction.change).toLocaleString()}\n`;
+                                            msg += `🪙 _Cambio:_ $${transaction.change.toLocaleString()}\n\n`;
                                         }
 
-                                        msg += `\n✅ *¡Gracias por tu compra!* 💚\n`;
-                                        msg += `_Generado por DonTendero.com_ 🚀`;
+                                        msg += `📅 Fecha: ${new Date(transaction.date).toLocaleDateString()} ${new Date(transaction.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}\n`;
+                                        msg += `🎫 Ticket: #${transaction.id.toString().slice(-6)}\n\n`;
+
+                                        msg += `🥰 *¡Esperamos verte pronto!* \n`;
+                                        msg += `Recuerda que aquí siempre encuentras calidad y frescura. 🍎🥦\n\n`;
+                                        msg += `_Gestionado con ❤️ por DonTendero.com_ 🚀`;
 
                                         const url = `https://wa.me/57${whatsappPhone}?text=${encodeURIComponent(msg)}`;
                                         window.open(url, '_blank');
                                         setShowWhatsAppForm(false);
-                                        toast("Abriendo WhatsApp...", "success");
+                                        toast("Abriendo WhatsApp con estilo... 😎", "success");
                                     }}
                                     disabled={!whatsappPhone || whatsappPhone.length < 10}
                                     className="flex-[2] bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3 rounded-xl shadow-lg shadow-green-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
