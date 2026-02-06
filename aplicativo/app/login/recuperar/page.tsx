@@ -16,8 +16,15 @@ export default function ForgotPasswordPage() {
         setLoading(true);
 
         try {
+            // FIXME: CONFIGURACIÓN FORZADA A PRODUCCIÓN
+            // El usuario solicitó que SIEMPRE redirija a la web desplegada, no a localhost.
+            // Si cambias de dominio, actualiza esta línea.
+            const redirectUrl = `https://dontendero.com/login/restablecer`;
+
+            console.log("Intentando enviar correo de recuperación con redirect a:", redirectUrl);
+
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/login/restablecer`,
+                redirectTo: redirectUrl,
             });
 
             if (error) {
