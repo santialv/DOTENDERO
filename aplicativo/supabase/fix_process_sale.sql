@@ -1,9 +1,24 @@
 -- ==============================================================================
--- REPARACIÓN PROCESO DE VENTA (POS)
--- Objetivo: Crear/Reemplazar la función RPC process_sale con la firma exacta que usa el Frontend.
+-- REPARACIÓN PROCESO DE VENTA (POS) - VERSIÓN CON PRODUCT_NAME
+-- Objetivo: Incluir el nombre del producto en invoice_items para cumplir restricción NOT NULL
 -- ==============================================================================
 
-CREATE OR REPLACE FUNCTION public.process_sale(
+-- 1. LIMPIEZA: Borrar versiones anteriores
+DO $$ 
+DECLARE 
+    r RECORD; 
+BEGIN 
+    FOR r IN SELECT oid::regprocedure AS func_signature 
+             FROM pg_proc 
+             WHERE proname = 'process_sale' 
+             AND pronamespace = 'public'::regnamespace 
+    LOOP 
+        EXECUTE 'DROP FUNCTION ' || r.func_signature || ' CASCADE'; 
+    END LOOP; 
+END $$;
+
+-- 2. CREACIÓN: Definir la función correcta
+CREATE FUNCTION public.process_sale(
     p_org_id UUID,
     p_user_id UUID,
     p_invoice_number INT,
@@ -20,17 +35,16 @@ AS $$
 DECLARE
     v_invoice_id UUID;
     v_item JSONB;
-    v_type TEXT := 'sale';
 BEGIN
-    -- 1. Insertar Factura (Cabecera)
+    -- a. Insertar Factura (Cabecera)
     INSERT INTO invoices (
         organization_id,
-        user_id, -- Vendedor que hizo la venta
+        user_id,
         customer_id,
-        period_number, -- Mapeado desde invoice_number (frontend counter)
+        period_number,
         total,
-        status, -- 'paid'
-        payment_method, 
+        status,
+        payment_method,
         shift_id,
         type,
         created_at
@@ -48,42 +62,41 @@ BEGIN
     )
     RETURNING id INTO v_invoice_id;
 
-    -- 2. Procesar Items (Detalle)
+    -- b. Procesar Items (Detalle)
     FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
     LOOP
-        -- a. Insertar Detalle
+        -- Insertar Detalle (INCLUYENDO product_name)
         INSERT INTO invoice_items (
             invoice_id,
             product_id,
+            product_name, -- CAMPO REQUERIDO
             quantity,
             unit_price,
-            organization_id, -- Denormalizado para RLS/Queries rápidos
+            organization_id,
             subtotal
         ) VALUES (
             v_invoice_id,
             (v_item->>'product_id')::UUID,
+            COALESCE(v_item->>'name', 'Producto Sin Nombre'), -- Fallback de seguridad
             (v_item->>'quantity')::NUMERIC,
             (v_item->>'unit_price')::NUMERIC,
             p_org_id,
             (v_item->>'subtotal')::NUMERIC
         );
 
-        -- b. Descontar Inventario
+        -- Descontar Inventario
         UPDATE products
         SET stock = stock - (v_item->>'quantity')::NUMERIC
         WHERE id = (v_item->>'product_id')::UUID
           AND organization_id = p_org_id;
-          
     END LOOP;
 
     RETURN v_invoice_id;
-
 EXCEPTION WHEN OTHERS THEN
-    -- Propagar error para que el Frontend lo vea
     RAISE EXCEPTION 'Error procesando venta: %', SQLERRM;
 END;
 $$;
 
--- Permisos
+-- 3. PERMISOS
 GRANT EXECUTE ON FUNCTION public.process_sale TO authenticated;
 GRANT EXECUTE ON FUNCTION public.process_sale TO service_role;

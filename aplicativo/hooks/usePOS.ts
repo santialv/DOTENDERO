@@ -322,6 +322,7 @@ export function usePOS() {
             p_payment_method: paymentMethods.map(p => p.method).join(','), // Simple comma list for now or first method
             p_items: cartItems.map(item => ({
                 product_id: item.id,
+                name: item.name, // Added product name for invoice history
                 quantity: item.quantity,
                 unit_price: item.finalPrice,
                 subtotal: item.finalPrice * item.quantity
