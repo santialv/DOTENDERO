@@ -335,7 +335,13 @@ export function usePOS() {
 
             if (error) {
                 console.error("Sale Error:", error);
-                toast(`Error al procesar venta: ${error.message}`, "error");
+
+                let msg = `Error al procesar venta: ${error.message}`;
+                if (error.message?.includes("Could not find the function")) {
+                    msg = "Error Crítico: Falta función en Base de Datos. Ejecuta 'fix_process_sale.sql' en Supabase.";
+                }
+
+                toast(msg, "error");
                 return null;
             }
 
