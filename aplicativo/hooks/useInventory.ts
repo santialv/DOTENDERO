@@ -193,51 +193,9 @@ export function useInventory() {
             }
 
         } catch (e) {
-            console.warn("Stats RPC unavailable, using client-side fallback (slower)", e);
-
-            // Fallback: Fetch specific columns to calculate stats locally
-            // We fetch all products for the org. CAUTION: Heavy for large datasets.
-            const { data: products, error } = await supabase
-                .from('products')
-                .select('stock, cost, min_stock, status')
-                .eq('organization_id', orgId);
-
-            if (error) {
-                console.error("Fallback stats fetch failed", error);
-                return;
-            }
-
-            if (products) {
-                let totalP = 0;
-                let totalV = 0;
-                let lowStock = 0;
-                let inactive = 0;
-
-                products.forEach(p => {
-                    totalP++;
-                    if (p.status === 'inactive') {
-                        inactive++;
-                    } else {
-                        // Active Product calculations
-                        const stock = p.stock || 0;
-                        const cost = p.cost || 0;
-                        const min = p.min_stock || 0;
-
-                        totalV += (stock * cost);
-
-                        if (stock <= min) {
-                            lowStock++;
-                        }
-                    }
-                });
-
-                setStats({
-                    totalProducts: totalP,
-                    totalValue: totalV,
-                    lowStockCount: lowStock,
-                    inactiveCount: inactive
-                });
-            }
+            console.error("Error loading inventory stats:", e);
+            // Do NOT fallback to fetching all products. It crashes the browser on large datasets.
+            // Stats will remain at 0, which is safer.
         }
     }, []);
 
