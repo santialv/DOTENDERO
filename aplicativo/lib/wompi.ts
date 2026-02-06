@@ -75,7 +75,12 @@ export class WompiService {
             : 'https://sandbox.wompi.co/v1/transactions';
 
         try {
-            const response = await fetch(`${baseUrl}/${id}`);
+            const response = await fetch(`${baseUrl}/${id}`, {
+                cache: 'no-store',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
             const data = await response.json();
             return data.data;
         } catch (error) {

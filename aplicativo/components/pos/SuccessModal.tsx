@@ -159,7 +159,7 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
 
                                         msg += `🥰 *¡Esperamos verte pronto!* \n`;
                                         msg += `Recuerda que aquí siempre encuentras calidad y frescura. 🍎🥦\n\n`;
-                                        msg += `_Gestionado con ❤️ por DonTendero.com_ 🚀`;
+                                        msg += `_Gestionado con ❤️ por somos.dontendero.com_ 🚀`;
 
                                         const url = `https://wa.me/57${whatsappPhone}?text=${encodeURIComponent(msg)}`;
                                         window.open(url, '_blank');

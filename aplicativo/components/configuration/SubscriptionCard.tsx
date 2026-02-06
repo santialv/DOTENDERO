@@ -19,44 +19,53 @@ export const SubscriptionCard = () => {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [planDetails, setPlanDetails] = useState<any>(null);
 
-    useEffect(() => {
-        const checkPayment = async () => {
-            const transactionId = searchParams.get('id');
+    const checkPayment = async (manualId?: string) => {
+        const transactionId = manualId || searchParams.get('id');
 
-            if (transactionId && businessInfo?.organization_id) {
-                toast("Verificando estado del pago...", "info");
+        if (transactionId && businessInfo?.organization_id) {
+            toast("Verificando estado del pago en tiempo real...", "info");
 
-                try {
-                    const result = await verifyAndActivateSubscription(transactionId, businessInfo.organization_id);
+            try {
+                const result = await verifyAndActivateSubscription(transactionId, businessInfo.organization_id);
 
-                    if (result.success) {
-                        setShowSuccessModal(true);
-                        // Clean URL
-                        const newUrl = window.location.pathname;
-                        window.history.replaceState({}, '', newUrl);
-                        toast("¡Pago confirmado! Tu suscripción ha sido activada.", "success");
+                if (result.success) {
+                    setShowSuccessModal(true);
+                    // Clean URL
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, '', newUrl);
+                    toast("¡Pago confirmado! 🚀", "success");
 
-                        // Force a refresh of the organization data
+                    // Force a refresh
+                    refresh();
+                } else {
+                    if (result.status === 'PENDING') {
+                        toast("El pago sigue pendiente. Intenta de nuevo en unos segundos.", "warning");
+                    } else if (result.status === 'APPROVED') {
+                        // Case: Approved in Wompi but update logic handles it
+                        toast("Pago Aprobado. Actualizando tu plan...", "success");
                         refresh();
                     } else {
-                        if (result.status === 'PENDING') {
-                            toast("El pago está en proceso de validación por tu banco.", "warning");
-                        } else {
-                            // Show detailed error message from server
-                            toast(result.message || `Error: ${result.status}`, "error");
-                        }
+                        toast(result.message || `Error: ${result.status}`, "error");
                     }
-                } catch (e) {
-                    console.error("Error verifying payment:", e);
-                    toast("Error verificando el pago", "error");
                 }
+            } catch (e) {
+                console.error("Error verifying payment:", e);
+                toast("Error verificando el pago", "error");
             }
-        };
+        } else {
+            if (manualId === undefined) {
+                // If called manually without ID and no URL param
+                const inputId = prompt("Ingresa el ID de transacción de Wompi (si lo tienes):");
+                if (inputId) checkPayment(inputId);
+            }
+        }
+    };
 
-        if (businessInfo?.organization_id) {
+    useEffect(() => {
+        if (businessInfo?.organization_id && searchParams.get('id')) {
             checkPayment();
         }
-    }, [searchParams, businessInfo?.organization_id, toast]);
+    }, [searchParams, businessInfo?.organization_id]);
 
     useEffect(() => {
         if (businessInfo?.plan) {
@@ -176,17 +185,29 @@ export const SubscriptionCard = () => {
                     {/* Action Bar */}
                     <div className="bg-slate-50 p-6 border-t border-slate-200 flex flex-wrap gap-6 justify-between items-center">
                         <span className="text-sm text-slate-500 font-medium">
-                            ¿Necesitas más poder para tu negocio?
+                            ¿Problemas con tu pago?
                         </span>
-                        <button
-                            onClick={() => setIsUpgradeModalOpen(true)}
-                            className="relative overflow-hidden group bg-slate-900 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-slate-500/30 hover:shadow-slate-500/50 transition-all hover:-translate-y-0.5 w-full sm:w-auto"
-                        >
-                            <div className="relative flex items-center justify-center gap-2">
-                                <span className="material-symbols-outlined text-[20px]">upgrade</span>
-                                <span>Cambiar de Plan</span>
-                            </div>
-                        </button>
+
+                        <div className="flex flex-wrap gap-4 w-full sm:w-auto">
+                            {/* Manual Verify Button */}
+                            <button
+                                onClick={() => checkPayment()}
+                                className="px-6 py-3 rounded-xl border border-slate-300 text-slate-600 font-bold hover:bg-slate-100 transition-colors flex items-center gap-2"
+                            >
+                                <span className="material-symbols-outlined text-sm">sync</span>
+                                <span>Verificar último pago</span>
+                            </button>
+
+                            <button
+                                onClick={() => setIsUpgradeModalOpen(true)}
+                                className="relative overflow-hidden group bg-slate-900 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-slate-500/30 hover:shadow-slate-500/50 transition-all hover:-translate-y-0.5 w-full sm:w-auto flex-1 sm:flex-initial"
+                            >
+                                <div className="relative flex items-center justify-center gap-2">
+                                    <span className="material-symbols-outlined text-[20px]">upgrade</span>
+                                    <span>Cambiar de Plan</span>
+                                </div>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
