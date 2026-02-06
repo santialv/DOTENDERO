@@ -35,6 +35,15 @@ export const PlanUpgradeModal = ({ isOpen, onClose, currentPlanId }: PlanUpgrade
         }
     }, [isOpen]);
 
+    const tryParse = (str: string) => {
+        try {
+            const parsed = JSON.parse(str);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    };
+
     const fetchPlans = async () => {
         try {
             const { data, error } = await supabase.from('plans').select('*').eq('active', true).order('price');
@@ -50,7 +59,11 @@ export const PlanUpgradeModal = ({ isOpen, onClose, currentPlanId }: PlanUpgrade
                     id: p.id,
                     name: p.name,
                     price: p.price,
-                    features: p.features || []
+                    features: Array.isArray(p.features)
+                        ? p.features
+                        : (typeof p.features === 'string'
+                            ? (tryParse(p.features) || [])
+                            : [])
                 }));
                 setPlans(mapped);
             } else {

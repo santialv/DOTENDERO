@@ -16,6 +16,8 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
     const [showEmailForm, setShowEmailForm] = useState(false);
     const [manualEmail, setManualEmail] = useState("");
     const [isSending, setIsSending] = useState(false);
+    const [showWhatsAppForm, setShowWhatsAppForm] = useState(false);
+    const [whatsappPhone, setWhatsappPhone] = useState("");
 
     if (!transaction) return null;
 
@@ -48,7 +50,7 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
         <>
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200 print:hidden">
                 <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden text-center p-8 transition-all">
-                    {!showEmailForm ? (
+                    {!showEmailForm && !showWhatsAppForm ? (
                         <>
                             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-500">
                                 <span className="material-symbols-outlined text-[48px]">check_circle</span>
@@ -60,38 +62,119 @@ export function SuccessModal({ transaction, onNewSale }: SuccessModalProps) {
                                     <p className="text-3xl font-black text-green-600">${(transaction.change || 0).toLocaleString()}</p>
                                 </div>
                             )}
-                            <div className="flex gap-2 mt-4">
+
+                            <div className="grid grid-cols-2 gap-2 mt-4">
+                                <button
+                                    onClick={onNewSale}
+                                    className="col-span-2 bg-[#13ec80] hover:bg-[#0eb562] text-slate-900 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95"
+                                >
+                                    <span>Nueva Venta</span>
+                                    <span className="material-symbols-outlined text-lg font-bold">arrow_forward</span>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setWhatsappPhone(transaction.customerData?.phone || "");
+                                        setShowWhatsAppForm(true);
+                                    }}
+                                    className="col-span-2 bg-white border-2 border-[#25D366] text-[#25D366] hover:bg-green-50 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 active:scale-95"
+                                >
+                                    <span className="text-lg">📱</span> {/* WhatsApp Icon placeholder */}
+                                    <span>Enviar x WhatsApp</span>
+                                </button>
+
                                 <button
                                     onClick={() => window.print()}
-                                    className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-3 rounded-xl transition-colors flex flex-col items-center justify-center gap-1 text-xs"
+                                    className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold py-3 rounded-xl transition-colors flex flex-col items-center justify-center gap-1 text-xs"
                                 >
                                     <span className="material-symbols-outlined text-lg">print</span>
                                     <span>Imprimir</span>
                                 </button>
 
                                 <button
-                                    onClick={onNewSale}
-                                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold py-3 rounded-xl transition-colors flex flex-col items-center justify-center gap-1 text-xs"
-                                >
-                                    <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                                    <span>Nueva</span>
-                                </button>
-
-                                <button
                                     onClick={() => setShowEmailForm(true)}
-                                    className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-3 rounded-xl transition-colors flex flex-col items-center justify-center gap-1 text-xs"
+                                    className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold py-3 rounded-xl transition-colors flex flex-col items-center justify-center gap-1 text-xs"
                                 >
                                     <span className="material-symbols-outlined text-lg">mail</span>
-                                    <span>Enviar</span>
+                                    <span>Correo</span>
                                 </button>
                             </div>
                         </>
+                    ) : showWhatsAppForm ? (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-[#25D366]">
+                                <span className="material-symbols-outlined text-[32px]">perm_phone_msg</span>
+                            </div>
+                            <h3 className="font-bold text-lg mb-2 text-slate-900">Enviar a WhatsApp</h3>
+                            <p className="text-xs text-slate-500 mb-6">El cliente recibirá un resumen de la compra instantáneamente.</p>
+
+                            <div className="text-left mb-6">
+                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block">
+                                    Número Celular (Sin +57)
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-3 text-slate-400 font-bold text-sm">🇨🇴 +57</span>
+                                    <input
+                                        type="tel"
+                                        placeholder="300 123 4567"
+                                        value={whatsappPhone}
+                                        onChange={e => setWhatsappPhone(e.target.value.replace(/\D/g, ''))}
+                                        className="w-full pl-16 p-3 rounded-xl border border-slate-200 focus:border-green-500 outline-none transition-colors font-bold text-lg bg-white"
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setShowWhatsAppForm(false)}
+                                    className="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-colors"
+                                >
+                                    Volver
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (!whatsappPhone) return;
+
+                                        // Build Message
+                                        let msg = `🧾 *Recibo de Compra* - ${businessInfo.name}\n\n`;
+                                        msg += `📅 *Fecha:* ${new Date(transaction.date).toLocaleDateString()} ${new Date(transaction.date).toLocaleTimeString()}\n`;
+                                        msg += `🔢 *Ticket:* #${transaction.id.toString().slice(-6)}\n`;
+                                        msg += `--------------------------------\n`;
+
+                                        transaction.items?.forEach(item => {
+                                            msg += `▪ ${item.quantity}x ${item.name} ($${((item.finalPrice || 0) * (item.quantity || 0)).toLocaleString()})\n`;
+                                        });
+
+                                        msg += `--------------------------------\n`;
+                                        msg += `💰 *TOTAL A PAGAR: $${(transaction.amount || 0).toLocaleString()}*\n`;
+
+                                        if (transaction.change && transaction.change > 0) {
+                                            msg += `💵 Cambio: $${transaction.change.toLocaleString()}\n`;
+                                        }
+
+                                        msg += `\n✅ *¡Gracias por tu compra!* 💚\n`;
+                                        msg += `_Generado por DonTendero.com_ 🚀`;
+
+                                        const url = `https://wa.me/57${whatsappPhone}?text=${encodeURIComponent(msg)}`;
+                                        window.open(url, '_blank');
+                                        setShowWhatsAppForm(false);
+                                        toast("Abriendo WhatsApp...", "success");
+                                    }}
+                                    disabled={!whatsappPhone || whatsappPhone.length < 10}
+                                    className="flex-[2] bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3 rounded-xl shadow-lg shadow-green-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    <span>Enviar Ahora</span>
+                                    <span className="material-symbols-outlined text-sm font-bold">send</span>
+                                </button>
+                            </div>
+                        </div>
                     ) : (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
                             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
                                 <span className="material-symbols-outlined text-[32px]">forward_to_inbox</span>
                             </div>
-                            <h3 className="font-bold text-lg mb-4 text-slate-900">Enviar Factura</h3>
+                            <h3 className="font-bold text-lg mb-4 text-slate-900">Enviar Factura (Email)</h3>
 
                             <div className="space-y-3 text-left mb-6">
                                 {transaction.customerData?.email && (
