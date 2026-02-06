@@ -14,62 +14,84 @@ export async function getWompiSignature(amount: number) {
     }
 }
 
+// Use supabaseAdmin to bypass RLS for payment verification
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
 export async function verifyAndActivateSubscription(transactionId: string, orgId: string) {
     console.log(`[SUBSCRIPTION] Verifying transaction ${transactionId} for Org ${orgId}`);
     try {
-        // 1. Verificar transacción real con Wompi
+        // 1. Verify with Wompi
         const transaction = await wompiService.verifyTransaction(transactionId);
 
         console.log(`[SUBSCRIPTION] Wompi Status: ${transaction?.status}`);
 
+        // In Sandbox, sometimes status is 'PENDING', but for testing we might want to allow it if key is test
+        // But strict implementation requires APPROVED.
         if (transaction?.status !== 'APPROVED') {
             return {
                 success: false,
                 status: transaction?.status || 'NOT_FOUND',
-                message: "El pago no fue aprobado o está pendiente."
+                message: "El pago no fue aprobado o está pendiente de validación."
             };
         }
 
-        // 2. Determinar Plan basado en el monto pagado
+        // 2. Determine Plan
         const amount = transaction.amount_in_cents / 100;
+        let planId = 'free';
 
-        // Buscamos el plan en la base de datos que coincida con este precio
-        const { data: matchedPlans } = await supabase
-            .from('plans')
-            .select('id')
-            .eq('price', amount)
-            .eq('active', true);
-
-        let planId = 'pro'; // Default fallback
-        if (matchedPlans && matchedPlans.length > 0) {
-            planId = matchedPlans[0].id;
+        // Robust Price Matching Logic
+        if (amount >= 80000) {
+            planId = 'pro'; // Empresario PRO (aprox 90k)
+        } else if (amount >= 20000) {
+            planId = 'basic'; // Emprendedor (aprox 50k)
         } else {
-            // Fallback razonable si no hay match exacto (ej: por descuentos de Wompi o IVA)
-            if (amount >= 400000) planId = 'pro';
-            else if (amount >= 30000) planId = 'basic';
+            // If amount is small (e.g. testing $1000), default to basic for sandbox testing
+            // Only for sandbox keys
+            if (!process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY?.includes('pub_prod_')) {
+                console.log("[SANDBOX] Small amount detected, authorizing Basic Plan for testing.");
+                planId = 'basic';
+            }
         }
 
-        console.log(`[SUBSCRIPTION DEBUG] Amount: ${amount}, Plan Identified: ${planId}`);
+        console.log(`[SUBSCRIPTION] Amount: ${amount}, Activating Plan: ${planId}`);
 
-        // 3. Activar Plan usando la Función RPC de Base de Datos
-        const { data, error } = await supabase.rpc('activate_subscription_plan', {
-            p_org_id: orgId,
-            p_plan_id: planId, // Changed from p_plan_code
-            p_payment_ref: transactionId,
-            p_amount: amount
-        });
+        // 3. Update Organization with Admin Privileges (Direct Update, No RPC needed)
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 30); // 30 Days
 
-        if (error) {
-            console.error("[SUBSCRIPTION] RPC Error:", error);
-            throw new Error(`Database Error: ${error.message}`);
+        const { error: updateError } = await supabaseAdmin
+            .from('organizations')
+            .update({
+                plan: planId,
+                subscription_status: 'active',
+                subscription_end_date: endDate.toISOString()
+            })
+            .eq('id', orgId);
+
+        if (updateError) throw updateError;
+
+        // 4. Log Subscription history (Best effort)
+        try {
+            await supabaseAdmin
+                .from('subscriptions')
+                .insert({
+                    organization_id: orgId,
+                    plan_id: planId,
+                    status: 'active',
+                    start_date: new Date().toISOString(),
+                    end_date: endDate.toISOString(),
+                    payment_ref: transactionId,
+                    amount_paid: amount
+                });
+        } catch (err) {
+            console.warn("Failed to log subscription history, but plan is active.", err);
         }
 
         return {
             success: true,
             message: "¡Plan activado exitosamente!",
             plan: planId,
-            status: 'APPROVED',
-            data
+            status: 'APPROVED'
         };
 
     } catch (error: any) {
@@ -80,7 +102,7 @@ export async function verifyAndActivateSubscription(transactionId: string, orgId
         return {
             success: false,
             status: 'ERROR',
-            message: error.message || "Error del sistema al activar suscripción.",
+            message: "Error activando el plan. Contacta a soporte.",
             error: error.message
         };
     }
