@@ -65,13 +65,37 @@ export const SubscriptionCard = () => {
     }, [businessInfo]);
 
     const fetchPlanDetails = async (planId: string) => {
+        // Fallback for free plan without needing DB call (or if DB call fails)
+        if (!planId || planId === 'free') {
+            setPlanDetails({
+                name: 'Plan Gratuito',
+                price: 0,
+                features: ['Control de Inventario', 'Punto de Venta (POS)', 'Reportes Básicos', '1 Usuario']
+            });
+            return;
+        }
+
         const { data } = await supabase.from('plans').select('*').eq('id', planId).single();
-        if (data) setPlanDetails(data);
+        if (data) {
+            setPlanDetails(data);
+        } else {
+            // If plan ID exists but not found in DB (edge case), show generic info
+            setPlanDetails({ name: 'Plan Personalizado', price: 0, features: [] });
+        }
     };
 
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
     };
+
+    // Determine derived state
+    const currentPlanId = businessInfo?.plan || 'free';
+    const isFreePlan = currentPlanId === 'free';
+    // Free plan is always active unless explicitly suspended (rare)
+    const displayStatus = isFreePlan ? 'active' : (businessInfo?.subscription_status || 'inactive');
+    const isStatusActive = displayStatus === 'active';
+
+    const planName = planDetails?.name || (isFreePlan ? 'Plan Gratuito' : 'Cargando...');
 
     return (
         <div className="flex flex-col gap-8 font-body">
@@ -79,13 +103,13 @@ export const SubscriptionCard = () => {
             <PlanUpgradeModal
                 isOpen={isUpgradeModalOpen}
                 onClose={() => setIsUpgradeModalOpen(false)}
-                currentPlanId={businessInfo?.plan || 'free'}
+                currentPlanId={currentPlanId}
             />
 
             <PlanSuccessModal
                 isOpen={showSuccessModal}
                 onClose={() => setShowSuccessModal(false)}
-                planName={planDetails?.name || businessInfo?.plan || 'Premium'}
+                planName={planName}
             />
 
             {/* Header Section */}
@@ -115,18 +139,18 @@ export const SubscriptionCard = () => {
                             <div className="space-y-2">
                                 <div className="flex items-center gap-3">
                                     <h3 className="text-slate-900 text-2xl font-black tracking-tight uppercase">
-                                        {planDetails?.name || businessInfo?.plan || 'Cargando...'}
+                                        {planName}
                                     </h3>
-                                    <span className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wide flex items-center gap-1.5 shadow-sm border ${businessInfo?.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>
+                                    <span className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wide flex items-center gap-1.5 shadow-sm border ${isStatusActive ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>
                                         <span className={`relative flex h-2 w-2`}>
-                                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${businessInfo?.subscription_status === 'active' ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
-                                            <span className={`relative inline-flex rounded-full h-2 w-2 ${businessInfo?.subscription_status === 'active' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isStatusActive ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                                            <span className={`relative inline-flex rounded-full h-2 w-2 ${isStatusActive ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
                                         </span>
-                                        {businessInfo?.subscription_status === 'active' ? 'Activo' : businessInfo?.subscription_status || 'Inactivo'}
+                                        {isStatusActive ? 'Activo' : 'Inactivo'}
                                     </span>
                                 </div>
                                 <p className="text-slate-500 font-medium">
-                                    {businessInfo?.plan === 'free' ? 'Plan gratuito sin costo recurrente.' : 'Facturación mensual recurrente'}
+                                    {isFreePlan ? 'Plan gratuito sin costo recurrente.' : 'Facturación mensual recurrente'}
                                 </p>
                             </div>
                             <div className="flex flex-col items-start sm:items-end bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -139,9 +163,7 @@ export const SubscriptionCard = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 relative z-10">
                             {planDetails?.features?.map((feature: string, idx: number) => (
                                 <div key={idx} className="flex items-center gap-3 group">
-                                    <div className="bg-emerald-50 p-1.5 rounded-full text-emerald-600 group-hover:scale-110 transition-transform">
-                                        <span className="material-symbols-outlined text-[18px]">check</span>
-                                    </div>
+                                    <span className="material-symbols-outlined text-[18px] text-emerald-500">check</span>
                                     <span className="text-sm font-medium text-slate-700">{feature}</span>
                                 </div>
                             ))}
