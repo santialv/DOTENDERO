@@ -38,7 +38,7 @@ ON customers
 USING GIN (full_name gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS idx_customers_identification 
-ON customers (identification_number);
+ON customers (document_number);
 
 -- 3. FUNCIÓN RPC OPTIMIZADA PARA ESTADÍSTICAS
 -- Reemplaza la lógica lenta del frontend. Calcula todo en DB en una sola pasada.
