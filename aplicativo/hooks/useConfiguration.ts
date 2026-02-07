@@ -42,7 +42,9 @@ export function useConfiguration() {
                 .from('organizations')
                 .select('*')
                 .eq('id', profile.organization_id)
-                .single();
+                .maybeSingle(); // Use maybeSingle for safety
+
+            console.log("DEBUG: Organization Data from DB:", org); // 🔍 DEBUG LOG
 
             if (error) {
                 console.error("Error loading org:", error);
@@ -51,6 +53,7 @@ export function useConfiguration() {
             let loadedInfo: BusinessInfo = DEFAULT_BUSINESS_INFO;
 
             if (org) {
+                console.log("DEBUG: Plan in DB is:", org.plan); // 🔍 DEBUG LOG
                 loadedInfo = {
                     name: org.name || "",
                     legalName: org.legal_name || "",
@@ -64,7 +67,9 @@ export function useConfiguration() {
                     logoUrl: org.logo_url || "",
                     rutUrl: org.rut_url || "",
                     owner_name: profile.full_name || "", // Added user name mapping
-                    plan: org.plan || "free",
+                    // Fix: Check both possible column names
+                    plan: org.plan || org.subscription_plan || "free",
+                    subscription_end_date: org.subscription_end_date, // Mapped Date
                     subscription_status: org.subscription_status || "active",
                     organization_id: org.id
                 };

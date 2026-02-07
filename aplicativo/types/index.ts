@@ -68,6 +68,11 @@ export type Transaction = {
     customerName?: string;
     customerData?: Customer;
     payments?: Payment[];
+
+    // View Fields
+    customer_name?: string;
+    reference_number?: string;
+    payment_method?: string;
 };
 
 export type Sale = {

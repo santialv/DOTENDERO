@@ -11,6 +11,7 @@ export function useTransactions() {
     const { toast } = useToast();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [stats, setStats] = useState({ totalCash: 0, totalBank: 0, totalFiado: 0 });
+    const [loading, setLoading] = useState(false);
 
     // Pagination & Filter State
     const [page, setPage] = useState(0);
@@ -29,6 +30,7 @@ export function useTransactions() {
 
     // 1. Fetch Transactions (Optimized View + Pagination)
     const fetchTransactions = useCallback(async (pageToLoad: number) => {
+        setLoading(true);
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
@@ -58,8 +60,13 @@ export function useTransactions() {
                 query = query.gte('date', startOfDay);
             } else if (filterDateMode === "semana") {
                 const startOfWeek = new Date(now);
-                startOfWeek.setDate(now.getDate() - now.getDay());
+                const day = startOfWeek.getDay(); // 0 (Sun) - 6 (Sat)
+                // Calculate difference to get to Monday. If Sunday (0), go back 6 days. Else go back (day-1) days.
+                const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+
+                startOfWeek.setDate(diff); // Now is Monday
                 startOfWeek.setHours(0, 0, 0, 0);
+
                 query = query.gte('date', startOfWeek.toISOString());
             } else if (filterDateMode === "mes") {
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -107,6 +114,8 @@ export function useTransactions() {
 
         } catch (error) {
             console.error("Error loading transactions:", error);
+        } finally {
+            setLoading(false);
         }
     }, [activeTab, filterDateMode, startDate, endDate, searchQuery, filterCustomer]);
 
@@ -114,7 +123,7 @@ export function useTransactions() {
     useEffect(() => {
         const timeout = setTimeout(() => {
             fetchTransactions(0);
-        }, 300);
+        }, 500); // 500ms debounce slightly longer to feel like user stopped typing
         return () => clearTimeout(timeout);
     }, [fetchTransactions]);
 
@@ -158,7 +167,6 @@ export function useTransactions() {
     }, [toast, fetchTransactions]);
 
     const handleCloseDay = () => {
-        // Simplified logic for "Closing" - can just print current view summary
         window.print();
     };
 
@@ -169,10 +177,11 @@ export function useTransactions() {
         stats,
         addTransaction,
         handleCloseDay,
+        loading, // Export loading
 
         // Pagination
         page,
-        setPage, // UI can manually call this, but ideally we wrap it to call fetchTransactions
+        setPage,
         totalPages: Math.ceil(totalCount / ITEMS_PER_PAGE),
 
         // Filter State & Setters

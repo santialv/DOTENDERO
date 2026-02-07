@@ -40,6 +40,7 @@ export type BusinessInfo = {
     rutUrl?: string; // Added
     owner_name?: string; // Added for UI display
     plan?: string;
+    subscription_end_date?: string;
     subscription_status?: string;
     organization_id?: string;
 };

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "gen-types": "npx supabase gen types typescript --project-id rlvoybmexdylkwpbpnla > types/database.types.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
